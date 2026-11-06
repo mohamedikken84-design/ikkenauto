@@ -15,6 +15,17 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: PostgreSQL voor integratietests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql postgresql-contrib
+          sudo pg_ctlcluster 16 main start
+          sudo -u postgres psql -c "CREATE ROLE ikkenauto LOGIN PASSWORD 'ci_ephemeral_only';" || sudo -u postgres psql -c "ALTER ROLE ikkenauto WITH LOGIN PASSWORD 'ci_ephemeral_only';"
+          sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname = 'ikkenauto_test'" | grep -q 1 || sudo -u postgres createdb -O ikkenauto ikkenauto_test
+          sudo -u postgres psql -d ikkenauto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS btree_gist;"
       - run: npm run lint
       - run: npm test
+        env:
+          DATABASE_URL: postgres://ikkenauto:ci_ephemeral_only@127.0.0.1:5432/ikkenauto_test
+          AUTH_MODE: development-session
       - run: npm run build
