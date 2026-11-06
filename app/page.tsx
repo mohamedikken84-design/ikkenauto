@@ -1,69 +1,150 @@
-import Image from "next/image";
+import { CtaLink } from "@/components/cta-link";
+import { SearchForm } from "@/components/search-form";
 
-export default function Home() {
+const audiences = [
+  {
+    label: "Particulier",
+    title: "Van mens tot mens",
+    text: "In de seed zitten ook een paar particuliere voorbeelden. Zelf een advertentie plaatsen kan nog niet.",
+  },
+  {
+    label: "Handelaar",
+    title: "Een dealeromgeving volgt",
+    text: "De lijst toont fictieve dealers, geen gekoppelde voorraad. Een echte dealeromgeving volgt later.",
+  },
+];
+
+const steps = [
+  {
+    title: "Zoeken",
+    text: "Filter de dealerseed op merk, model, prijs, kilometer, bouwjaar, brandstof en afstand.",
+  },
+  {
+    title: "Kiezen",
+    text: "Open een advertentie voor kenmerken, BTW-regime, verkoper en een lokaal contactformulier.",
+  },
+  {
+    title: "Contact",
+    text: "Het formulier blijft op dit apparaat. Er is nog geen mail naar de verkoper en geen account.",
+  },
+];
+
+const limits = [
+  "Geen analysetracking en geen marketingcookies in deze versie.",
+  "Geen accounts. Een contactbericht op een advertentie blijft lokaal in je browser.",
+  "Geen Car-Pass. Die gegevens tonen we pas wanneer de koppeling er is.",
+  "Privacy, cookies en voorwaarden zijn placeholders en nog geen geldige juridische teksten.",
+];
+
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <>
+      <section aria-labelledby="belofte" className="bg-ink text-paper">
+        <div className="mx-auto w-full max-w-6xl px-4 pt-16 pb-28 md:pt-24 md:pb-32">
+          <p className="text-xs font-semibold tracking-[0.18em] text-gold uppercase">
+            België · particulier en handelaar
+          </p>
+          <h1
+            id="belofte"
+            className="mt-4 max-w-3xl font-display text-4xl leading-[1.08] font-medium md:text-6xl"
+          >
+            Vind je volgende auto in België.
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-paper/80">
+            IKKENAUTO.be wordt de marktplaats waar je een auto zoekt of
+            aanbiedt, bij particulieren en later ook bij handelaars. Eén plek,
+            met merk, model en prijs als vertrekpunt.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      <div className="mx-auto -mt-16 w-full max-w-6xl px-4">
+        <SearchForm idPrefix="home" />
+      </div>
+
+      <section aria-labelledby="markt" className="mx-auto w-full max-w-6xl px-4 py-16 md:py-24">
+        <div className="max-w-2xl">
+          <h2 id="markt" className="font-display text-3xl leading-tight md:text-4xl">
+            Eerst particulieren, daarna handelaars
+          </h2>
+          <p className="mt-4 text-lg leading-relaxed text-muted">
+            De markt start bij mensen die een auto verkopen. Professionele
+            verkopers komen erbij zodra hun omgeving klaar is. We nemen hun
+            aanbod nu niet over.
+          </p>
         </div>
-      </main>
-    </div>
+        <div className="mt-10 grid gap-6 md:grid-cols-2">
+          {audiences.map((item) => (
+            <article key={item.label} className="border border-line bg-surface p-6">
+              <p className="text-xs font-semibold tracking-[0.16em] text-gold-deep uppercase">
+                {item.label}
+              </p>
+              <h3 className="mt-3 font-display text-2xl">{item.title}</h3>
+              <p className="mt-3 leading-relaxed text-muted">{item.text}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section aria-labelledby="stappen" className="border-y border-line bg-surface">
+        <div className="mx-auto w-full max-w-6xl px-4 py-16 md:py-24">
+          <h2 id="stappen" className="font-display text-3xl leading-tight md:text-4xl">
+            Drie stappen, zodra het aanbod er is
+          </h2>
+          <ol className="mt-10 grid gap-8 md:grid-cols-3">
+            {steps.map((step, index) => (
+              <li key={step.title} className="border-t-2 border-gold pt-4">
+                <p className="text-sm font-semibold text-gold-deep">
+                  0{index + 1}
+                </p>
+                <h3 className="mt-2 font-display text-2xl">{step.title}</h3>
+                <p className="mt-3 leading-relaxed text-muted">{step.text}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section aria-labelledby="grenzen" className="mx-auto w-full max-w-6xl px-4 py-16 md:py-24">
+        <h2 id="grenzen" className="font-display text-3xl leading-tight md:text-4xl">
+          Eerlijk over wat er nog niet is
+        </h2>
+        <ul className="mt-8 grid gap-4 md:grid-cols-2">
+          {limits.map((item) => (
+            <li
+              key={item}
+              className="border border-line bg-surface px-5 py-4 leading-relaxed"
+            >
+              {item}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section aria-labelledby="verder" className="bg-ink text-paper">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-16 md:flex-row md:items-end md:justify-between md:py-20">
+          <div className="max-w-xl">
+            <h2 id="verder" className="font-display text-3xl leading-tight md:text-4xl">
+              Bekijk de dealerseed.
+            </h2>
+            <p className="mt-4 text-lg leading-relaxed text-paper/80">
+              Zoeken en advertenties werken op fictieve voorraad. Plaatsen,
+              mailen en een echte dealeromgeving volgen nog.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <CtaLink href="/nl/autos" variant="inverse">
+              Naar zoeken
+            </CtaLink>
+            <CtaLink href="/plaats-advertentie" variant="secondary">
+              Plaats advertentie
+            </CtaLink>
+            <CtaLink href="/handelaars" variant="secondary">
+              Voor handelaars
+            </CtaLink>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }
