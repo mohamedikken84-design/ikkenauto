@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test lib/listings/search.test.ts"
+    "test": "tsx --test lib/listings/search.test.ts lib/listings/home-search.test.ts"
   },
   "dependencies": {
     "next": "16.4.5",
