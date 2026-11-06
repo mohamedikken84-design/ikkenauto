@@ -54,7 +54,10 @@ function ListingDetail({ listing }: { listing: Listing }) {
 
   return (
     <article className="mx-auto w-full max-w-6xl px-4 py-8">
-      <p className="text-sm">
+      <p className="border border-gold bg-surface px-4 py-3 text-sm leading-6">
+        Fictieve ontwikkeldata, geen echte voorraad. Deze pagina komt uit de voorbeeldseed en niet uit een gepubliceerde dealerstock.
+      </p>
+      <p className="mt-4 text-sm">
         <BackToResults />
         <span className="text-muted"> · </span>
         <Link href="/nl/autos" className="text-sm font-semibold underline decoration-gold decoration-2 underline-offset-4">
