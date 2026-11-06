@@ -15,7 +15,22 @@ Open [http://localhost:3000](http://localhost:3000).
 
 - Thema in wit, zwart en goud
 - Gedeelde header en footer
-- Homepage met zoekbalk-placeholder (merk, model, prijs)
-- Routes voor zoeken, adverteren, berichten, account, handelaars en juridische placeholders
+- Homepage met zoekbalk naar de dealerseed
+- `/nl/autos` met filters, resultaatkaarten en advertentiedetail
+- Typed seed plus `data/dealer-listings.csv` (zelfde `Listing`-model)
+- Routes voor adverteren, berichten, account, handelaars en juridische placeholders
 
-Er is nog geen authenticatie, berichtenbackend, advertentiebestand, Car-Pass of dealeromgeving. De pagina's over privacy, cookies en voorwaarden zijn nog geen geldige juridische teksten.
+Er is nog geen authenticatie, mailbackend, live voorraad, scraping of Car-Pass. Favorieten en contactberichten blijven in de browser. De pagina's over privacy, cookies en voorwaarden zijn nog geen geldige juridische teksten.
+
+## Zoeken uitproberen
+
+```bash
+npm run dev
+```
+
+- [http://localhost:3000/nl/autos](http://localhost:3000/nl/autos)
+- Filter op merk, dan model. De telling hoort te dalen.
+- Zet postcode `2000` en straal `10 km`: alleen Antwerpen.
+- Open een kaart, gebruik de browser terug: filters en positie blijven behouden.
+- Deel de URL met queryparameters: dezelfde filters komen terug.
+- Een onmogelijke combinatie, bijvoorbeeld Golf onder € 1.000, toont nul resultaten en voorstellen om een filter te lossen.

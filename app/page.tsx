@@ -5,33 +5,33 @@ const audiences = [
   {
     label: "Particulier",
     title: "Van mens tot mens",
-    text: "Zoek straks tussen auto's van particulieren, of bereid je eigen advertentie voor. Plaatsen, wijzigen en offline halen zit nog niet in deze versie.",
+    text: "In de seed zitten ook een paar particuliere voorbeelden. Zelf een advertentie plaatsen kan nog niet.",
   },
   {
     label: "Handelaar",
     title: "Een dealeromgeving volgt",
-    text: "Garages krijgen later een eigen plek. Er is nog geen zakelijk account, geen voorraadkoppeling en geen automatische import van advertenties.",
+    text: "De lijst toont fictieve dealers, geen gekoppelde voorraad. Een echte dealeromgeving volgt later.",
   },
 ];
 
 const steps = [
   {
     title: "Zoeken",
-    text: "Merk, model en een maximale prijs. Dezelfde drie velden op de homepage en op de zoekpagina.",
+    text: "Filter de dealerseed op merk, model, prijs, kilometer, bouwjaar, brandstof en afstand.",
   },
   {
     title: "Kiezen",
-    text: "Een advertentie die de auto toont, zonder ruis van andere sites. Het aanbod zelf komt later.",
+    text: "Open een advertentie voor kenmerken, BTW-regime, verkoper en een lokaal contactformulier.",
   },
   {
     title: "Contact",
-    text: "Een bericht naar de aanbieder. Berichten en accounts zijn nog niet gebouwd.",
+    text: "Het formulier blijft op dit apparaat. Er is nog geen mail naar de verkoper en geen account.",
   },
 ];
 
 const limits = [
   "Geen analysetracking en geen marketingcookies in deze versie.",
-  "Geen accounts of berichten, dus nog geen persoonsgegevens die we voor die functies bijhouden.",
+  "Geen accounts. Een contactbericht op een advertentie blijft lokaal in je browser.",
   "Geen Car-Pass. Die gegevens tonen we pas wanneer de koppeling er is.",
   "Privacy, cookies en voorwaarden zijn placeholders en nog geen geldige juridische teksten.",
 ];
@@ -125,16 +125,15 @@ export default function HomePage() {
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-16 md:flex-row md:items-end md:justify-between md:py-20">
           <div className="max-w-xl">
             <h2 id="verder" className="font-display text-3xl leading-tight md:text-4xl">
-              De routes staan klaar. De functies volgen.
+              Bekijk de dealerseed.
             </h2>
             <p className="mt-4 text-lg leading-relaxed text-paper/80">
-              Bekijk hoe zoeken, adverteren en de handelaarsomgeving er op de
-              kaart liggen. Niets daarvan verwerkt vandaag al een echte
-              advertentie.
+              Zoeken en advertenties werken op fictieve voorraad. Plaatsen,
+              mailen en een echte dealeromgeving volgen nog.
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-            <CtaLink href="/zoeken" variant="inverse">
+            <CtaLink href="/nl/autos" variant="inverse">
               Naar zoeken
             </CtaLink>
             <CtaLink href="/plaats-advertentie" variant="secondary">

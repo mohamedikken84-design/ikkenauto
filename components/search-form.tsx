@@ -5,13 +5,13 @@ type SearchFormProps = {
 const fields = [
   { name: "merk", label: "Merk", placeholder: "Volkswagen" },
   { name: "model", label: "Model", placeholder: "Golf" },
-  { name: "prijs", label: "Prijs tot (€)", placeholder: "15.000" },
+  { name: "prijsTot", label: "Prijs tot (€)", placeholder: "15.000" },
 ] as const;
 
 export function SearchForm({ idPrefix }: SearchFormProps) {
   return (
     <form
-      action="/zoeken"
+      action="/nl/autos"
       method="get"
       role="search"
       aria-label="Zoek een auto op merk, model en prijs"
@@ -29,7 +29,7 @@ export function SearchForm({ idPrefix }: SearchFormProps) {
                 id={id}
                 name={field.name}
                 type="text"
-                inputMode={field.name === "prijs" ? "decimal" : "text"}
+                inputMode={field.name === "prijsTot" ? "decimal" : "text"}
                 autoComplete="off"
                 placeholder={field.placeholder}
                 className="mt-2 w-full border border-line bg-paper px-3 py-3 text-base text-ink placeholder:text-muted"
@@ -45,8 +45,7 @@ export function SearchForm({ idPrefix }: SearchFormProps) {
         </button>
       </div>
       <p className="mt-4 text-sm leading-6 text-muted">
-        Er is nog geen zoekmotor en geen advertentiebestand. De balk opent de
-        zoekpagina, maar verwerkt je invoer nog niet.
+        Zoekt in de dealerseed op merk, model en maximumprijs. Nog geen live markt.
       </p>
     </form>
   );

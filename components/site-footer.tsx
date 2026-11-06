@@ -12,9 +12,9 @@ export function SiteFooter() {
           </p>
           <p className="mt-3 max-w-md text-sm leading-6 text-paper/80">
             Belgische automarktplaats in opbouw. Deze versie plaatst geen
-            analysecookies en geen marketingcookies, en verzamelt geen accounts
-            of berichten. De privacyverklaring volgt voor we persoonsgegevens
-            verwerken.
+            analysecookies en geen marketingcookies. Er is geen account. Een
+            contactbericht op een advertentie blijft in deze browser en wordt
+            niet gemaild.
           </p>
         </div>
         <nav aria-label="Juridische informatie">

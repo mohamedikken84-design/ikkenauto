@@ -18,8 +18,9 @@ export default function PrivacyPage() {
     >
       <p>
         Deze versie plaatst geen analysetracking en geen marketingcookies. Er
-        is geen account, geen berichten en geen advertentieformulier dat gegevens
-        bewaart.
+        is geen account. Het contactformulier op een advertentie bewaart naam,
+        e-mail, telefoon en bericht alleen in de browser van die bezoeker, niet
+        op een server.
       </p>
       <p>
         Wanneer die functies er zijn, beschrijft de verklaring het doel, de
