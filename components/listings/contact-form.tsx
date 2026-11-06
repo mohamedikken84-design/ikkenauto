@@ -1,18 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-
-const storageKey = "ikkenauto.leads";
-
-type Lead = {
-  listingId: string;
-  listingTitle: string;
-  name: string;
-  email: string;
-  phone: string;
-  message: string;
-  savedAt: string;
-};
+import { leadsStorageKey, saveStoredLead, type StoredLead } from "@/lib/listings/browser-store";
 
 type ContactFormProps = {
   listingId: string;
@@ -20,13 +9,14 @@ type ContactFormProps = {
 };
 
 export function ContactForm({ listingId, listingTitle }: ContactFormProps) {
-  const [saved, setSaved] = useState<Lead | null>(null);
+  const [saved, setSaved] = useState<StoredLead | null>(null);
+  const [storageError, setStorageError] = useState(false);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
-    const lead: Lead = {
+    const lead: StoredLead = {
       listingId,
       listingTitle,
       name: String(data.get("naam") ?? "").trim(),
@@ -35,8 +25,13 @@ export function ContactForm({ listingId, listingTitle }: ContactFormProps) {
       message: String(data.get("bericht") ?? "").trim(),
       savedAt: new Date().toISOString(),
     };
-    const current = readLeads();
-    localStorage.setItem(storageKey, JSON.stringify([lead, ...current].slice(0, 20)));
+    const result = saveStoredLead(localStorage, leadsStorageKey, lead);
+    if (!result.ok) {
+      setSaved(null);
+      setStorageError(true);
+      return;
+    }
+    setStorageError(false);
     setSaved(lead);
     form.reset();
   }
@@ -100,19 +95,22 @@ export function ContactForm({ listingId, listingTitle }: ContactFormProps) {
       </button>
       {saved ? (
         <p className="mt-4 border border-gold bg-paper px-4 py-3 text-sm leading-6" role="status">
-          Lokaal bewaard op dit apparaat om {saved.savedAt.slice(11, 16)}. Er is geen e-mail
+          Lokaal bewaard op dit apparaat om {formatSavedTime(saved.savedAt)}. Er is geen e-mail
           verstuurd over {saved.listingTitle}.
+        </p>
+      ) : null}
+      {storageError ? (
+        <p className="mt-4 border border-ink bg-paper px-4 py-3 text-sm leading-6" role="alert">
+          Bewaren lukte niet. Deze browser weigert lokale opslag. Er is niets bewaard en er is geen
+          e-mail verstuurd.
         </p>
       ) : null}
     </form>
   );
 }
 
-function readLeads() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(storageKey) ?? "[]") as unknown;
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+function formatSavedTime(iso: string) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleTimeString("nl-BE", { hour: "2-digit", minute: "2-digit" });
 }

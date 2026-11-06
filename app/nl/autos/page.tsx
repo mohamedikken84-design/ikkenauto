@@ -4,7 +4,7 @@ import { FilterForm } from "@/components/listings/filter-form";
 import { ResultCard } from "@/components/listings/result-card";
 import { activeChips, hasActiveFilters, searchListings } from "@/lib/listings/filter";
 import { formatCount } from "@/lib/listings/format";
-import { parseFilters } from "@/lib/listings/query";
+import { parseSearch } from "@/lib/listings/query";
 import { knownPostcodes, listings, modelsByMake, postcodes } from "@/lib/listings/seed";
 import { pageMetadata } from "@/lib/metadata";
 
@@ -30,10 +30,11 @@ async function SearchScreen({
 }) {
   const groupedModels = modelsByMake();
   const makes = Object.keys(groupedModels);
-  const filters = parseFilters(await searchParams, {
+  const parsed = parseSearch(await searchParams, {
     makes,
     models: listings.map((listing) => listing.model),
   });
+  const filters = parsed.filters;
   const search = searchListings(listings, filters, postcodes);
   const chips = activeChips(filters);
   const locationHint = locationMessage(filters.postalCode, filters.radiusKm, search.unknownPostalCode, search.origin?.city);
@@ -55,6 +56,16 @@ async function SearchScreen({
         </h1>
         <p className="mt-3 font-display text-3xl">{formatCount(search.results.length)}</p>
         <p className="mt-1 text-muted">van {formatCount(listings.length)} in de seed. Geen live voorraad en geen scraping.</p>
+        <p className="mt-1 text-sm text-muted">Volgorde: prijs, laag naar hoog. Een andere sortering is er niet.</p>
+        {parsed.notices.length > 0 ? (
+          <ul className="mt-3 grid gap-2">
+            {parsed.notices.map((notice) => (
+              <li key={notice.id} className="border border-ink bg-surface px-3 py-2 text-sm" role="status">
+                {notice.text}
+              </li>
+            ))}
+          </ul>
+        ) : null}
         {locationHint ? <p className="mt-3 text-sm leading-6 text-ink">{locationHint}</p> : null}
         {chips.length > 0 ? (
           <ul className="mt-4 flex flex-wrap gap-2">

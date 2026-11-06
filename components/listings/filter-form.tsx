@@ -3,7 +3,7 @@
 import type { ChangeEvent, FocusEvent } from "react";
 import { useRouter } from "next/navigation";
 import { bodyLabel, fuelLabel, sellerLabel, transmissionLabel } from "@/lib/listings/labels";
-import { parseFilters, toAutosHref } from "@/lib/listings/query";
+import { parseFilters, queriesMatch, toAutosHref } from "@/lib/listings/query";
 import {
   BODY_TYPES,
   FUELS,
@@ -20,7 +20,8 @@ type FilterFormProps = {
   postcodes: { postalCode: string; city: string }[];
 };
 
-const controlClass = "mt-2 w-full border border-line bg-paper px-3 py-3 font-normal placeholder:text-muted";
+const controlClass =
+  "mt-2 w-full border border-line bg-paper px-3 py-3 font-normal placeholder:text-[#a39888]";
 const years = Array.from({ length: 11 }, (_, index) => 2026 - index);
 
 export function FilterForm({ filters, makes, modelsByMake, postcodes }: FilterFormProps) {
@@ -39,7 +40,7 @@ export function FilterForm({ filters, makes, modelsByMake, postcodes }: FilterFo
     }
     const href = toAutosHref(next);
     const current = `${window.location.pathname}${window.location.search}`;
-    if (href === current) return;
+    if (queriesMatch(href, current)) return;
     router.push(href, { scroll: false });
   }
 
@@ -100,6 +101,7 @@ export function FilterForm({ filters, makes, modelsByMake, postcodes }: FilterFo
               </option>
             ))}
           </select>
+          {!filters.make && filters.model ? <input type="hidden" name="model" value={filters.model} /> : null}
         </label>
         <div className="grid grid-cols-2 gap-3">
           <label className="text-sm font-semibold" htmlFor="filter-prijs-van">
@@ -110,7 +112,7 @@ export function FilterForm({ filters, makes, modelsByMake, postcodes }: FilterFo
               inputMode="numeric"
               defaultValue={filters.priceMin ?? ""}
               onBlur={onNumberBlur}
-              placeholder="5.000"
+              placeholder="optioneel"
               className={controlClass}
             />
           </label>
@@ -122,7 +124,7 @@ export function FilterForm({ filters, makes, modelsByMake, postcodes }: FilterFo
               inputMode="numeric"
               defaultValue={filters.priceMax ?? ""}
               onBlur={onNumberBlur}
-              placeholder="25.000"
+              placeholder="optioneel"
               className={controlClass}
             />
           </label>
@@ -135,7 +137,7 @@ export function FilterForm({ filters, makes, modelsByMake, postcodes }: FilterFo
             inputMode="numeric"
             defaultValue={filters.kmMax ?? ""}
             onBlur={onNumberBlur}
-            placeholder="100.000"
+              placeholder="optioneel"
             className={controlClass}
           />
         </label>
@@ -212,7 +214,7 @@ export function FilterForm({ filters, makes, modelsByMake, postcodes }: FilterFo
               list="gekende-postcodes"
               defaultValue={filters.postalCode}
               onBlur={onNumberBlur}
-              placeholder="2000"
+              placeholder="4 cijfers"
               className={controlClass}
             />
           </label>

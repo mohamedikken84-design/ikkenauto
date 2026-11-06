@@ -19,7 +19,9 @@ function first(value: QueryValue) {
 }
 
 function digits(value: string) {
-  const cleaned = value.replace(/[^\d]/g, "");
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.includes("-")) return null;
+  const cleaned = trimmed.replace(/[^\d]/g, "");
   if (!cleaned) return null;
   const parsed = Number(cleaned);
   return Number.isFinite(parsed) ? parsed : null;
@@ -34,33 +36,100 @@ function matchOption(value: string, options: readonly string[]) {
   return options.find((option) => option.toLowerCase() === value.toLowerCase()) ?? value;
 }
 
-export function parseFilters(
+export type SearchNotice = {
+  id: string;
+  text: string;
+};
+
+export function parseSearch(
   input: Record<string, QueryValue>,
   options?: { makes?: readonly string[]; models?: readonly string[] },
-): SearchFilters {
+): { filters: SearchFilters; notices: SearchNotice[] } {
+  const notices: SearchNotice[] = [];
   const year = (value: string) => {
     const parsed = digits(value);
     if (parsed === null || parsed < 1995 || parsed > 2026) return null;
     return parsed;
   };
-  const radius = digits(first(input.straal));
+  const rawRadius = first(input.straal);
+  const radius = digits(rawRadius);
+  const rawPostcode = first(input.postcode);
+  const rawFuel = first(input.brandstof);
+  const priceMin = digits(first(input.prijsVan));
   const priceMax = digits(first(input.prijsTot) || first(input.prijs));
+  const yearMin = year(first(input.jaarVan));
+  const yearMax = year(first(input.jaarTot));
+  const radiusKm = radius !== null && (RADIUS_OPTIONS as readonly number[]).includes(radius) ? radius : null;
+
+  if (rawRadius && radiusKm === null) {
+    notices.push({
+      id: "straal",
+      text: `Straal '${rawRadius}' hoort niet bij de keuzes. De afstand is niet beperkt.`,
+    });
+  }
+  if (rawPostcode && !/^\d{4}$/.test(rawPostcode)) {
+    notices.push({
+      id: "postcode",
+      text: `Postcode '${rawPostcode}' is geen postcode van 4 cijfers. Die locatie is niet gebruikt.`,
+    });
+  }
+  if (rawFuel && !oneOf<Fuel>(rawFuel, FUELS)) {
+    notices.push({
+      id: "brandstof",
+      text: `Brandstof '${rawFuel}' kennen we niet. Dat filter is niet toegepast.`,
+    });
+  }
+  if (priceMin !== null && priceMax !== null && priceMin > priceMax) {
+    notices.push({
+      id: "prijs",
+      text: "Prijs van ligt boven prijs tot. Daardoor is de telling 0.",
+    });
+  }
+  if (yearMin !== null && yearMax !== null && yearMin > yearMax) {
+    notices.push({
+      id: "jaar",
+      text: "Jaar van ligt na jaar tot. Daardoor is de telling 0.",
+    });
+  }
 
   return {
-    make: matchOption(first(input.merk), options?.makes ?? []),
-    model: matchOption(first(input.model), options?.models ?? []),
-    priceMin: digits(first(input.prijsVan)),
-    priceMax,
-    kmMax: digits(first(input.kmTot)),
-    yearMin: year(first(input.jaarVan)),
-    yearMax: year(first(input.jaarTot)),
-    fuel: oneOf<Fuel>(first(input.brandstof), FUELS),
-    transmission: oneOf<Transmission>(first(input.transmissie), TRANSMISSIONS),
-    body: oneOf<BodyType>(first(input.carrosserie), BODY_TYPES),
-    postalCode: /^\d{4}$/.test(first(input.postcode)) ? first(input.postcode) : "",
-    radiusKm: radius !== null && (RADIUS_OPTIONS as readonly number[]).includes(radius) ? radius : null,
-    seller: oneOf<SellerType>(first(input.verkoper), SELLER_TYPES),
+    filters: {
+      make: matchOption(first(input.merk), options?.makes ?? []),
+      model: matchOption(first(input.model), options?.models ?? []),
+      priceMin,
+      priceMax,
+      kmMax: digits(first(input.kmTot)),
+      yearMin,
+      yearMax,
+      fuel: oneOf<Fuel>(rawFuel, FUELS),
+      transmission: oneOf<Transmission>(first(input.transmissie), TRANSMISSIONS),
+      body: oneOf<BodyType>(first(input.carrosserie), BODY_TYPES),
+      postalCode: /^\d{4}$/.test(rawPostcode) ? rawPostcode : "",
+      radiusKm,
+      seller: oneOf<SellerType>(first(input.verkoper), SELLER_TYPES),
+    },
+    notices,
   };
+}
+
+export function parseFilters(
+  input: Record<string, QueryValue>,
+  options?: { makes?: readonly string[]; models?: readonly string[] },
+): SearchFilters {
+  return parseSearch(input, options).filters;
+}
+
+export function queriesMatch(left: string, right: string) {
+  const leftUrl = new URL(left, "https://ikkenauto.be");
+  const rightUrl = new URL(right, "https://ikkenauto.be");
+  if (leftUrl.pathname !== rightUrl.pathname) return false;
+  const leftParams = new URLSearchParams(leftUrl.search);
+  const rightParams = new URLSearchParams(rightUrl.search);
+  const keys = new Set([...leftParams.keys(), ...rightParams.keys()]);
+  for (const key of keys) {
+    if (leftParams.get(key) !== rightParams.get(key)) return false;
+  }
+  return true;
 }
 
 export function toSearchParams(filters: SearchFilters) {

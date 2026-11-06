@@ -1,8 +1,8 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
+import { favoritesStorageKey, readStringList, toggleStoredId } from "@/lib/listings/browser-store";
 
-const storageKey = "ikkenauto.favorieten";
 const changeEvent = "ikkenauto-favorieten";
 
 function subscribe(onStoreChange: () => void) {
@@ -15,17 +15,8 @@ function subscribe(onStoreChange: () => void) {
   };
 }
 
-function readIds() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(storageKey) ?? "[]") as unknown;
-    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
-  } catch {
-    return [];
-  }
-}
-
 function snapshot() {
-  return localStorage.getItem(storageKey) ?? "[]";
+  return localStorage.getItem(favoritesStorageKey) ?? "[]";
 }
 
 function serverSnapshot() {
@@ -40,18 +31,21 @@ type FavoriteButtonProps = {
 
 export function FavoriteButton({ id, title, className = "" }: FavoriteButtonProps) {
   const raw = useSyncExternalStore(subscribe, snapshot, serverSnapshot);
+  const [storageError, setStorageError] = useState(false);
   let saved = false;
   try {
-    const parsed = JSON.parse(raw) as unknown;
-    saved = Array.isArray(parsed) && parsed.includes(id);
+    saved = readStringList({ getItem: () => raw, setItem: () => undefined }, "snapshot").includes(id);
   } catch {
     saved = false;
   }
 
   function toggle() {
-    const current = readIds();
-    const next = current.includes(id) ? current.filter((item) => item !== id) : [...current, id];
-    localStorage.setItem(storageKey, JSON.stringify(next));
+    const result = toggleStoredId(localStorage, favoritesStorageKey, id);
+    if (!result.ok) {
+      setStorageError(true);
+      return;
+    }
+    setStorageError(false);
     window.dispatchEvent(new Event(changeEvent));
   }
 
@@ -64,8 +58,11 @@ export function FavoriteButton({ id, title, className = "" }: FavoriteButtonProp
         saved ? "border-gold bg-gold text-ink" : "border-ink bg-surface text-ink hover:border-gold-deep"
       } ${className}`}
     >
-      {saved ? "Bewaard" : "Bewaar"}
-      <span className="sr-only"> {title} op dit apparaat</span>
+      {storageError ? "Niet bewaard" : saved ? "Bewaard" : "Bewaar"}
+      <span className="sr-only">
+        {" "}
+        {title} op dit apparaat{storageError ? ". De browser weigerde lokale opslag." : ""}
+      </span>
     </button>
   );
 }
