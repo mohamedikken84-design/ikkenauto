@@ -7,11 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test lib/listings/search.test.ts lib/dealer/dealer.integration.test.ts",
+    "test": "tsx --test --test-concurrency=1 lib/listings/search.test.ts lib/dealer/dealer.integration.test.ts lib/dealer/account.integration.test.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:dev-session": "tsx scripts/create-dev-session.ts"
   },
   "dependencies": {
+    "@node-rs/argon2": "^2.0.2",
     "next": "16.4.5",
     "pg": "^8.16.3",
     "react": "19.3.0",

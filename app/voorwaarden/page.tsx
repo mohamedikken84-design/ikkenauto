@@ -17,8 +17,8 @@ export default function VoorwaardenPage() {
       lede="Dit zijn nog geen algemene voorwaarden. Er is nog geen geldige tekst voor gebruik, advertenties of handel tussen gebruikers."
     >
       <p>
-        De site toont het skelet van de marktplaats. Je kunt nog geen
-        advertentie plaatsen, geen bericht sturen en geen account openen.
+        De site toont het skelet van de marktplaats. Een lokaal account kan
+        wel, maar je kunt nog geen advertentie plaatsen en geen bericht sturen.
       </p>
       <p>
         Bindende afspraken publiceren we pas wanneer de marktplaats die

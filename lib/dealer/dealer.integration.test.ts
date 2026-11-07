@@ -232,7 +232,10 @@ async function resetTables() {
 }
 
 async function createDealer(name: string) {
-  const result = await getPool().query<{ id: string }>("INSERT INTO dealers (name) VALUES ($1) RETURNING id", [name]);
+  const result = await getPool().query<{ id: string }>(
+    "INSERT INTO dealers (name, verification_status) VALUES ($1, 'verified') RETURNING id",
+    [name],
+  );
   return result.rows[0].id;
 }
 

@@ -17,10 +17,10 @@ export default function PrivacyPage() {
       lede="Dit is nog geen privacyverklaring. De tekst wordt vastgelegd voor IKKENAUTO.be persoonsgegevens verwerkt voor accounts, advertenties of berichten."
     >
       <p>
-        Deze versie plaatst geen analysetracking en geen marketingcookies. Er
-        is geen account. Het contactformulier op een advertentie bewaart naam,
-        e-mail, telefoon en bericht alleen in de browser van die bezoeker, niet
-        op een server.
+        Deze versie plaatst geen analysetracking en geen marketingcookies. Een
+        lokaal account bewaart naam, e-mail en een wachtwoordhash in de
+        ontwikkeldatabase. Dat is nog geen juridisch beoordeelde privacytekst en
+        geen toestemming voor marketing.
       </p>
       <p>
         Wanneer die functies er zijn, beschrijft de verklaring het doel, de
