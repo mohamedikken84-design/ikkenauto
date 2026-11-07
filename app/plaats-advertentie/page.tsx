@@ -21,8 +21,8 @@ export default function PlaatsAdvertentiePage() {
         <li>foto&apos;s van de auto</li>
       </ul>
       <p>
-        Er wordt in deze versie niets bewaard. Je kunt nog geen account
-        aanmaken om een advertentie te beheren.
+        Er wordt op deze pagina niets bewaard. Een lokaal account beheert nog
+        geen advertentie.
       </p>
     </PageIntro>
   );

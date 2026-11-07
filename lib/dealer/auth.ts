@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { PoolClient } from "pg";
 import { getPool } from "@/lib/db/client";
-import type { Actor, DealerRole } from "@/lib/dealer/types";
+import type { Actor, AppRole } from "@/lib/dealer/types";
 
 export class AuthConfigError extends Error {}
 
@@ -12,6 +12,14 @@ export function assertAuthMode(): "development-session" | "production" {
   throw new AuthConfigError(
     "AUTH_MODE ontbreekt of is ongeldig. development-session werkt niet in productie en er is geen losse login.",
   );
+}
+
+export function assertPasswordAuthAllowed() {
+  if (process.env.NODE_ENV === "production" || process.env.AUTH_MODE === "production") {
+    throw new AuthConfigError(
+      "Lokale wachtwoordlogin is niet de productie-identiteit. Productieauth is niet gekoppeld.",
+    );
+  }
 }
 
 export function hashSessionToken(token: string) {
@@ -29,14 +37,14 @@ export async function resolveActor(token: string): Promise<Actor | null> {
   if (!token) return null;
   const result = await getPool().query<{
     user_id: string;
-    role: DealerRole;
+    role: AppRole;
     dealer_id: string | null;
     email: string;
   }>(
     `SELECT u.id AS user_id, u.role, u.dealer_id, u.email
      FROM sessions s
      JOIN users u ON u.id = s.user_id
-     WHERE s.token_hash = $1 AND s.expires_at > now()`,
+     WHERE s.token_hash = $1 AND s.expires_at > now() AND s.revoked_at IS NULL`,
     [hashSessionToken(token)],
   );
   const row = result.rows[0];

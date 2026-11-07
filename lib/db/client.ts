@@ -22,7 +22,7 @@ export async function closePool() {
 }
 
 export async function withTransaction<T>(
-  settings: { dealerId: string | null; role: string; publicRead: boolean },
+  settings: { dealerId: string | null; role: string; publicRead: boolean; userId?: string | null },
   fn: (client: PoolClient) => Promise<T>,
 ) {
   const client = await getPool().connect();
@@ -30,6 +30,7 @@ export async function withTransaction<T>(
     await client.query("BEGIN");
     await client.query("SELECT set_config('app.dealer_id', $1, true)", [settings.dealerId ?? ""]);
     await client.query("SELECT set_config('app.role', $1, true)", [settings.role]);
+    await client.query("SELECT set_config('app.user_id', $1, true)", [settings.userId ?? ""]);
     await client.query("SELECT set_config('app.public_read', $1, true)", [settings.publicRead ? "on" : "off"]);
     const result = await fn(client);
     await client.query("COMMIT");

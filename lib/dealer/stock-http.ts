@@ -1,4 +1,5 @@
-import { AuthConfigError, DealerAccessError, readBearerToken, requireDealerActor, resolveActor } from "@/lib/dealer/auth";
+import { AuthConfigError, DealerAccessError, requireDealerActor, resolveActor } from "@/lib/dealer/auth";
+import { readAnySessionToken } from "@/lib/dealer/auth-http";
 import { importDealerCsv } from "@/lib/dealer/import-stock";
 import { createOwnVehicle, isDealerAccessError, listAllStockAsAdmin, listOwnStock, StockValidationError, updateOwnVehicle } from "@/lib/dealer/stock";
 import { publicationStatuses, type PublicationStatus, type StockInput } from "@/lib/dealer/types";
@@ -9,7 +10,7 @@ function json(body: unknown, status = 200) {
 
 async function actorFrom(request: Request) {
   try {
-    const actor = await resolveActor(readBearerToken(request));
+    const actor = await resolveActor(readAnySessionToken(request));
     if (!actor) return json({ error: "unauthorized" }, 401);
     return actor;
   } catch (error) {

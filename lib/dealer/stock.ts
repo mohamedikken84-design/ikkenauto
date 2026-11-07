@@ -175,6 +175,13 @@ export async function updateOwnVehicle(
     if (nextStatus === "published") {
       const problems = publicationProblems(next);
       if (problems.length > 0) throw new StockValidationError(problems.join("; "));
+      const dealer = await client.query<{ verification_status: string }>(
+        "SELECT verification_status FROM dealers WHERE id = $1",
+        [dealerId],
+      );
+      if (dealer.rows[0]?.verification_status !== "verified") {
+        throw new StockValidationError("Een niet-geverifieerde garage kan niet publiceren.");
+      }
     }
     const updated = await client.query<VehicleRow>(
       `UPDATE vehicles SET
@@ -212,6 +219,10 @@ export async function listPublishedVehicles() {
     const result = await client.query<VehicleRow>(
       `SELECT ${vehicleColumns} FROM vehicles
        WHERE publication_status = 'published' AND fictional = false
+         AND EXISTS (
+           SELECT 1 FROM dealers d
+           WHERE d.id = vehicles.dealer_id AND d.verification_status = 'verified'
+         )
        ORDER BY price_eur, id`,
     );
     return result.rows.map(mapVehicle);

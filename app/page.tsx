@@ -25,13 +25,13 @@ const steps = [
   },
   {
     title: "Contact",
-    text: "Het formulier blijft op dit apparaat. Er is nog geen mail naar de verkoper en geen account.",
+    text: "Het formulier blijft op dit apparaat. Er is nog geen mail naar de verkoper.",
   },
 ];
 
 const limits = [
   "Geen analysetracking en geen marketingcookies in deze versie.",
-  "Geen accounts. Een contactbericht op een advertentie blijft lokaal in je browser.",
+  "Een lokaal account is geen productie-identiteit. Een contactbericht op een advertentie blijft in je browser.",
   "Geen Car-Pass. Die gegevens tonen we pas wanneer de koppeling er is.",
   "Privacy, cookies en voorwaarden zijn placeholders en nog geen geldige juridische teksten.",
 ];
