@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { before, describe, it } from "node:test";
 import { withService } from "@/lib/db/client";
 import { insertLocalSession } from "@/lib/dealer/auth";
-import { handleGetStock, handleUpdateStock } from "@/lib/dealer/stock-http";
+import { handleDeleteStock, handleGetStock, handleUpdateStock } from "@/lib/dealer/stock-http";
 import { createOwnVehicle, listOwnStock, listPublishedVehicles } from "@/lib/dealer/stock";
 import type { Actor, StockInput } from "@/lib/dealer/types";
 import { migrate } from "../../scripts/migrate";
@@ -49,8 +49,9 @@ describe("voorraadformulier", () => {
 
   it("bewaart listingvelden en houdt het VIN uit de publieke lijst", async () => {
     const garage = await createGarage("Formuliergarage");
-    const owner = await createMember(garage, "formulier@example.test");
-    const other = await createMember(await createGarage("Andere garage"), "andere-formulier@example.test");
+    const stamp = Date.now();
+    const owner = await createMember(garage, `formulier-${stamp}@example.test`);
+    const other = await createMember(await createGarage("Andere garage"), `andere-formulier-${stamp}@example.test`);
     const created = await createOwnVehicle(owner, sample);
     assert.equal(created.sourceStockId, "FORM-1");
     assert.equal(created.color, "grijs");
@@ -59,8 +60,9 @@ describe("voorraadformulier", () => {
     assert.equal("vin" in created, false);
 
     const own = await handleGetStock(auth(owner), created.id);
-    const ownBody = (await own.json()) as { vehicle: { vin: string } };
+    const ownBody = (await own.json()) as { vehicle: { vin: string; licensePlate: string } };
     assert.equal(ownBody.vehicle.vin, "WVWZZZ1KZAW000001");
+    assert.equal(ownBody.vehicle.licensePlate, "1ABC123");
 
     const hidden = await handleGetStock(auth(other), created.id);
     assert.equal(hidden.status, 404);
@@ -77,6 +79,14 @@ describe("voorraadformulier", () => {
     const archived = await handleUpdateStock(jsonRequest(owner, { publicationStatus: "archived" }), created.id);
     assert.equal(archived.status, 200);
     assert.equal((await listOwnStock(owner)).find((item) => item.id === created.id)?.publicationStatus, "archived");
+
+    const removed = await handleDeleteStock(auth(owner), created.id);
+    assert.equal(removed.status, 200);
+    assert.equal((await listOwnStock(owner)).some((item) => item.id === created.id), false);
+    const tombstone = await withService((client) =>
+      client.query<{ deleted_at: string | null }>("SELECT deleted_at FROM vehicles WHERE id = $1", [created.id]),
+    );
+    assert.ok(tombstone.rows[0]?.deleted_at);
 
     const audit = await withService((client) =>
       client.query<{ diff: { vin?: string } }>("SELECT diff FROM audit_log WHERE entity_id = $1", [created.id]),

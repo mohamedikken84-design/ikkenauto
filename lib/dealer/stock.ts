@@ -143,6 +143,15 @@ export async function listOwnStock(actor: Actor) {
   });
 }
 
+function cleanPlate(value: string | null | undefined) {
+  if (value == null || value.trim() === "") return null;
+  const plate = value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  if (!/^[A-Z0-9]{2,12}$/.test(plate)) {
+    throw new StockValidationError("Het kenteken mag alleen letters en cijfers bevatten, 2 tot 12 tekens.");
+  }
+  return plate;
+}
+
 function cleanVin(value: string | null | undefined) {
   if (value == null || value.trim() === "") return null;
   const vin = value.replace(/[\s-]/g, "").toUpperCase();
@@ -186,7 +195,7 @@ function listingValues(input: StockInput) {
     descriptionNl: input.descriptionNl?.trim() || null,
     descriptionFr: input.descriptionFr?.trim() || null,
     vin: cleanVin(input.vin),
-    plate: input.licensePlate?.trim() || null,
+    plate: cleanPlate(input.licensePlate),
   };
 }
 
@@ -403,6 +412,30 @@ export async function updateOwnVehicle(
       ],
     );
     return mapVehicle(updated.rows[0]);
+  });
+}
+
+export async function deleteOwnVehicle(actor: Actor, vehicleId: string) {
+  return dealerContext(actor, async (client, dealerId) => {
+    const current = await client.query<{ publication_status: string }>(
+      "SELECT publication_status FROM vehicles WHERE id = $1 AND garage_id = $2 AND deleted_at IS NULL",
+      [vehicleId, dealerId],
+    );
+    const row = current.rows[0];
+    if (!row) return false;
+    if (row.publication_status === "sold") {
+      throw new StockValidationError("Een verkochte auto kan niet worden verwijderd.");
+    }
+    await client.query(
+      "UPDATE vehicles SET deleted_at = now(), updated_by = $3, updated_at = now() WHERE id = $1 AND garage_id = $2",
+      [vehicleId, dealerId, actor.userId],
+    );
+    await client.query(
+      `INSERT INTO audit_log (garage_id, actor_id, action, entity_type, entity_id, diff)
+       VALUES ($1, $2, 'vehicle.delete', 'vehicle', $3, '{"deleted":true}'::jsonb)`,
+      [dealerId, actor.userId, vehicleId],
+    );
+    return true;
   });
 }
 

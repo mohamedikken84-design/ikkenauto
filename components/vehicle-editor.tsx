@@ -21,6 +21,7 @@ export function VehicleEditor({ vehicle }: EditorProps) {
   const [status, setStatus] = useState(vehicle?.publicationStatus ?? "draft");
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const idRef = useRef(vehicle?.id ?? "");
 
@@ -80,6 +81,17 @@ export function VehicleEditor({ vehicle }: EditorProps) {
     };
   }, [persist, status]);
 
+  async function removeVehicle() {
+    if (!idRef.current) return;
+    const response = await fetch(`/api/dealer/stock/${idRef.current}`, { method: "DELETE" });
+    if (!response.ok) {
+      setMessage("Verwijderen lukte niet.");
+      return;
+    }
+    router.push("/account/voorraad");
+    router.refresh();
+  }
+
   return (
     <form ref={formRef} className="mt-8 grid gap-4" onSubmit={(event) => event.preventDefault()}>
       <p className="text-sm text-muted">Status: {publicationLabel(status)}. Een concept wordt automatisch bewaard.</p>
@@ -132,7 +144,26 @@ export function VehicleEditor({ vehicle }: EditorProps) {
         <button type="button" className="min-h-12 border border-ink px-5 text-sm font-semibold" onClick={() => void persist("archived", false)}>
           Archiveren
         </button>
+        {vehicle ? (
+          <button type="button" className="min-h-12 border border-ink px-5 text-sm font-semibold" onClick={() => setConfirmDelete(true)}>
+            Auto verwijderen
+          </button>
+        ) : null}
       </div>
+      {confirmDelete ? (
+        <div className="border border-ink p-4" role="alertdialog" aria-labelledby="verwijder-titel">
+          <h2 id="verwijder-titel" className="font-semibold">Deze auto verwijderen?</h2>
+          <p className="mt-2 text-sm">{vehicle?.make} {vehicle?.model} verdwijnt uit uw voorraad. Dit kunt u niet ongedaan maken.</p>
+          <div className="mt-4 flex gap-3">
+            <button type="button" className="min-h-12 bg-ink px-5 text-sm font-semibold text-paper" onClick={() => void removeVehicle()}>
+              Verwijderen
+            </button>
+            <button type="button" className="min-h-12 border border-ink px-5 text-sm font-semibold" onClick={() => setConfirmDelete(false)}>
+              Annuleren
+            </button>
+          </div>
+        </div>
+      ) : null}
       {message ? <p role="status" className="text-sm">{message}</p> : null}
     </form>
   );

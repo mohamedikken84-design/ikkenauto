@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
+import { restartPostgres } from "@/lib/db/postgres-cluster";
 import { after, before, describe, it } from "node:test";
 import { closePool, withService, withTransaction } from "@/lib/db/client";
 import { importDealerCsv } from "@/lib/dealer/import-stock";
@@ -16,7 +15,6 @@ import type { Actor, StockInput } from "@/lib/dealer/types";
 import { insertLocalSession } from "@/lib/dealer/auth";
 import { migrate } from "../../scripts/migrate";
 
-const execFileAsync = promisify(execFile);
 const sample: StockInput = {
   make: "Testmerk",
   model: "Testmodel",
@@ -223,7 +221,7 @@ describe("dealerstock", () => {
     const actor = await actorFor(admin.token);
     const created = await createOwnVehicle(actor, sample);
     await closePool();
-    await execFileAsync("sudo", ["pg_ctlcluster", "16", "main", "restart"]);
+    await restartPostgres();
     const restored = await listOwnStock(actor);
     assert.equal(restored.some((vehicle) => vehicle.id === created.id), true);
   });
