@@ -160,7 +160,7 @@ export async function registerAccount(input: RegistrationInput, clientKey: strin
     return id;
   });
   const token = await issueToken(userId, "verify_email", 24);
-  const copy = mailCopy(locale, input.displayName.trim(), `${appOrigin()}/account/verifieer?token=${token}`, "verify");
+  const copy = mailCopy(locale, input.displayName.trim(), `${appOrigin()}/api/auth/exchange?purpose=verify&token=${token}`, "verify");
   await sendAuthMail({ recipientEmail: email, subject: copy.subject, body: copy.body });
   return { message: text.registerOk };
 }
@@ -192,7 +192,7 @@ export async function resendVerification(email: string, clientKey: string, local
   );
   const token = await issueToken(user.id, "verify_email", 24);
   const mailLocale = localeOf(user.locale);
-  const copy = mailCopy(mailLocale, user.display_name, `${appOrigin()}/account/verifieer?token=${token}`, "verify");
+  const copy = mailCopy(mailLocale, user.display_name, `${appOrigin()}/api/auth/exchange?purpose=verify&token=${token}`, "verify");
   await sendAuthMail({ recipientEmail: normalized, subject: copy.subject, body: copy.body });
   return { message: text.resendOk };
 }
@@ -303,9 +303,29 @@ export async function requestPasswordReset(email: string, clientKey: string, loc
   const text = phrases(locale);
   if (!user) return { message: text.recoveryOk };
   const token = await issueToken(user.id, "reset_password", 1);
-  const copy = mailCopy(localeOf(user.locale), user.display_name, `${appOrigin()}/account/herstel/bevestigen?token=${token}`, "reset");
+  const copy = mailCopy(localeOf(user.locale), user.display_name, `${appOrigin()}/api/auth/exchange?purpose=reset&token=${token}`, "reset");
   await sendAuthMail({ recipientEmail: normalized, subject: copy.subject, body: copy.body });
   return { message: text.recoveryOk };
+}
+
+export async function rotateAuthLink(purpose: "verify_email" | "reset_password", token: string) {
+  if (!token) return null;
+  const next = randomBytes(32).toString("base64url");
+  const updated = await withService((client) =>
+    client.query(
+      `UPDATE auth.local_tokens
+       SET token_hash = $3
+       WHERE token_hash = $1 AND purpose = $2 AND used_at IS NULL AND expires_at > now()`,
+      [hashSessionToken(token), purpose, hashSessionToken(next)],
+    ),
+  );
+  return (updated.rowCount ?? 0) > 0 ? next : null;
+}
+
+export async function updateOwnLocale(actor: Actor, locale: "nl" | "fr") {
+  await withTransaction(actorAccess(actor), (client) =>
+    client.query("UPDATE public.profiles SET locale = $2 WHERE id = $1", [actor.userId, locale]),
+  );
 }
 
 export async function confirmPasswordReset(token: string, password: string, passwordConfirm = "", locale = "nl") {
