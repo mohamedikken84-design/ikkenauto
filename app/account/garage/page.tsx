@@ -59,7 +59,12 @@ async function GarageScreen({ searchParams }: { searchParams: Promise<{ welkom?:
         </p>
       )}
       <p className="mt-6 text-sm">
-        <Link className="font-semibold underline decoration-gold decoration-2 underline-offset-4" href="/account/claim">
+        <Link className="inline-flex min-h-11 items-center font-semibold underline decoration-gold decoration-2 underline-offset-4" href="/account/garage/leads">
+          Aanvragen
+        </Link>
+      </p>
+      <p className="mt-2 text-sm">
+        <Link className="inline-flex min-h-11 items-center font-semibold underline decoration-gold decoration-2 underline-offset-4" href="/account/claim">
           Bestaande garage claimen
         </Link>
       </p>
