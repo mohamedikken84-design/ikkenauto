@@ -1,6 +1,6 @@
 import { AuthConfigError, DealerAccessError, requireDealerActor, resolveActor } from "@/lib/dealer/auth";
 import { readAnySessionToken } from "@/lib/dealer/auth-http";
-import { importDealerCsv } from "@/lib/dealer/import-stock";
+import { importDealerCsv, previewDealerCsv } from "@/lib/dealer/import-stock";
 import { createOwnVehicle, deleteOwnVehicle, getOwnVehicle, isDealerAccessError, listAllStockAsAdmin, listOwnStock, StockValidationError, updateOwnVehicle } from "@/lib/dealer/stock";
 import { publicationStatuses, type PublicationStatus, type StockInput } from "@/lib/dealer/types";
 
@@ -152,6 +152,19 @@ export async function handleDeleteStock(request: Request, vehicleId: string) {
   } catch (error) {
     if (error instanceof StockValidationError) return json({ error: error.message }, 422);
     if (error instanceof DealerAccessError) return json({ error: "forbidden" }, 403);
+    throw error;
+  }
+}
+
+export async function handlePreviewImport(request: Request) {
+  const actor = await actorFrom(request);
+  if (!isActor(actor)) return actor;
+  if (actor.role !== "dealer_admin") return json({ error: "forbidden" }, 403);
+  const csv = await request.text();
+  try {
+    return json(await previewDealerCsv(actor, csv));
+  } catch (error) {
+    if (isDealerAccessError(error)) return json({ error: "forbidden" }, 403);
     throw error;
   }
 }

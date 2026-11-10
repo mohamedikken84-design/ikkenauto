@@ -49,8 +49,9 @@ describe("voorraadformulier", () => {
 
   it("bewaart listingvelden en houdt het VIN uit de publieke lijst", async () => {
     const garage = await createGarage("Formuliergarage");
-    const owner = await createMember(garage, "formulier@example.test");
-    const other = await createMember(await createGarage("Andere garage"), "andere-formulier@example.test");
+    const stamp = Date.now();
+    const owner = await createMember(garage, `formulier-${stamp}@example.test`);
+    const other = await createMember(await createGarage("Andere garage"), `andere-formulier-${stamp}@example.test`);
     const created = await createOwnVehicle(owner, sample);
     assert.equal(created.sourceStockId, "FORM-1");
     assert.equal(created.color, "grijs");

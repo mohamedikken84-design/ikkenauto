@@ -38,6 +38,12 @@ const columns = [
   "description",
 ] as const;
 
+function normalizeDelimiter(text: string) {
+  const header = text.split(/\r?\n/, 1)[0] ?? "";
+  if (header.includes(";") && !header.includes(",")) return text.replaceAll(";", ",");
+  return text;
+}
+
 function parseTable(text: string) {
   const rows: string[][] = [];
   let row: string[] = [];
@@ -78,7 +84,7 @@ function oneOf(value: string, allowed: readonly string[]) {
 }
 
 export function parseStockCsv(text: string): { fatal: string | null; rows: StockCsvRow[] } {
-  const table = parseTable(text);
+  const table = parseTable(normalizeDelimiter(text));
   if (table.length === 0) return { fatal: "Het bestand is leeg.", rows: [] };
   const header = table[0].map((cell) => cell.trim());
   const missing = columns.filter((column) => !header.includes(column));
