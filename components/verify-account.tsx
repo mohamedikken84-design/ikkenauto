@@ -11,21 +11,16 @@ export function VerifyAccount({ locale }: { locale: Locale }) {
   const [state, setState] = useState<"loading" | "ok" | "bad">("loading");
 
   useEffect(() => {
-    const token = new URLSearchParams(window.location.search).get("token") ?? "";
     let active = true;
     const start = setTimeout(() => {
       void (async () => {
-        if (!token) {
-          if (active) setState("bad");
-          return;
-        }
         try {
           const csrfResponse = await fetch("/api/auth/csrf");
           const csrfBody = (await csrfResponse.json()) as { token?: string };
           const response = await fetch("/api/auth/verify", {
             method: "POST",
             headers: { "content-type": "application/json", origin: window.location.origin },
-            body: JSON.stringify({ token, csrf: csrfBody.token ?? "" }),
+            body: JSON.stringify({ csrf: csrfBody.token ?? "" }),
           });
           if (active) setState(response.ok ? "ok" : "bad");
         } catch {

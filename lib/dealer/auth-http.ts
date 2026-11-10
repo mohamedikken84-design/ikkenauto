@@ -11,6 +11,8 @@ import {
   registerAccount,
   requestPasswordReset,
   resendVerification,
+  rotateAuthLink,
+  updateOwnLocale,
   verifyEmailToken,
 } from "@/lib/dealer/account";
 import { RateLimitError } from "@/lib/dealer/rate-limit";
@@ -135,9 +137,12 @@ export async function handleVerify(request: Request) {
     locale = requestLocale(request, body);
     assertCsrf(request, String(body.csrf ?? ""), locale);
     const text = copyFor(locale);
-    const ok = await verifyEmailToken(String(body.token ?? ""));
-    if (!ok) return json({ message: text.verifyInvalid }, 400);
-    return json({ message: text.verifyDone });
+    const token = String(body.token ?? "") || readCookie(request, "ikken_verify_token");
+    const ok = await verifyEmailToken(token);
+    const headers = new Headers();
+    headers.append("set-cookie", cookie("ikken_verify_token", "", 0));
+    if (!ok) return json({ message: text.verifyInvalid }, 400, headers);
+    return json({ message: text.verifyDone }, 200, headers);
   } catch (error) {
     return fail(error, locale);
   }
@@ -227,8 +232,11 @@ export async function handleRecoveryConfirm(request: Request) {
     const body = await readBody(request);
     locale = requestLocale(request, body);
     assertCsrf(request, String(body.csrf ?? ""), locale);
-    await confirmPasswordReset(String(body.token ?? ""), String(body.password ?? ""), String(body.passwordConfirm ?? ""), locale);
-    return json({ message: copyFor(locale).passwordUpdated });
+    const token = String(body.token ?? "") || readCookie(request, "ikken_reset_token");
+    await confirmPasswordReset(token, String(body.password ?? ""), String(body.passwordConfirm ?? ""), locale);
+    const headers = new Headers();
+    headers.append("set-cookie", cookie("ikken_reset_token", "", 0));
+    return json({ message: copyFor(locale).passwordUpdated }, 200, headers);
   } catch (error) {
     return fail(error, locale);
   }
@@ -244,6 +252,44 @@ export async function handleSession(request: Request) {
   } catch (error) {
     if (error instanceof AuthConfigError) return json({ error: "auth-niet-beschikbaar" }, 503);
     throw error;
+  }
+}
+
+export async function handleExchange(request: Request) {
+  const url = new URL(request.url);
+  const purpose = url.searchParams.get("purpose") === "reset" ? "reset_password" : "verify_email";
+  const rotated = await rotateAuthLink(purpose, url.searchParams.get("token") ?? "").catch(() => null);
+  const dest = purpose === "reset_password" ? "/account/herstel/bevestigen" : "/account/verifieer";
+  const response = new Response(null, {
+    status: 303,
+    headers: {
+      location: new URL(dest, url).toString(),
+      "referrer-policy": "no-referrer",
+    },
+  });
+  if (rotated) {
+    const name = purpose === "reset_password" ? "ikken_reset_token" : "ikken_verify_token";
+    response.headers.append("set-cookie", cookie(name, rotated, 3600));
+  }
+  return response;
+}
+
+export async function handleLocale(request: Request) {
+  let locale: Locale = "nl";
+  try {
+    locale = requestLocale(request);
+    assertOrigin(request);
+    const body = await readBody(request);
+    locale = requestLocale(request, body);
+    assertCsrf(request, String(body.csrf ?? ""), locale);
+    const next = body.locale === "fr" ? "fr" : "nl";
+    const actor = await resolveActor(readAnySessionToken(request));
+    if (actor) await updateOwnLocale(actor, next);
+    const headers = new Headers();
+    headers.append("set-cookie", `ikken_locale=${next}; Path=/; Max-Age=31536000; SameSite=Lax`);
+    return json({ ok: true, locale: next }, 200, headers);
+  } catch (error) {
+    return fail(error, locale);
   }
 }
 
