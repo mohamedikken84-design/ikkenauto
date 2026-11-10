@@ -19,7 +19,11 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql postgresql-contrib
-          sudo pg_ctlcluster 16 main start
+          cluster=$(pg_lsclusters --no-header | awk 'NR==1 {print $1, $2, $4}')
+          set -- $cluster
+          if [ "$3" != "online" ]; then
+            sudo pg_ctlcluster "$1" "$2" start
+          fi
           sudo -u postgres psql -c "CREATE ROLE ikkenauto LOGIN PASSWORD 'ci_ephemeral_only';" || sudo -u postgres psql -c "ALTER ROLE ikkenauto WITH LOGIN PASSWORD 'ci_ephemeral_only';"
           sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname = 'ikkenauto_test'" | grep -q 1 || sudo -u postgres createdb -O ikkenauto ikkenauto_test
           sudo -u postgres psql -d ikkenauto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS btree_gist;"

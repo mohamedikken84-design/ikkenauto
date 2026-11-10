@@ -1,13 +1,11 @@
 import assert from "node:assert/strict";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
+import { restartPostgres } from "@/lib/db/postgres-cluster";
 import { after, before, describe, it } from "node:test";
 import { closePool, withService, withTransaction } from "@/lib/db/client";
 import { handleClaim, handleLogin, handleLogout, handleRecovery, handleRecoveryConfirm, handleRegister, handleSession, handleVerify, handleCsrf } from "@/lib/dealer/auth-http";
 import { resolveActor } from "@/lib/dealer/auth";
 import { migrate } from "../../scripts/migrate";
 
-const execFileAsync = promisify(execFile);
 const origin = "http://127.0.0.1:3000";
 
 describe("registratie en lokale auth", () => {
@@ -284,7 +282,7 @@ describe("registratie en lokale auth", () => {
       password: "lokaal-wachtwoord-12",
     }));
     await closePool();
-    await execFileAsync("sudo", ["pg_ctlcluster", "16", "main", "restart"]);
+    await restartPostgres();
     const found = await withService((client) => client.query("SELECT id FROM auth.users WHERE email = $1", [email]));
     assert.equal(found.rows.length, 1);
   });
