@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BackToResults } from "@/components/listings/back-to-results";
 import { ContactForm } from "@/components/listings/contact-form";
+import { PublicLeadForm } from "@/components/public-lead-form";
 import { FavoriteButton } from "@/components/listings/favorite-button";
 import { Gallery } from "@/components/listings/gallery";
 import { formatEur, formatKm, formatRegistration, powerHp } from "@/lib/listings/format";
@@ -127,7 +128,11 @@ function ListingDetail({ listing }: { listing: Listing }) {
               geen live voorraad en geen afspraakmodule.
             </p>
           </section>
-          <ContactForm listingId={listing.id} listingTitle={`${title} ${listing.version}`} />
+          {/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(listing.id) ? (
+            <PublicLeadForm vehicleId={listing.id} />
+          ) : (
+            <ContactForm listingId={listing.id} listingTitle={`${title} ${listing.version}`} />
+          )}
         </div>
       </div>
     </article>
