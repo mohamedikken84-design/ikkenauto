@@ -17,30 +17,30 @@ const fraunces = Fraunces({
   variable: "--font-fraunces",
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(site.url),
-  title: {
-    default: site.title,
-    template: "%s · IKKENAUTO.be",
-  },
-  description: site.description,
-  applicationName: site.domainLabel,
-  alternates: {
-    canonical: "/",
-  },
-  openGraph: {
-    title: site.title,
+export async function generateMetadata(): Promise<Metadata> {
+  const closed = process.env.PUBLIC_CLOSED !== "false";
+  return {
+    metadataBase: new URL(site.url),
+    title: {
+      default: site.title,
+      template: "%s · IKKENAUTO.be",
+    },
     description: site.description,
-    locale: "nl_BE",
-    type: "website",
-    siteName: site.domainLabel,
-    url: site.url,
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
-};
+    applicationName: site.domainLabel,
+    alternates: {
+      canonical: "/",
+    },
+    openGraph: {
+      title: site.title,
+      description: site.description,
+      locale: "nl_BE",
+      type: "website",
+      siteName: site.domainLabel,
+      url: site.url,
+    },
+    robots: closed ? { index: false, follow: false } : { index: true, follow: true },
+  };
+}
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
