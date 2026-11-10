@@ -65,7 +65,7 @@ function Shell({ locale, children }: { locale: "nl" | "fr"; children: React.Reac
         <main id="inhoud" className="flex-1">
           {children}
         </main>
-        <SiteFooter />
+        <SiteFooter locale={locale} />
       </body>
     </html>
   );

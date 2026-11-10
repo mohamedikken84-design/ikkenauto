@@ -8,7 +8,7 @@ import { pageMetadata } from "@/lib/metadata";
 export async function generateMetadata() {
   const locale = await getLocale();
   return pageMetadata({
-    title: locale === "fr" ? "Se connecter – IKKENAUTO" : "Aanmelden – IKKENAUTO",
+    title: locale === "fr" ? "Se connecter" : "Aanmelden",
     description: copyFor(locale).loginIntro,
     path: "/account/login",
   });

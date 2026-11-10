@@ -59,7 +59,7 @@ export function AuthForm({ action, submitLabel, pendingLabel, locale, children, 
       const response = await fetch(action, {
         method: "POST",
         headers: { "content-type": "application/json", origin: window.location.origin },
-        body: JSON.stringify({ ...data, csrf, locale }),
+        body: JSON.stringify({ ...data, csrf, uiLocale: locale, locale: data.locale ?? locale }),
       });
       const body = (await response.json()) as { message?: string; error?: string; ok?: boolean; next?: string; fields?: Record<string, string> };
       if (!response.ok) {
@@ -92,7 +92,23 @@ export function AuthForm({ action, submitLabel, pendingLabel, locale, children, 
   }
 
   return (
-    <form onSubmit={onSubmit} className="mt-8 grid gap-4" noValidate>
+    <form
+      onSubmit={onSubmit}
+      onBlur={(event) => {
+        const target = event.target;
+        if (!(target instanceof HTMLInputElement) || !target.name || target.type === "hidden" || target.name === "locale") return;
+        const data = Object.fromEntries(new FormData(event.currentTarget).entries()) as Record<string, string>;
+        const local = clientErrors(event.currentTarget, data, text);
+        setFields((current) => {
+          const next = { ...current };
+          if (local[target.name]) next[target.name] = local[target.name];
+          else delete next[target.name];
+          return next;
+        });
+      }}
+      className="mt-8 grid gap-4"
+      noValidate
+    >
       {alert ? (
         <p role="alert" className="border border-ink bg-surface px-3 py-2 text-sm leading-6">
           {alert}
@@ -126,15 +142,54 @@ export function AuthForm({ action, submitLabel, pendingLabel, locale, children, 
 
 function clientErrors(form: HTMLFormElement, data: Record<string, string>, text: Copy) {
   const fields: Record<string, string> = {};
-  if (form.querySelector('[name="email"]') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email ?? "")) fields.email = text.emailInvalid;
+  if (form.querySelector('[name="displayName"]')) {
+    const name = (data.displayName ?? "").trim();
+    if (!name || name.length > 80) fields.displayName = text.nameInvalid;
+  }
+  if (form.querySelector('[name="email"]') && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((data.email ?? "").trim())) fields.email = text.emailInvalid;
   if (form.querySelector('[name="password"]') && (data.password ?? "").length < 12) fields.password = text.passwordShort;
   if (form.querySelector('[name="passwordConfirm"]') && data.passwordConfirm !== data.password) fields.passwordConfirm = text.passwordMismatch;
+  if (form.querySelector('[name="tradeName"]')) {
+    const trade = (data.tradeName ?? "").trim();
+    if (!trade || trade.length > 120) fields.tradeName = text.tradeInvalid;
+  }
   if (form.querySelector('[name="kboNumber"]')) {
     const kbo = (data.kboNumber ?? "").replace(/[\s.]/g, "");
     if (!/^\d{10}$/.test(kbo)) fields.kboNumber = text.kboInvalid;
   }
+  if (form.querySelector('[name="vatNumber"]')) {
+    const vat = (data.vatNumber ?? "").replace(/[\s.]/g, "").toUpperCase();
+    if (!/^BE[01]\d{9}$/.test(vat)) fields.vatNumber = text.vatInvalid;
+  }
+  if (form.querySelector('[name="postalCode"]') && !/^\d{4}$/.test(data.postalCode ?? "")) fields.postalCode = text.postcodeInvalid;
+  if (form.querySelector('[name="city"]') && !(data.city ?? "").trim()) fields.city = text.cityInvalid;
   if (form.querySelector('[name="acceptTerms"]') && data.acceptTerms !== "on") fields.acceptTerms = text.termsError;
   return fields;
+}
+
+export function TermsField({ id, children }: { id: string; children: ReactNode }) {
+  const error = useContext(ErrorContext).acceptTerms;
+  return (
+    <div>
+      <label className="flex min-h-11 items-start gap-3 text-sm leading-6" htmlFor={id}>
+        <input
+          id={id}
+          className="mt-1 size-5"
+          type="checkbox"
+          name="acceptTerms"
+          value="on"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? `${id}-error` : undefined}
+        />
+        <span>{children}</span>
+      </label>
+      {error ? (
+        <p id={`${id}-error`} className="mt-1 text-sm">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
 }
 
 export function Field({

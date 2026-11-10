@@ -6,16 +6,13 @@ import { hashPassword, verifyPassword } from "@/lib/dealer/password";
 import { assertRateLimit } from "@/lib/dealer/rate-limit";
 import type { Actor } from "@/lib/dealer/types";
 import { AccountFieldError, AccountInputError } from "@/lib/dealer/errors";
+import { copyFor } from "@/lib/i18n/auth-copy";
 
 export { AccountFieldError, AccountInputError };
 
-const genericRegister =
-  "Als dit e-mailadres nog vrij is, sturen wij een bevestigingsbericht. Dat kan enkele minuten duren. Kijk ook in uw map Ongewenst.";
-const genericLogin = "Onjuiste gegevens, of het adres is nog niet bevestigd.";
-const genericRecovery =
-  "Als er een bevestigd account bij dit adres hoort, sturen wij een herstelbericht. Dat kan enkele minuten duren. Kijk ook in Ongewenst.";
-const genericResend =
-  "Als dit adres bij een nog niet bevestigd account hoort, sturen wij een nieuw bericht. Dat kan enkele minuten duren.";
+function phrases(locale: string) {
+  return copyFor(locale === "fr" ? "fr" : "nl");
+}
 
 export type RegistrationInput = {
   kind: string;
@@ -113,22 +110,23 @@ export async function registerAccount(input: RegistrationInput, clientKey: strin
   if (kind !== "particulier" && kind !== "professioneel") {
     throw new AccountInputError("Kies particulier of professioneel.");
   }
+  const text = phrases(locale);
   const fields: Record<string, string> = {};
-  if (!input.acceptTerms) fields.acceptTerms = "Bevestig dat u de voorwaarden en de privacyverklaring hebt gelezen.";
-  if (!input.displayName.trim() || input.displayName.trim().length > 80) fields.displayName = "Vul uw naam in (maximaal 80 tekens).";
-  if (!validEmail(email)) fields.email = "Voer een geldig e-mailadres in.";
-  if (!validPassword(input.password)) fields.password = "Het wachtwoord moet minstens 12 tekens tellen.";
-  if ((input.passwordConfirm ?? "") !== input.password) fields.passwordConfirm = "De wachtwoorden komen niet overeen.";
+  if (!input.acceptTerms) fields.acceptTerms = text.termsError;
+  if (!input.displayName.trim() || input.displayName.trim().length > 80) fields.displayName = text.nameInvalid;
+  if (!validEmail(email)) fields.email = text.emailInvalid;
+  if (!validPassword(input.password)) fields.password = text.passwordShort;
+  if ((input.passwordConfirm ?? "") !== input.password) fields.passwordConfirm = text.passwordMismatch;
   appOrigin();
   let garage: { tradeName: string; kbo: string; vat: string; postalCode: string; city: string } | null = null;
   if (kind === "professioneel") {
     const kbo = (input.kboNumber ?? "").replace(/[\s.]/g, "");
     const vat = (input.vatNumber ?? "").replace(/[\s.]/g, "").toUpperCase();
-    if (!input.tradeName?.trim() || input.tradeName.trim().length > 120) fields.tradeName = "Vul de handelsnaam van de garage in.";
-    if (!validKbo(kbo)) fields.kboNumber = "Voer een KBO-nummer van 10 cijfers in, bijvoorbeeld 0123.456.749.";
-    if (!validVat(vat)) fields.vatNumber = "Voer een Belgisch btw-nummer in, bijvoorbeeld BE0123.456.749.";
-    if (!/^\d{4}$/.test(input.postalCode ?? "")) fields.postalCode = "De postcode moet uit 4 cijfers bestaan.";
-    if (!input.city?.trim()) fields.city = "Vul de gemeente in.";
+    if (!input.tradeName?.trim() || input.tradeName.trim().length > 120) fields.tradeName = text.tradeInvalid;
+    if (!validKbo(kbo)) fields.kboNumber = text.kboInvalid;
+    if (!validVat(vat)) fields.vatNumber = text.vatInvalid;
+    if (!/^\d{4}$/.test(input.postalCode ?? "")) fields.postalCode = text.postcodeInvalid;
+    if (!input.city?.trim()) fields.city = text.cityInvalid;
     if (!fields.tradeName && !fields.kboNumber && !fields.vatNumber && !fields.postalCode && !fields.city) {
       garage = { tradeName: input.tradeName!.trim(), kbo, vat, postalCode: input.postalCode ?? "", city: input.city!.trim() };
     }
@@ -138,7 +136,7 @@ export async function registerAccount(input: RegistrationInput, clientKey: strin
   const existing = await withService((client) =>
     client.query<{ id: string }>("SELECT id FROM auth.users WHERE email = $1", [email]),
   );
-  if (existing.rows[0]) return { message: genericRegister };
+  if (existing.rows[0]) return { message: text.registerOk };
 
   const passwordHash = await hashPassword(input.password);
   const userId = await withService(async (client) => {
@@ -164,15 +162,16 @@ export async function registerAccount(input: RegistrationInput, clientKey: strin
   const token = await issueToken(userId, "verify_email", 24);
   const copy = mailCopy(locale, input.displayName.trim(), `${appOrigin()}/account/verifieer?token=${token}`, "verify");
   await sendAuthMail({ recipientEmail: email, subject: copy.subject, body: copy.body });
-  return { message: genericRegister };
+  return { message: text.registerOk };
 }
 
-export async function resendVerification(email: string, clientKey: string) {
+export async function resendVerification(email: string, clientKey: string, locale = "nl") {
   assertLocalAuthAllowed();
   assertMailAllowed();
   await assertRateLimit("resend", clientKey);
   const normalized = normalizeEmail(email);
-  if (!validEmail(normalized)) return { message: genericResend };
+  const text = phrases(locale);
+  if (!validEmail(normalized)) return { message: text.resendOk };
   const found = await withService((client) =>
     client.query<{ id: string; display_name: string; locale: string }>(
       `SELECT u.id, p.display_name, p.locale
@@ -183,7 +182,7 @@ export async function resendVerification(email: string, clientKey: string) {
     ),
   );
   const user = found.rows[0];
-  if (!user) return { message: genericResend };
+  if (!user) return { message: text.resendOk };
   await withService((client) =>
     client.query(
       `UPDATE auth.local_tokens SET used_at = now()
@@ -192,10 +191,10 @@ export async function resendVerification(email: string, clientKey: string) {
     ),
   );
   const token = await issueToken(user.id, "verify_email", 24);
-  const locale = localeOf(user.locale);
-  const copy = mailCopy(locale, user.display_name, `${appOrigin()}/account/verifieer?token=${token}`, "verify");
+  const mailLocale = localeOf(user.locale);
+  const copy = mailCopy(mailLocale, user.display_name, `${appOrigin()}/account/verifieer?token=${token}`, "verify");
   await sendAuthMail({ recipientEmail: normalized, subject: copy.subject, body: copy.body });
-  return { message: genericResend };
+  return { message: text.resendOk };
 }
 
 export async function verifyEmailToken(token: string) {
@@ -256,7 +255,7 @@ async function dummyPasswordHash() {
   return dummyHash;
 }
 
-export async function loginAccount(email: string, password: string, clientKey: string) {
+export async function loginAccount(email: string, password: string, clientKey: string, locale = "nl") {
   assertLocalAuthAllowed();
   if (supabaseConfigured()) {
     const remote = await import("@/lib/supabase/auth");
@@ -273,7 +272,7 @@ export async function loginAccount(email: string, password: string, clientKey: s
   );
   const row = found.rows[0];
   const passwordOk = await verifyPassword(row?.encrypted_password ?? (await dummyPasswordHash()), password);
-  if (!row || !row.email_confirmed_at || !passwordOk) throw new AccountInputError(genericLogin);
+  if (!row || !row.email_confirmed_at || !passwordOk) throw new AccountInputError(phrases(locale).loginError);
   const token = await insertLocalSession(row.id);
   return { token };
 }
@@ -287,7 +286,7 @@ export async function logoutAccount(token: string) {
   );
 }
 
-export async function requestPasswordReset(email: string, clientKey: string) {
+export async function requestPasswordReset(email: string, clientKey: string, locale = "nl") {
   assertLocalAuthAllowed();
   assertMailAllowed();
   await assertRateLimit("recovery", clientKey);
@@ -301,17 +300,19 @@ export async function requestPasswordReset(email: string, clientKey: string) {
     ),
   );
   const user = found.rows[0];
-  if (!user) return { message: genericRecovery };
+  const text = phrases(locale);
+  if (!user) return { message: text.recoveryOk };
   const token = await issueToken(user.id, "reset_password", 1);
   const copy = mailCopy(localeOf(user.locale), user.display_name, `${appOrigin()}/account/herstel/bevestigen?token=${token}`, "reset");
   await sendAuthMail({ recipientEmail: normalized, subject: copy.subject, body: copy.body });
-  return { message: genericRecovery };
+  return { message: text.recoveryOk };
 }
 
-export async function confirmPasswordReset(token: string, password: string, passwordConfirm = "") {
+export async function confirmPasswordReset(token: string, password: string, passwordConfirm = "", locale = "nl") {
   assertLocalAuthAllowed();
-  if (passwordConfirm !== password) throw new AccountFieldError({ passwordConfirm: "De wachtwoorden komen niet overeen." });
-  if (!validPassword(password)) throw new AccountFieldError({ password: "Het nieuwe wachtwoord moet minstens 12 tekens zijn." });
+  const text = phrases(locale);
+  if (passwordConfirm !== password) throw new AccountFieldError({ passwordConfirm: text.passwordMismatch });
+  if (!validPassword(password)) throw new AccountFieldError({ password: text.passwordNewShort });
   const tokenHash = hashSessionToken(token);
   const passwordHash = await hashPassword(password);
   const updated = await withService(async (client) => {

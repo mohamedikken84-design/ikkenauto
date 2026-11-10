@@ -44,20 +44,20 @@ function AuthHeader({ locale, path }: { locale: Locale; path: string }) {
   }
   return (
     <header className="border-b-2 border-gold bg-surface">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-4">
+      <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-4">
         <Logo href="/" />
-        <div className="flex items-center gap-3">
-          <div className="flex min-h-11 items-center gap-2 text-sm font-semibold" aria-label={text.portalLanguage}>
-            <button type="button" className="inline-flex min-h-11 items-center px-2 underline-offset-4 hover:underline" aria-pressed={locale === "nl"} onClick={() => choose("nl")}>
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1 text-sm font-semibold" aria-label={text.portalLanguage}>
+            <button type="button" className="inline-flex size-11 items-center justify-center underline-offset-4 hover:underline" aria-pressed={locale === "nl"} onClick={() => choose("nl")}>
               NL
             </button>
             <span aria-hidden="true">|</span>
-            <button type="button" className="inline-flex min-h-11 items-center px-2 underline-offset-4 hover:underline" aria-pressed={locale === "fr"} onClick={() => choose("fr")}>
+            <button type="button" className="inline-flex size-11 items-center justify-center underline-offset-4 hover:underline" aria-pressed={locale === "fr"} onClick={() => choose("fr")}>
               FR
             </button>
           </div>
-          <Link className="inline-flex min-h-11 items-center text-sm font-semibold underline decoration-gold decoration-2 underline-offset-4" href={onLogin ? "/account/registreren" : "/account/login"}>
-            {onLogin ? text.noAccount : text.login}
+          <Link className="inline-flex min-h-11 min-w-0 items-center text-sm font-semibold underline decoration-gold decoration-2 underline-offset-4" href={onLogin ? "/account/registreren" : "/account/login"}>
+            {onLogin ? text.registerLink : text.login}
           </Link>
         </div>
       </div>

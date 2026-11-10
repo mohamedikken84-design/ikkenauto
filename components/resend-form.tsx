@@ -37,7 +37,7 @@ export function ResendForm({ locale }: { locale: Locale }) {
       const response = await fetch("/api/auth/verify/resend", {
         method: "POST",
         headers: { "content-type": "application/json", origin: window.location.origin },
-        body: JSON.stringify({ email, csrf: csrfBody.token ?? "" }),
+        body: JSON.stringify({ email, csrf: csrfBody.token ?? "", locale, uiLocale: locale }),
       });
       const body = (await response.json()) as { message?: string };
       if (!response.ok) {
@@ -68,7 +68,9 @@ export function ResendForm({ locale }: { locale: Locale }) {
         {text.email}
         <input
           id="resend-email"
+          name="email"
           type="email"
+          autoComplete="email"
           required
           value={email}
           onChange={(event) => setEmail(event.target.value)}

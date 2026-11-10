@@ -7,7 +7,7 @@ import { pageMetadata } from "@/lib/metadata";
 export async function generateMetadata() {
   const locale = await getLocale();
   return pageMetadata({
-    title: copyFor(locale).verifyOkTitle,
+    title: copyFor(locale).verifyTitle,
     description: copyFor(locale).verifyOkBody,
     path: "/account/verifieer",
   });

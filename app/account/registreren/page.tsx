@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { AuthForm, Field } from "@/components/auth-form";
+import { AuthForm, Field, TermsField } from "@/components/auth-form";
 import { copyFor } from "@/lib/i18n/auth-copy";
 import { getLocale } from "@/lib/i18n/locale";
 import { pageMetadata } from "@/lib/metadata";
@@ -9,7 +9,7 @@ export async function generateMetadata() {
   const locale = await getLocale();
   const text = copyFor(locale);
   return pageMetadata({
-    title: locale === "fr" ? "Créer un compte – IKKENAUTO" : "Account aanmaken – IKKENAUTO",
+    title: locale === "fr" ? "Créer un compte" : "Account aanmaken",
     description: text.registerIntro,
     path: "/account/registreren",
   });
@@ -60,22 +60,19 @@ async function RegisterScreen() {
             </label>
           </fieldset>
         </fieldset>
-        <label className="flex min-h-11 items-start gap-3 text-sm leading-6">
-          <input className="mt-1 size-5" type="checkbox" name="acceptTerms" value="on" />
-          <span>
-            {locale === "fr" ? (
-              <>
-                J&apos;ai lu les <Link className="underline" href="/voorwaarden">conditions</Link> et la{" "}
-                <Link className="underline" href="/privacy">politique de confidentialité</Link> et je les accepte.
-              </>
-            ) : (
-              <>
-                Ik heb de <Link className="underline" href="/voorwaarden">voorwaarden</Link> en de{" "}
-                <Link className="underline" href="/privacy">privacyverklaring</Link> gelezen en ga ermee akkoord.
-              </>
-            )}
-          </span>
-        </label>
+        <TermsField id="reg-voorwaarden">
+          {locale === "fr" ? (
+            <>
+              J&apos;ai lu les <Link className="underline" href="/voorwaarden">conditions</Link> et la{" "}
+              <Link className="underline" href="/privacy">politique de confidentialité</Link> et je les accepte.
+            </>
+          ) : (
+            <>
+              Ik heb de <Link className="underline" href="/voorwaarden">voorwaarden</Link> en de{" "}
+              <Link className="underline" href="/privacy">privacyverklaring</Link> gelezen en ga ermee akkoord.
+            </>
+          )}
+        </TermsField>
       </AuthForm>
       <p className="mt-4 text-sm">
         <Link className="inline-flex min-h-11 items-center font-semibold underline decoration-gold decoration-2 underline-offset-4" href="/account/login">
