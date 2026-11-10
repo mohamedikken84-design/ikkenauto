@@ -69,6 +69,18 @@ type VehicleRow = {
   city: string;
   vat_regime: string;
   description: string;
+  color: string | null;
+  doors: number | null;
+  seats: number | null;
+  co2_gkm: number | null;
+  euro_norm: string | null;
+  equipment: string[] | null;
+  vat_deductible: boolean;
+  warranty_months: number | null;
+  inspection_valid_until: string | null;
+  previous_owners: number | null;
+  description_nl: string | null;
+  description_fr: string | null;
 };
 
 function mapVehicle(row: VehicleRow): VehicleRecord {
@@ -95,12 +107,26 @@ function mapVehicle(row: VehicleRow): VehicleRecord {
     city: row.city,
     vatRegime: row.vat_regime,
     description: row.description,
+    color: row.color,
+    doors: row.doors,
+    seats: row.seats,
+    co2Gkm: row.co2_gkm,
+    euroNorm: row.euro_norm,
+    equipment: row.equipment ?? [],
+    vatDeductible: Boolean(row.vat_deductible),
+    warrantyMonths: row.warranty_months,
+    inspectionValidUntil: row.inspection_valid_until,
+    previousOwners: row.previous_owners,
+    descriptionNl: row.description_nl,
+    descriptionFr: row.description_fr,
   };
 }
 
 const vehicleColumns = `id, garage_id, source_system, source_stock_id, fictional, provenance, source_rights,
   publication_status, make, model, version, price_eur, mileage_km, first_registration, fuel, transmission,
-  body, power_kw, postal_code, city, vat_regime, description`;
+  body, power_kw, postal_code, city, vat_regime, description, color, doors, seats, co2_gkm, euro_norm,
+  equipment, vat_deductible, warranty_months, inspection_valid_until::text AS inspection_valid_until,
+  previous_owners, description_nl, description_fr`;
 
 async function dealerContext<T>(actor: Actor, fn: (client: PoolClient, dealerId: string) => Promise<T>) {
   const dealer = requireDealerActor(actor);
@@ -117,19 +143,87 @@ export async function listOwnStock(actor: Actor) {
   });
 }
 
+function cleanVin(value: string | null | undefined) {
+  if (value == null || value.trim() === "") return null;
+  const vin = value.replace(/[\s-]/g, "").toUpperCase();
+  if (!/^[A-HJ-NPR-Z0-9]{11,17}$/.test(vin)) {
+    throw new StockValidationError("Het VIN moet 11 tot 17 tekens zijn, zonder I, O of Q.");
+  }
+  return vin;
+}
+
+function listingValues(input: StockInput) {
+  const doors = input.doors ?? null;
+  const seats = input.seats ?? null;
+  const co2 = input.co2Gkm ?? null;
+  const warranty = input.warrantyMonths ?? null;
+  const owners = input.previousOwners ?? null;
+  if (doors != null && (!Number.isInteger(doors) || doors < 2 || doors > 6)) {
+    throw new StockValidationError("Het aantal deuren moet tussen 2 en 6 liggen.");
+  }
+  if (seats != null && (!Number.isInteger(seats) || seats < 1 || seats > 9)) {
+    throw new StockValidationError("Het aantal zitplaatsen moet tussen 1 en 9 liggen.");
+  }
+  if (co2 != null && (!Number.isInteger(co2) || co2 < 0 || co2 > 999)) {
+    throw new StockValidationError("CO2 moet tussen 0 en 999 g/km liggen.");
+  }
+  if (warranty != null && (!Number.isInteger(warranty) || warranty < 0 || warranty > 120)) {
+    throw new StockValidationError("Garantie moet tussen 0 en 120 maanden liggen.");
+  }
+  if (owners != null && (!Number.isInteger(owners) || owners < 0)) {
+    throw new StockValidationError("Het aantal vorige eigenaars moet 0 of meer zijn.");
+  }
+  return {
+    color: input.color?.trim() || null,
+    doors,
+    seats,
+    co2,
+    euroNorm: input.euroNorm?.trim() || null,
+    equipment: input.equipment ?? [],
+    warranty,
+    inspection: input.inspectionValidUntil?.trim() || null,
+    owners,
+    descriptionNl: input.descriptionNl?.trim() || null,
+    descriptionFr: input.descriptionFr?.trim() || null,
+    vin: cleanVin(input.vin),
+    plate: input.licensePlate?.trim() || null,
+  };
+}
+
+async function writePrivate(
+  client: PoolClient,
+  vehicleId: string,
+  garageId: string,
+  vin: string | null | undefined,
+  plate: string | null | undefined,
+) {
+  if (vin === undefined && plate === undefined) return;
+  await client.query(
+    `INSERT INTO vehicle_private (vehicle_id, garage_id, vin, license_plate)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (vehicle_id) DO UPDATE SET
+       vin = COALESCE($3, vehicle_private.vin),
+       license_plate = COALESCE($4, vehicle_private.license_plate)`,
+    [vehicleId, garageId, vin ?? null, plate ?? null],
+  );
+}
+
 export async function createOwnVehicle(actor: Actor, input: StockInput) {
   const problems = publicationProblems(input);
   if (problems.length > 0) throw new StockValidationError(problems.join("; "));
+  const extra = listingValues(input);
   return dealerContext(actor, async (client, dealerId) => {
-    const sourceStockId = crypto.randomUUID();
+    const sourceStockId = input.sourceStockId?.trim() || crypto.randomUUID();
     const result = await client.query<VehicleRow>(
       `INSERT INTO vehicles (
          garage_id, source_system, source_stock_id, fictional, provenance, source_rights, publication_status,
          make, model, version, price_eur, mileage_km, first_registration, fuel, transmission, body, power_kw,
-         postal_code, city, vat_regime, description
+         postal_code, city, vat_regime, description, color, doors, seats, co2_gkm, euro_norm, equipment,
+         warranty_months, inspection_valid_until, previous_owners, description_nl, description_fr, updated_by
        ) VALUES (
          $1, 'manual', $2, false, 'dealer-manual', 'dealer-owned', 'draft',
-         $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
+         $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16,
+         $17, $18, $19, $20, $21, $22::jsonb, $23, $24, $25, $26, $27, $28
        ) RETURNING ${vehicleColumns}`,
       [
         dealerId,
@@ -148,9 +242,23 @@ export async function createOwnVehicle(actor: Actor, input: StockInput) {
         input.city.trim(),
         input.vatRegime,
         input.description.trim(),
+        extra.color,
+        extra.doors,
+        extra.seats,
+        extra.co2,
+        extra.euroNorm,
+        JSON.stringify(extra.equipment),
+        extra.warranty,
+        extra.inspection,
+        extra.owners,
+        extra.descriptionNl,
+        extra.descriptionFr,
+        actor.userId,
       ],
     );
-    return mapVehicle(result.rows[0]);
+    const vehicle = mapVehicle(result.rows[0]);
+    await writePrivate(client, vehicle.id, dealerId, extra.vin, extra.plate);
+    return vehicle;
   });
 }
 
@@ -194,12 +302,15 @@ export async function updateOwnVehicle(
     if (nextStatus === "published") {
       const problems = publicationProblems(next);
       if (problems.length > 0) throw new StockValidationError(problems.join("; "));
-      const dealer = await client.query<{ verification_status: string }>(
-        "SELECT verification_status FROM garages WHERE id = $1",
+      const dealer = await client.query<{ verification_status: string; is_public: boolean }>(
+        "SELECT verification_status, is_public FROM garages WHERE id = $1",
         [dealerId],
       );
       if (dealer.rows[0]?.verification_status !== "verified") {
         throw new StockValidationError("Een niet-geverifieerde garage kan niet publiceren.");
+      }
+      if (!dealer.rows[0]?.is_public) {
+        throw new StockValidationError("Publiceer eerst uw garagepagina. De auto blijft een concept.");
       }
       const minimum = await photoMinimum();
       if (minimum > 0) {
@@ -212,11 +323,28 @@ export async function updateOwnVehicle(
         }
       }
     }
+    const extra = listingValues({
+      ...next,
+      color: patch.color !== undefined ? patch.color : row.color,
+      doors: patch.doors !== undefined ? patch.doors : row.doors,
+      seats: patch.seats !== undefined ? patch.seats : row.seats,
+      co2Gkm: patch.co2Gkm !== undefined ? patch.co2Gkm : row.co2_gkm,
+      euroNorm: patch.euroNorm !== undefined ? patch.euroNorm : row.euro_norm,
+      equipment: patch.equipment !== undefined ? patch.equipment : (row.equipment ?? []),
+      warrantyMonths: patch.warrantyMonths !== undefined ? patch.warrantyMonths : row.warranty_months,
+      inspectionValidUntil: patch.inspectionValidUntil !== undefined ? patch.inspectionValidUntil : row.inspection_valid_until,
+      previousOwners: patch.previousOwners !== undefined ? patch.previousOwners : row.previous_owners,
+      descriptionNl: patch.descriptionNl !== undefined ? patch.descriptionNl : row.description_nl,
+      descriptionFr: patch.descriptionFr !== undefined ? patch.descriptionFr : row.description_fr,
+    });
     const updated = await client.query<VehicleRow>(
       `UPDATE vehicles SET
          publication_status = $3, make = $4, model = $5, version = $6, price_eur = $7, mileage_km = $8,
          first_registration = $9, fuel = $10, transmission = $11, body = $12, power_kw = $13,
-         postal_code = $14, city = $15, vat_regime = $16, description = $17, updated_at = now()
+         postal_code = $14, city = $15, vat_regime = $16, description = $17,
+         color = $18, doors = $19, seats = $20, co2_gkm = $21, euro_norm = $22, equipment = $23::jsonb,
+         warranty_months = $24, inspection_valid_until = $25, previous_owners = $26,
+         description_nl = $27, description_fr = $28, updated_by = $29, updated_at = now()
        WHERE id = $1 AND garage_id = $2
        RETURNING ${vehicleColumns}`,
       [
@@ -237,9 +365,64 @@ export async function updateOwnVehicle(
         next.city,
         next.vatRegime,
         next.description,
+        extra.color,
+        extra.doors,
+        extra.seats,
+        extra.co2,
+        extra.euroNorm,
+        JSON.stringify(extra.equipment),
+        extra.warranty,
+        extra.inspection,
+        extra.owners,
+        extra.descriptionNl,
+        extra.descriptionFr,
+        actor.userId,
+      ],
+    );
+    if (patch.vin !== undefined || patch.licensePlate !== undefined) {
+      await writePrivate(
+        client,
+        vehicleId,
+        dealerId,
+        patch.vin !== undefined ? extra.vin : undefined,
+        patch.licensePlate !== undefined ? extra.plate : undefined,
+      );
+    }
+    await client.query(
+      `INSERT INTO audit_log (garage_id, actor_id, action, entity_type, entity_id, diff)
+       VALUES ($1, $2, 'vehicle.update', 'vehicle', $3, $4::jsonb)`,
+      [
+        dealerId,
+        actor.userId,
+        vehicleId,
+        JSON.stringify({
+          publicationStatus: nextStatus,
+          priceEur: next.priceEur,
+          color: extra.color,
+        }),
       ],
     );
     return mapVehicle(updated.rows[0]);
+  });
+}
+
+export async function getOwnVehicle(actor: Actor, vehicleId: string) {
+  return dealerContext(actor, async (client, dealerId) => {
+    const result = await client.query<VehicleRow>(
+      `SELECT ${vehicleColumns} FROM vehicles WHERE id = $1 AND garage_id = $2 AND deleted_at IS NULL`,
+      [vehicleId, dealerId],
+    );
+    const row = result.rows[0];
+    if (!row) return null;
+    const secret = await client.query<{ vin: string | null; license_plate: string | null }>(
+      "SELECT vin, license_plate FROM vehicle_private WHERE vehicle_id = $1",
+      [vehicleId],
+    );
+    return {
+      ...mapVehicle(row),
+      vin: secret.rows[0]?.vin ?? null,
+      licensePlate: secret.rows[0]?.license_plate ?? null,
+    };
   });
 }
 

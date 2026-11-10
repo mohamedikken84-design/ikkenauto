@@ -36,6 +36,23 @@ export type VehicleRecord = {
   city: string;
   vatRegime: string;
   description: string;
+  color: string | null;
+  doors: number | null;
+  seats: number | null;
+  co2Gkm: number | null;
+  euroNorm: string | null;
+  equipment: string[];
+  vatDeductible: boolean;
+  warrantyMonths: number | null;
+  inspectionValidUntil: string | null;
+  previousOwners: number | null;
+  descriptionNl: string | null;
+  descriptionFr: string | null;
+};
+
+export type DealerVehicle = VehicleRecord & {
+  vin: string | null;
+  licensePlate: string | null;
 };
 
 export type StockInput = {
@@ -53,4 +70,18 @@ export type StockInput = {
   city: string;
   vatRegime: string;
   description: string;
+  sourceStockId?: string;
+  color?: string | null;
+  doors?: number | null;
+  seats?: number | null;
+  co2Gkm?: number | null;
+  euroNorm?: string | null;
+  equipment?: string[];
+  warrantyMonths?: number | null;
+  inspectionValidUntil?: string | null;
+  previousOwners?: number | null;
+  descriptionNl?: string | null;
+  descriptionFr?: string | null;
+  vin?: string | null;
+  licensePlate?: string | null;
 };

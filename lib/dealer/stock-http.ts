@@ -1,7 +1,7 @@
 import { AuthConfigError, DealerAccessError, requireDealerActor, resolveActor } from "@/lib/dealer/auth";
 import { readAnySessionToken } from "@/lib/dealer/auth-http";
 import { importDealerCsv } from "@/lib/dealer/import-stock";
-import { createOwnVehicle, isDealerAccessError, listAllStockAsAdmin, listOwnStock, StockValidationError, updateOwnVehicle } from "@/lib/dealer/stock";
+import { createOwnVehicle, getOwnVehicle, isDealerAccessError, listAllStockAsAdmin, listOwnStock, StockValidationError, updateOwnVehicle } from "@/lib/dealer/stock";
 import { publicationStatuses, type PublicationStatus, type StockInput } from "@/lib/dealer/types";
 
 function json(body: unknown, status = 200) {
@@ -23,6 +23,30 @@ function isActor(value: Awaited<ReturnType<typeof actorFrom>>): value is Exclude
   return !(value instanceof Response);
 }
 
+function optionalNumber(value: unknown) {
+  if (value == null || value === "") return null;
+  return Number(value);
+}
+
+function readListing(value: Record<string, unknown>): Partial<StockInput> {
+  const listing: Partial<StockInput> = {};
+  if ("sourceStockId" in value) listing.sourceStockId = String(value.sourceStockId ?? "");
+  if ("color" in value) listing.color = value.color == null ? null : String(value.color);
+  if ("doors" in value) listing.doors = optionalNumber(value.doors);
+  if ("seats" in value) listing.seats = optionalNumber(value.seats);
+  if ("co2Gkm" in value) listing.co2Gkm = optionalNumber(value.co2Gkm);
+  if ("euroNorm" in value) listing.euroNorm = value.euroNorm == null ? null : String(value.euroNorm);
+  if (Array.isArray(value.equipment)) listing.equipment = value.equipment.map(String);
+  if ("warrantyMonths" in value) listing.warrantyMonths = optionalNumber(value.warrantyMonths);
+  if ("inspectionValidUntil" in value) listing.inspectionValidUntil = value.inspectionValidUntil == null ? null : String(value.inspectionValidUntil);
+  if ("previousOwners" in value) listing.previousOwners = optionalNumber(value.previousOwners);
+  if ("descriptionNl" in value) listing.descriptionNl = value.descriptionNl == null ? null : String(value.descriptionNl);
+  if ("descriptionFr" in value) listing.descriptionFr = value.descriptionFr == null ? null : String(value.descriptionFr);
+  if ("vin" in value) listing.vin = value.vin == null ? null : String(value.vin);
+  if ("licensePlate" in value) listing.licensePlate = value.licensePlate == null ? null : String(value.licensePlate);
+  return listing;
+}
+
 function readStockInput(value: Record<string, unknown>): StockInput {
   return {
     make: String(value.make ?? ""),
@@ -39,6 +63,7 @@ function readStockInput(value: Record<string, unknown>): StockInput {
     city: String(value.city ?? ""),
     vatRegime: String(value.vatRegime ?? ""),
     description: String(value.description ?? ""),
+    ...readListing(value),
   };
 }
 
@@ -50,7 +75,7 @@ function readStockPatch(value: Record<string, unknown>): Partial<StockInput> {
   if (typeof value.priceEur === "number") patch.priceEur = value.priceEur;
   if (typeof value.mileageKm === "number") patch.mileageKm = value.mileageKm;
   if (typeof value.powerKw === "number") patch.powerKw = value.powerKw;
-  return patch;
+  return { ...patch, ...readListing(value) };
 }
 
 export async function handleListStock(request: Request) {
@@ -59,6 +84,19 @@ export async function handleListStock(request: Request) {
   try {
     requireDealerActor(actor);
     return json({ vehicles: await listOwnStock(actor) });
+  } catch (error) {
+    if (isDealerAccessError(error)) return json({ error: "forbidden" }, 403);
+    throw error;
+  }
+}
+
+export async function handleGetStock(request: Request, vehicleId: string) {
+  const actor = await actorFrom(request);
+  if (!isActor(actor)) return actor;
+  try {
+    const vehicle = await getOwnVehicle(actor, vehicleId);
+    if (!vehicle) return json({ error: "not-found" }, 404);
+    return json({ vehicle });
   } catch (error) {
     if (isDealerAccessError(error)) return json({ error: "forbidden" }, 403);
     throw error;

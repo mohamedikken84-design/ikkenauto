@@ -54,6 +54,9 @@ async function AccountScreen() {
           </Link>
         </li>
         <li>
+          <Link className="underline decoration-gold decoration-2 underline-offset-4" href="/account/voorraad">
+            Voorraad
+          </Link>
           <Link className="underline decoration-gold decoration-2 underline-offset-4" href="/account/garage">
             Garage
           </Link>
