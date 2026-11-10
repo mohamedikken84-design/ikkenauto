@@ -5,14 +5,14 @@ import { assertMailAllowed, sendAuthMail } from "@/lib/dealer/mail";
 import { hashPassword, verifyPassword } from "@/lib/dealer/password";
 import { assertRateLimit } from "@/lib/dealer/rate-limit";
 import type { Actor } from "@/lib/dealer/types";
-import { AccountInputError } from "@/lib/dealer/errors";
+import { AccountFieldError, AccountInputError } from "@/lib/dealer/errors";
+import { copyFor } from "@/lib/i18n/auth-copy";
 
-export { AccountInputError };
+export { AccountFieldError, AccountInputError };
 
-const genericRegister = "Als dit e-mailadres nog vrij is, sturen wij een bevestigingsbericht. Dat kan enkele minuten duren.";
-const genericLogin = "Onjuiste gegevens, of het adres is nog niet bevestigd.";
-const genericRecovery = "Als er een bevestigd account bij dit adres hoort, sturen wij een herstelbericht.";
-const genericResend = "Als dit adres bij een nog niet bevestigd account hoort, sturen wij een nieuw bericht.";
+function phrases(locale: string) {
+  return copyFor(locale === "fr" ? "fr" : "nl");
+}
 
 export type RegistrationInput = {
   kind: string;
@@ -75,24 +75,24 @@ function mailCopy(locale: "nl" | "fr", name: string, link: string, kind: "verify
   if (kind === "verify" && locale === "fr") {
     return {
       subject: "Confirmez votre compte IKKENAUTO",
-      body: `Bonjour ${name},\n\nConfirmez votre adresse e-mail via ce lien (valable 24 heures) :\n${link}\n\nVous n'avez pas demandé ce compte ? Ignorez simplement ce message.\n`,
+      body: `Bonjour ${name},\n\nMerci de votre inscription sur IKKENAUTO, la place de marché automobile belge pour les professionnels.\n\nConfirmez votre adresse e-mail via ce lien (valable 24 heures) :\n${link}\n\nVous pourrez ensuite vous connecter et préparer le stock de votre garage. Le site n'est pas encore ouvert aux acheteurs.\n\nVous n'avez pas demandé ce compte ? Ignorez simplement ce message.\n\nBien cordialement,\nL'équipe IKKENAUTO\nhttps://ikkenauto.be\n`,
     };
   }
   if (kind === "verify") {
     return {
       subject: "Bevestig uw IKKENAUTO-account",
-      body: `Dag ${name},\n\nBevestig uw e-mailadres via deze link (24 uur geldig):\n${link}\n\nHebt u dit account niet aangevraagd? Dan mag u dit bericht negeren.\n`,
+      body: `Dag ${name},\n\nBedankt voor uw registratie bij IKKENAUTO, de Belgische automarktplaats voor dealers.\n\nBevestig uw e-mailadres via deze link (24 uur geldig):\n${link}\n\nDaarna kunt u zich aanmelden en de voorraad van uw garage klaarzetten. De site is nog niet open voor kopers.\n\nHebt u dit account niet aangevraagd? Dan mag u dit bericht negeren.\n\nMet vriendelijke groeten,\nHet team van IKKENAUTO\nhttps://ikkenauto.be\n`,
     };
   }
   if (locale === "fr") {
     return {
       subject: "Définissez un nouveau mot de passe IKKENAUTO",
-      body: `Bonjour ${name},\n\nChoisissez un nouveau mot de passe via ce lien (valable une heure, usage unique) :\n${link}\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez ce message.\n`,
+      body: `Bonjour ${name},\n\nUne demande de nouveau mot de passe a été faite pour votre compte dealer IKKENAUTO.\n\nChoisissez un nouveau mot de passe via ce lien (valable une heure, usage unique) :\n${link}\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez ce message. Votre mot de passe actuel reste valable.\n\nBien cordialement,\nL'équipe IKKENAUTO\nhttps://ikkenauto.be\n`,
     };
   }
   return {
     subject: "Stel een nieuw IKKENAUTO-wachtwoord in",
-    body: `Dag ${name},\n\nKies een nieuw wachtwoord via deze link (één uur geldig, één keer te gebruiken):\n${link}\n\nAls u dit niet hebt gevraagd, mag u dit bericht negeren.\n`,
+    body: `Dag ${name},\n\nIemand heeft een nieuw wachtwoord aangevraagd voor uw IKKENAUTO-dealeraccount.\n\nKies een nieuw wachtwoord via deze link (één uur geldig, één keer te gebruiken):\n${link}\n\nAls u dit niet hebt gevraagd, mag u dit bericht negeren. Uw huidige wachtwoord blijft dan geldig.\n\nMet vriendelijke groeten,\nHet team van IKKENAUTO\nhttps://ikkenauto.be\n`,
   };
 }
 
@@ -110,33 +110,33 @@ export async function registerAccount(input: RegistrationInput, clientKey: strin
   if (kind !== "particulier" && kind !== "professioneel") {
     throw new AccountInputError("Kies particulier of professioneel.");
   }
-  if (!input.acceptTerms) {
-    throw new AccountInputError("Bevestig dat u de voorwaarden en de privacyverklaring hebt gelezen.");
-  }
-  if (!input.displayName.trim() || input.displayName.trim().length > 80) {
-    throw new AccountInputError("Vul uw naam in (maximaal 80 tekens).");
-  }
-  if (!validEmail(email) || !validPassword(input.password)) {
-    throw new AccountInputError("Gebruik een geldig e-mailadres en een wachtwoord van minstens 12 tekens.");
-  }
-  if (input.password !== (input.passwordConfirm ?? input.password)) {
-    throw new AccountInputError("De wachtwoorden komen niet overeen.");
-  }
+  const text = phrases(locale);
+  const fields: Record<string, string> = {};
+  if (!input.acceptTerms) fields.acceptTerms = text.termsError;
+  if (!input.displayName.trim() || input.displayName.trim().length > 80) fields.displayName = text.nameInvalid;
+  if (!validEmail(email)) fields.email = text.emailInvalid;
+  if (!validPassword(input.password)) fields.password = text.passwordShort;
+  if ((input.passwordConfirm ?? "") !== input.password) fields.passwordConfirm = text.passwordMismatch;
   appOrigin();
   let garage: { tradeName: string; kbo: string; vat: string; postalCode: string; city: string } | null = null;
   if (kind === "professioneel") {
     const kbo = (input.kboNumber ?? "").replace(/[\s.]/g, "");
     const vat = (input.vatNumber ?? "").replace(/[\s.]/g, "").toUpperCase();
-    if (!input.tradeName?.trim() || input.tradeName.trim().length > 120 || !validKbo(kbo) || !validVat(vat) || !/^\d{4}$/.test(input.postalCode ?? "") || !input.city?.trim()) {
-      throw new AccountInputError("Vul handelsnaam, KBO van 10 cijfers, btw-nummer, postcode en gemeente in.");
+    if (!input.tradeName?.trim() || input.tradeName.trim().length > 120) fields.tradeName = text.tradeInvalid;
+    if (!validKbo(kbo)) fields.kboNumber = text.kboInvalid;
+    if (!validVat(vat)) fields.vatNumber = text.vatInvalid;
+    if (!/^\d{4}$/.test(input.postalCode ?? "")) fields.postalCode = text.postcodeInvalid;
+    if (!input.city?.trim()) fields.city = text.cityInvalid;
+    if (!fields.tradeName && !fields.kboNumber && !fields.vatNumber && !fields.postalCode && !fields.city) {
+      garage = { tradeName: input.tradeName!.trim(), kbo, vat, postalCode: input.postalCode ?? "", city: input.city!.trim() };
     }
-    garage = { tradeName: input.tradeName.trim(), kbo, vat, postalCode: input.postalCode ?? "", city: input.city.trim() };
   }
+  if (Object.keys(fields).length > 0) throw new AccountFieldError(fields);
 
   const existing = await withService((client) =>
     client.query<{ id: string }>("SELECT id FROM auth.users WHERE email = $1", [email]),
   );
-  if (existing.rows[0]) return { message: genericRegister };
+  if (existing.rows[0]) return { message: text.registerOk };
 
   const passwordHash = await hashPassword(input.password);
   const userId = await withService(async (client) => {
@@ -162,15 +162,16 @@ export async function registerAccount(input: RegistrationInput, clientKey: strin
   const token = await issueToken(userId, "verify_email", 24);
   const copy = mailCopy(locale, input.displayName.trim(), `${appOrigin()}/account/verifieer?token=${token}`, "verify");
   await sendAuthMail({ recipientEmail: email, subject: copy.subject, body: copy.body });
-  return { message: genericRegister };
+  return { message: text.registerOk };
 }
 
-export async function resendVerification(email: string, clientKey: string) {
+export async function resendVerification(email: string, clientKey: string, locale = "nl") {
   assertLocalAuthAllowed();
   assertMailAllowed();
   await assertRateLimit("resend", clientKey);
   const normalized = normalizeEmail(email);
-  if (!validEmail(normalized)) return { message: genericResend };
+  const text = phrases(locale);
+  if (!validEmail(normalized)) return { message: text.resendOk };
   const found = await withService((client) =>
     client.query<{ id: string; display_name: string; locale: string }>(
       `SELECT u.id, p.display_name, p.locale
@@ -181,7 +182,7 @@ export async function resendVerification(email: string, clientKey: string) {
     ),
   );
   const user = found.rows[0];
-  if (!user) return { message: genericResend };
+  if (!user) return { message: text.resendOk };
   await withService((client) =>
     client.query(
       `UPDATE auth.local_tokens SET used_at = now()
@@ -190,10 +191,10 @@ export async function resendVerification(email: string, clientKey: string) {
     ),
   );
   const token = await issueToken(user.id, "verify_email", 24);
-  const locale = localeOf(user.locale);
-  const copy = mailCopy(locale, user.display_name, `${appOrigin()}/account/verifieer?token=${token}`, "verify");
+  const mailLocale = localeOf(user.locale);
+  const copy = mailCopy(mailLocale, user.display_name, `${appOrigin()}/account/verifieer?token=${token}`, "verify");
   await sendAuthMail({ recipientEmail: normalized, subject: copy.subject, body: copy.body });
-  return { message: genericResend };
+  return { message: text.resendOk };
 }
 
 export async function verifyEmailToken(token: string) {
@@ -254,7 +255,7 @@ async function dummyPasswordHash() {
   return dummyHash;
 }
 
-export async function loginAccount(email: string, password: string, clientKey: string) {
+export async function loginAccount(email: string, password: string, clientKey: string, locale = "nl") {
   assertLocalAuthAllowed();
   if (supabaseConfigured()) {
     const remote = await import("@/lib/supabase/auth");
@@ -271,7 +272,7 @@ export async function loginAccount(email: string, password: string, clientKey: s
   );
   const row = found.rows[0];
   const passwordOk = await verifyPassword(row?.encrypted_password ?? (await dummyPasswordHash()), password);
-  if (!row || !row.email_confirmed_at || !passwordOk) throw new AccountInputError(genericLogin);
+  if (!row || !row.email_confirmed_at || !passwordOk) throw new AccountInputError(phrases(locale).loginError);
   const token = await insertLocalSession(row.id);
   return { token };
 }
@@ -285,7 +286,7 @@ export async function logoutAccount(token: string) {
   );
 }
 
-export async function requestPasswordReset(email: string, clientKey: string) {
+export async function requestPasswordReset(email: string, clientKey: string, locale = "nl") {
   assertLocalAuthAllowed();
   assertMailAllowed();
   await assertRateLimit("recovery", clientKey);
@@ -299,16 +300,19 @@ export async function requestPasswordReset(email: string, clientKey: string) {
     ),
   );
   const user = found.rows[0];
-  if (!user) return { message: genericRecovery };
+  const text = phrases(locale);
+  if (!user) return { message: text.recoveryOk };
   const token = await issueToken(user.id, "reset_password", 1);
   const copy = mailCopy(localeOf(user.locale), user.display_name, `${appOrigin()}/account/herstel/bevestigen?token=${token}`, "reset");
   await sendAuthMail({ recipientEmail: normalized, subject: copy.subject, body: copy.body });
-  return { message: genericRecovery };
+  return { message: text.recoveryOk };
 }
 
-export async function confirmPasswordReset(token: string, password: string) {
+export async function confirmPasswordReset(token: string, password: string, passwordConfirm = "", locale = "nl") {
   assertLocalAuthAllowed();
-  if (!validPassword(password)) throw new AccountInputError("Het nieuwe wachtwoord moet minstens 12 tekens zijn.");
+  const text = phrases(locale);
+  if (passwordConfirm !== password) throw new AccountFieldError({ passwordConfirm: text.passwordMismatch });
+  if (!validPassword(password)) throw new AccountFieldError({ password: text.passwordNewShort });
   const tokenHash = hashSessionToken(token);
   const passwordHash = await hashPassword(password);
   const updated = await withService(async (client) => {

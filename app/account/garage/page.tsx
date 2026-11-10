@@ -18,15 +18,16 @@ const garageStatus: Record<string, string> = {
   verified: "geverifieerd",
 };
 
-export default function GaragePage() {
+export default function GaragePage({ searchParams }: { searchParams: Promise<{ welkom?: string }> }) {
   return (
     <Suspense fallback={<p className="px-4 py-16">Garage laden…</p>}>
-      <GarageScreen />
+      <GarageScreen searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function GarageScreen() {
+async function GarageScreen({ searchParams }: { searchParams: Promise<{ welkom?: string }> }) {
+  const welcome = (await searchParams).welkom === "1";
   const token = (await cookies()).get("ikken_session")?.value ?? "";
   const actor = token ? await resolveActor(token).catch(() => null) : null;
   if (!actor) redirect("/account/login");
@@ -35,6 +36,9 @@ async function GarageScreen() {
   return (
     <article className="mx-auto w-full max-w-3xl px-4 py-16">
       <h1 className="font-display text-4xl">Garage</h1>
+      {welcome ? (
+        <p className="mt-4 leading-relaxed">Welkom bij IKKENAUTO. Vul uw garage aan. Kopers zien niets zolang de site gesloten is.</p>
+      ) : null}
       {profile.garage ? (
         <>
           <p className="mt-4 text-lg">{profile.garage.trade_name}</p>
