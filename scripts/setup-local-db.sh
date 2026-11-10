@@ -21,4 +21,22 @@ if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname = 'ikke
   sudo -u postgres createdb -O ikkenauto ikkenauto_test
 fi
 sudo -u postgres psql -d ikkenauto_test -v ON_ERROR_STOP=1 -c "CREATE EXTENSION IF NOT EXISTS btree_gist;"
+sudo -u postgres psql -d ikkenauto_test -v ON_ERROR_STOP=1 <<'SQL'
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+    CREATE ROLE anon NOLOGIN NOINHERIT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+    CREATE ROLE authenticated NOLOGIN NOINHERIT;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role') THEN
+    CREATE ROLE service_role NOLOGIN NOINHERIT BYPASSRLS;
+  END IF;
+END
+$$;
+GRANT anon, authenticated, service_role TO ikkenauto;
+GRANT USAGE, CREATE ON SCHEMA public TO service_role;
+GRANT USAGE ON SCHEMA public TO anon, authenticated;
+SQL
 echo "Database ikkenauto_test staat klaar voor rol ikkenauto."

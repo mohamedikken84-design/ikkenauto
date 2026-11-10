@@ -96,6 +96,9 @@ export async function handleUpdateStock(request: Request, vehicleId: string) {
     return json({ vehicle });
   } catch (error) {
     if (error instanceof StockValidationError) return json({ error: error.message }, 422);
+    if (error instanceof Error && /niet-geverifieerde garage|foto|verkochte auto/.test(error.message)) {
+      return json({ error: error.message }, 422);
+    }
     if (error instanceof DealerAccessError) return json({ error: "forbidden" }, 403);
     throw error;
   }

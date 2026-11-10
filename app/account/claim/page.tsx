@@ -30,7 +30,7 @@ async function ClaimScreen() {
         Dit blijft een aanvraag. KBO, naam of e-mail dragen geen eigendom over. Een beheerder beoordeelt later het
         bewijs. Er gaat geen bericht naar de garage.
       </p>
-      <AuthForm action="/api/auth/claim" submitLabel="Aanvraag indienen">
+      <AuthForm action="/api/auth/claim" submitLabel="Aanvraag indienen" pendingLabel="Indienen…" locale="nl">
         <Field id="claim-kbo" label="KBO-nummer" name="kboNumber" />
         <label className="text-sm font-semibold" htmlFor="claim-bewijs">
           Bewijs

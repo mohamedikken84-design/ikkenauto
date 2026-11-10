@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { getPool } from "@/lib/db/client";
+import { withService } from "@/lib/db/client";
 
 const windowMinutes = 15;
 
@@ -15,7 +15,8 @@ export function rateLimitMaximum() {
 export async function assertRateLimit(action: string, subject: string) {
   const bucket = createHash("sha256").update(`${action}\n${subject}`).digest("hex");
   const max = rateLimitMaximum();
-  const result = await getPool().query<{ attempts: number }>(
+  const result = await withService((client) =>
+    client.query<{ attempts: number }>(
     `INSERT INTO auth_rate_limits (bucket, attempts, window_start)
      VALUES ($1, 1, now())
      ON CONFLICT (bucket) DO UPDATE SET
@@ -28,7 +29,8 @@ export async function assertRateLimit(action: string, subject: string) {
          ELSE auth_rate_limits.window_start
        END
      RETURNING attempts`,
-    [bucket, String(windowMinutes)],
+      [bucket, String(windowMinutes)],
+    ),
   );
   if ((result.rows[0]?.attempts ?? 1) > max) {
     throw new RateLimitError("te veel pogingen");

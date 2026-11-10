@@ -1,12 +1,13 @@
 import type { PoolClient } from "pg";
-import { withTransaction } from "@/lib/db/client";
-import { DealerAccessError, requireDealerActor } from "@/lib/dealer/auth";
+import { withService, withTransaction } from "@/lib/db/client";
+import { actorAccess, DealerAccessError, requireDealerActor } from "@/lib/dealer/auth";
 import type { Actor, PublicationStatus, StockInput, VehicleRecord } from "@/lib/dealer/types";
 
 const transitions: Record<PublicationStatus, readonly PublicationStatus[]> = {
-  draft: ["published", "paused", "sold"],
-  published: ["paused", "sold", "draft"],
-  paused: ["published", "sold", "draft"],
+  draft: ["published", "paused", "sold", "archived"],
+  published: ["paused", "sold", "draft", "archived"],
+  paused: ["published", "sold", "draft", "archived"],
+  archived: ["draft"],
   sold: [],
 };
 
@@ -14,6 +15,21 @@ export class StockValidationError extends Error {
   constructor(message: string) {
     super(message);
   }
+}
+
+async function photoMinimum() {
+  const result = await withService((client) =>
+    client.query<{ value: number }>("SELECT value AS value FROM app_settings WHERE key = 'photo_min_to_publish'"),
+  );
+  const value = result.rows[0]?.value;
+  return typeof value === "number" ? value : 3;
+}
+
+async function soldIsReversible() {
+  const result = await withService((client) =>
+    client.query<{ value: boolean }>("SELECT value AS value FROM app_settings WHERE key = 'sold_reversible'"),
+  );
+  return result.rows[0]?.value === true;
 }
 
 export function canTransition(from: PublicationStatus, to: PublicationStatus) {
@@ -32,7 +48,7 @@ export function publicationProblems(input: StockInput) {
 
 type VehicleRow = {
   id: string;
-  dealer_id: string;
+  garage_id: string;
   source_system: string;
   source_stock_id: string;
   fictional: boolean;
@@ -58,7 +74,7 @@ type VehicleRow = {
 function mapVehicle(row: VehicleRow): VehicleRecord {
   return {
     id: row.id,
-    dealerId: row.dealer_id,
+    dealerId: row.garage_id,
     sourceSystem: row.source_system,
     sourceStockId: row.source_stock_id,
     fictional: row.fictional,
@@ -82,21 +98,19 @@ function mapVehicle(row: VehicleRow): VehicleRecord {
   };
 }
 
-const vehicleColumns = `id, dealer_id, source_system, source_stock_id, fictional, provenance, source_rights,
+const vehicleColumns = `id, garage_id, source_system, source_stock_id, fictional, provenance, source_rights,
   publication_status, make, model, version, price_eur, mileage_km, first_registration, fuel, transmission,
   body, power_kw, postal_code, city, vat_regime, description`;
 
 async function dealerContext<T>(actor: Actor, fn: (client: PoolClient, dealerId: string) => Promise<T>) {
   const dealer = requireDealerActor(actor);
-  return withTransaction({ dealerId: dealer.dealerId, role: dealer.role, publicRead: false }, (client) =>
-    fn(client, dealer.dealerId),
-  );
+  return withTransaction(actorAccess(actor), (client) => fn(client, dealer.dealerId));
 }
 
 export async function listOwnStock(actor: Actor) {
   return dealerContext(actor, async (client, dealerId) => {
     const result = await client.query<VehicleRow>(
-      `SELECT ${vehicleColumns} FROM vehicles WHERE dealer_id = $1 ORDER BY created_at`,
+      `SELECT ${vehicleColumns} FROM vehicles WHERE garage_id = $1 AND deleted_at IS NULL ORDER BY created_at`,
       [dealerId],
     );
     return result.rows.map(mapVehicle);
@@ -110,7 +124,7 @@ export async function createOwnVehicle(actor: Actor, input: StockInput) {
     const sourceStockId = crypto.randomUUID();
     const result = await client.query<VehicleRow>(
       `INSERT INTO vehicles (
-         dealer_id, source_system, source_stock_id, fictional, provenance, source_rights, publication_status,
+         garage_id, source_system, source_stock_id, fictional, provenance, source_rights, publication_status,
          make, model, version, price_eur, mileage_km, first_registration, fuel, transmission, body, power_kw,
          postal_code, city, vat_regime, description
        ) VALUES (
@@ -147,13 +161,18 @@ export async function updateOwnVehicle(
 ) {
   return dealerContext(actor, async (client, dealerId) => {
     const current = await client.query<VehicleRow>(
-      `SELECT ${vehicleColumns} FROM vehicles WHERE id = $1 AND dealer_id = $2`,
+      `SELECT ${vehicleColumns} FROM vehicles WHERE id = $1 AND garage_id = $2`,
       [vehicleId, dealerId],
     );
     const row = current.rows[0];
     if (!row) return null;
     const nextStatus = patch.publicationStatus ?? row.publication_status;
-    if (patch.publicationStatus && !canTransition(row.publication_status, patch.publicationStatus)) {
+    if (patch.publicationStatus && row.publication_status === "sold" && patch.publicationStatus !== "sold") {
+      const reversible = await soldIsReversible();
+      if (!reversible || patch.publicationStatus !== "draft") {
+        throw new StockValidationError("Een verkochte auto kan niet van status veranderen.");
+      }
+    } else if (patch.publicationStatus && !canTransition(row.publication_status, patch.publicationStatus)) {
       throw new StockValidationError(`status ${row.publication_status} kan niet naar ${patch.publicationStatus}`);
     }
     const next: StockInput = {
@@ -176,11 +195,21 @@ export async function updateOwnVehicle(
       const problems = publicationProblems(next);
       if (problems.length > 0) throw new StockValidationError(problems.join("; "));
       const dealer = await client.query<{ verification_status: string }>(
-        "SELECT verification_status FROM dealers WHERE id = $1",
+        "SELECT verification_status FROM garages WHERE id = $1",
         [dealerId],
       );
       if (dealer.rows[0]?.verification_status !== "verified") {
         throw new StockValidationError("Een niet-geverifieerde garage kan niet publiceren.");
+      }
+      const minimum = await photoMinimum();
+      if (minimum > 0) {
+        const photos = await client.query<{ count: string }>(
+          "SELECT count(*)::text AS count FROM vehicle_photos WHERE vehicle_id = $1",
+          [vehicleId],
+        );
+        if (Number(photos.rows[0]?.count ?? 0) < minimum) {
+          throw new StockValidationError(`Voeg minstens ${minimum} foto's toe voor u de auto klaarzet voor de lancering.`);
+        }
       }
     }
     const updated = await client.query<VehicleRow>(
@@ -188,7 +217,7 @@ export async function updateOwnVehicle(
          publication_status = $3, make = $4, model = $5, version = $6, price_eur = $7, mileage_km = $8,
          first_registration = $9, fuel = $10, transmission = $11, body = $12, power_kw = $13,
          postal_code = $14, city = $15, vat_regime = $16, description = $17, updated_at = now()
-       WHERE id = $1 AND dealer_id = $2
+       WHERE id = $1 AND garage_id = $2
        RETURNING ${vehicleColumns}`,
       [
         vehicleId,
@@ -215,13 +244,13 @@ export async function updateOwnVehicle(
 }
 
 export async function listPublishedVehicles() {
-  return withTransaction({ dealerId: null, role: "public", publicRead: true }, async (client) => {
+  return withTransaction({ userId: null, access: "anon" }, async (client) => {
     const result = await client.query<VehicleRow>(
       `SELECT ${vehicleColumns} FROM vehicles
-       WHERE publication_status = 'published' AND fictional = false
+       WHERE publication_status = 'published' AND fictional = false AND deleted_at IS NULL
          AND EXISTS (
-           SELECT 1 FROM dealers d
-           WHERE d.id = vehicles.dealer_id AND d.verification_status = 'verified'
+           SELECT 1 FROM garages d
+           WHERE d.id = vehicles.garage_id AND d.verification_status = 'verified' AND d.is_public AND d.deleted_at IS NULL
          )
        ORDER BY price_eur, id`,
     );
@@ -231,8 +260,8 @@ export async function listPublishedVehicles() {
 
 export async function listAllStockAsAdmin(actor: Actor) {
   if (actor.role !== "platform_admin") throw new DealerAccessError("forbidden");
-  return withTransaction({ dealerId: null, role: "platform_admin", publicRead: false }, async (client) => {
-    const result = await client.query<VehicleRow>(`SELECT ${vehicleColumns} FROM vehicles ORDER BY dealer_id, id`);
+  return withTransaction(actorAccess(actor), async (client) => {
+    const result = await client.query<VehicleRow>(`SELECT ${vehicleColumns} FROM vehicles ORDER BY garage_id, id`);
     return result.rows.map(mapVehicle);
   });
 }

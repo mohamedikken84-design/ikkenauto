@@ -3,7 +3,7 @@ export type DealerRole = (typeof dealerRoles)[number];
 export const appRoles = [...dealerRoles, "private_user"] as const;
 export type AppRole = (typeof appRoles)[number];
 
-export const publicationStatuses = ["draft", "published", "paused", "sold"] as const;
+export const publicationStatuses = ["draft", "published", "paused", "sold", "archived"] as const;
 export type PublicationStatus = (typeof publicationStatuses)[number];
 
 export type Actor = {

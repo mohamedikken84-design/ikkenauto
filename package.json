@@ -7,12 +7,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test --test-concurrency=1 lib/listings/search.test.ts lib/listings/home-search.test.ts lib/dealer/dealer.integration.test.ts lib/dealer/account.integration.test.ts",
+    "test": "tsx --test --test-concurrency=1 lib/listings/search.test.ts lib/listings/home-search.test.ts lib/dealer/dealer.integration.test.ts lib/dealer/account.integration.test.ts lib/dealer/qa-fixes.integration.test.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:dev-session": "tsx scripts/create-dev-session.ts"
   },
   "dependencies": {
     "@node-rs/argon2": "^2.0.2",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.119.0",
+    "bcryptjs": "^3.0.3",
     "next": "16.4.5",
     "pg": "^8.16.3",
     "react": "19.3.0",
@@ -20,6 +23,7 @@
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/pg": "^8.15.5",
     "@types/react": "^19",

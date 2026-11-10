@@ -1,5 +1,5 @@
-import { getPool } from "@/lib/db/client";
-import { AuthConfigError } from "@/lib/dealer/auth";
+import { withService } from "@/lib/db/client";
+import { AuthConfigError, supabaseConfigured } from "@/lib/dealer/auth";
 
 export type MailMessage = {
   recipientEmail: string;
@@ -8,6 +8,7 @@ export type MailMessage = {
 };
 
 export function assertMailAllowed() {
+  if (supabaseConfigured() && process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) return;
   const transport = process.env.MAIL_TRANSPORT?.trim() ?? "";
   const production = process.env.NODE_ENV === "production" || process.env.AUTH_MODE === "production";
   if (production) {
@@ -22,8 +23,10 @@ export function assertMailAllowed() {
 
 export async function sendAuthMail(message: MailMessage) {
   assertMailAllowed();
-  await getPool().query(
+  await withService((client) =>
+    client.query(
     `INSERT INTO local_mail_messages (recipient_email, subject, body) VALUES ($1, $2, $3)`,
-    [message.recipientEmail, message.subject, message.body],
+      [message.recipientEmail, message.subject, message.body],
+    ),
   );
 }

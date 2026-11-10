@@ -2,6 +2,12 @@ import { Pool, type PoolClient } from "pg";
 
 let pool: Pool | null = null;
 
+export type DbAccess = {
+  userId: string | null;
+  appRole?: string;
+  access: "anon" | "authenticated" | "service";
+};
+
 export function databaseUrl() {
   return process.env.DATABASE_URL?.trim() ?? "";
 }
@@ -21,17 +27,19 @@ export async function closePool() {
   pool = null;
 }
 
-export async function withTransaction<T>(
-  settings: { dealerId: string | null; role: string; publicRead: boolean; userId?: string | null },
-  fn: (client: PoolClient) => Promise<T>,
-) {
+export async function withTransaction<T>(access: DbAccess, fn: (client: PoolClient) => Promise<T>) {
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
-    await client.query("SELECT set_config('app.dealer_id', $1, true)", [settings.dealerId ?? ""]);
-    await client.query("SELECT set_config('app.role', $1, true)", [settings.role]);
-    await client.query("SELECT set_config('app.user_id', $1, true)", [settings.userId ?? ""]);
-    await client.query("SELECT set_config('app.public_read', $1, true)", [settings.publicRead ? "on" : "off"]);
+    const claims = JSON.stringify({
+      sub: access.userId ?? "",
+      role: access.access === "anon" ? "anon" : "authenticated",
+      app_metadata: { role: access.appRole ?? "" },
+    });
+    await client.query("SELECT set_config('request.jwt.claims', $1, true)", [claims]);
+    if (access.access === "service") await client.query("SET LOCAL ROLE service_role");
+    else if (access.access === "anon") await client.query("SET LOCAL ROLE anon");
+    else await client.query("SET LOCAL ROLE authenticated");
     const result = await fn(client);
     await client.query("COMMIT");
     return result;
@@ -41,4 +49,8 @@ export async function withTransaction<T>(
   } finally {
     client.release();
   }
+}
+
+export function withService<T>(fn: (client: PoolClient) => Promise<T>) {
+  return withTransaction({ userId: null, access: "service" }, fn);
 }
