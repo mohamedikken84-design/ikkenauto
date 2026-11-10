@@ -78,6 +78,47 @@ async function upsertRow(client: PoolClient, dealerId: string, batchId: string, 
   );
 }
 
+export async function previewDealerCsv(actor: Actor, csv: string) {
+  const dealer = requireDealerAdmin(actor);
+  const parsed = parseStockCsv(csv);
+  if (parsed.fatal) return { fatal: parsed.fatal, rows: [] as PreviewRow[], vehicleCount: await countOwn(actor) };
+  const existing = await withTransaction(actorAccess(dealer), (client) =>
+    client.query<{ source_stock_id: string }>(
+      "SELECT source_stock_id FROM vehicles WHERE garage_id = $1 AND source_system = 'csv'",
+      [dealer.dealerId],
+    ),
+  );
+  const known = new Set(existing.rows.map((row) => row.source_stock_id));
+  return {
+    fatal: null,
+    vehicleCount: await countOwn(actor),
+    rows: parsed.rows.map((row) => ({
+      lineNumber: row.lineNumber,
+      sourceStockId: row.sourceStockId,
+      make: row.make,
+      model: row.model,
+      priceEur: row.priceEur,
+      status: row.errors.length > 0 ? "invalid" : known.has(row.sourceStockId) ? "update" : "new",
+      errors: row.errors,
+    })),
+  };
+}
+
+type PreviewRow = {
+  lineNumber: number;
+  sourceStockId: string;
+  make: string;
+  model: string;
+  priceEur: number;
+  status: string;
+  errors: string[];
+};
+
+async function countOwn(actor: Actor) {
+  const { listOwnStock } = await import("@/lib/dealer/stock");
+  return (await listOwnStock(actor)).length;
+}
+
 export async function importDealerCsv(
   actor: Actor,
   csv: string,
