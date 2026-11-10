@@ -5,14 +5,17 @@ import { assertMailAllowed, sendAuthMail } from "@/lib/dealer/mail";
 import { hashPassword, verifyPassword } from "@/lib/dealer/password";
 import { assertRateLimit } from "@/lib/dealer/rate-limit";
 import type { Actor } from "@/lib/dealer/types";
-import { AccountInputError } from "@/lib/dealer/errors";
+import { AccountFieldError, AccountInputError } from "@/lib/dealer/errors";
 
-export { AccountInputError };
+export { AccountFieldError, AccountInputError };
 
-const genericRegister = "Als dit e-mailadres nog vrij is, sturen wij een bevestigingsbericht. Dat kan enkele minuten duren.";
+const genericRegister =
+  "Als dit e-mailadres nog vrij is, sturen wij een bevestigingsbericht. Dat kan enkele minuten duren. Kijk ook in uw map Ongewenst.";
 const genericLogin = "Onjuiste gegevens, of het adres is nog niet bevestigd.";
-const genericRecovery = "Als er een bevestigd account bij dit adres hoort, sturen wij een herstelbericht.";
-const genericResend = "Als dit adres bij een nog niet bevestigd account hoort, sturen wij een nieuw bericht.";
+const genericRecovery =
+  "Als er een bevestigd account bij dit adres hoort, sturen wij een herstelbericht. Dat kan enkele minuten duren. Kijk ook in Ongewenst.";
+const genericResend =
+  "Als dit adres bij een nog niet bevestigd account hoort, sturen wij een nieuw bericht. Dat kan enkele minuten duren.";
 
 export type RegistrationInput = {
   kind: string;
@@ -75,24 +78,24 @@ function mailCopy(locale: "nl" | "fr", name: string, link: string, kind: "verify
   if (kind === "verify" && locale === "fr") {
     return {
       subject: "Confirmez votre compte IKKENAUTO",
-      body: `Bonjour ${name},\n\nConfirmez votre adresse e-mail via ce lien (valable 24 heures) :\n${link}\n\nVous n'avez pas demandé ce compte ? Ignorez simplement ce message.\n`,
+      body: `Bonjour ${name},\n\nMerci de votre inscription sur IKKENAUTO, la place de marché automobile belge pour les professionnels.\n\nConfirmez votre adresse e-mail via ce lien (valable 24 heures) :\n${link}\n\nVous pourrez ensuite vous connecter et préparer le stock de votre garage. Le site n'est pas encore ouvert aux acheteurs.\n\nVous n'avez pas demandé ce compte ? Ignorez simplement ce message.\n\nBien cordialement,\nL'équipe IKKENAUTO\nhttps://ikkenauto.be\n`,
     };
   }
   if (kind === "verify") {
     return {
       subject: "Bevestig uw IKKENAUTO-account",
-      body: `Dag ${name},\n\nBevestig uw e-mailadres via deze link (24 uur geldig):\n${link}\n\nHebt u dit account niet aangevraagd? Dan mag u dit bericht negeren.\n`,
+      body: `Dag ${name},\n\nBedankt voor uw registratie bij IKKENAUTO, de Belgische automarktplaats voor dealers.\n\nBevestig uw e-mailadres via deze link (24 uur geldig):\n${link}\n\nDaarna kunt u zich aanmelden en de voorraad van uw garage klaarzetten. De site is nog niet open voor kopers.\n\nHebt u dit account niet aangevraagd? Dan mag u dit bericht negeren.\n\nMet vriendelijke groeten,\nHet team van IKKENAUTO\nhttps://ikkenauto.be\n`,
     };
   }
   if (locale === "fr") {
     return {
       subject: "Définissez un nouveau mot de passe IKKENAUTO",
-      body: `Bonjour ${name},\n\nChoisissez un nouveau mot de passe via ce lien (valable une heure, usage unique) :\n${link}\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez ce message.\n`,
+      body: `Bonjour ${name},\n\nUne demande de nouveau mot de passe a été faite pour votre compte dealer IKKENAUTO.\n\nChoisissez un nouveau mot de passe via ce lien (valable une heure, usage unique) :\n${link}\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez ce message. Votre mot de passe actuel reste valable.\n\nBien cordialement,\nL'équipe IKKENAUTO\nhttps://ikkenauto.be\n`,
     };
   }
   return {
     subject: "Stel een nieuw IKKENAUTO-wachtwoord in",
-    body: `Dag ${name},\n\nKies een nieuw wachtwoord via deze link (één uur geldig, één keer te gebruiken):\n${link}\n\nAls u dit niet hebt gevraagd, mag u dit bericht negeren.\n`,
+    body: `Dag ${name},\n\nIemand heeft een nieuw wachtwoord aangevraagd voor uw IKKENAUTO-dealeraccount.\n\nKies een nieuw wachtwoord via deze link (één uur geldig, één keer te gebruiken):\n${link}\n\nAls u dit niet hebt gevraagd, mag u dit bericht negeren. Uw huidige wachtwoord blijft dan geldig.\n\nMet vriendelijke groeten,\nHet team van IKKENAUTO\nhttps://ikkenauto.be\n`,
   };
 }
 
@@ -110,28 +113,27 @@ export async function registerAccount(input: RegistrationInput, clientKey: strin
   if (kind !== "particulier" && kind !== "professioneel") {
     throw new AccountInputError("Kies particulier of professioneel.");
   }
-  if (!input.acceptTerms) {
-    throw new AccountInputError("Bevestig dat u de voorwaarden en de privacyverklaring hebt gelezen.");
-  }
-  if (!input.displayName.trim() || input.displayName.trim().length > 80) {
-    throw new AccountInputError("Vul uw naam in (maximaal 80 tekens).");
-  }
-  if (!validEmail(email) || !validPassword(input.password)) {
-    throw new AccountInputError("Gebruik een geldig e-mailadres en een wachtwoord van minstens 12 tekens.");
-  }
-  if (input.password !== (input.passwordConfirm ?? input.password)) {
-    throw new AccountInputError("De wachtwoorden komen niet overeen.");
-  }
+  const fields: Record<string, string> = {};
+  if (!input.acceptTerms) fields.acceptTerms = "Bevestig dat u de voorwaarden en de privacyverklaring hebt gelezen.";
+  if (!input.displayName.trim() || input.displayName.trim().length > 80) fields.displayName = "Vul uw naam in (maximaal 80 tekens).";
+  if (!validEmail(email)) fields.email = "Voer een geldig e-mailadres in.";
+  if (!validPassword(input.password)) fields.password = "Het wachtwoord moet minstens 12 tekens tellen.";
+  if ((input.passwordConfirm ?? "") !== input.password) fields.passwordConfirm = "De wachtwoorden komen niet overeen.";
   appOrigin();
   let garage: { tradeName: string; kbo: string; vat: string; postalCode: string; city: string } | null = null;
   if (kind === "professioneel") {
     const kbo = (input.kboNumber ?? "").replace(/[\s.]/g, "");
     const vat = (input.vatNumber ?? "").replace(/[\s.]/g, "").toUpperCase();
-    if (!input.tradeName?.trim() || input.tradeName.trim().length > 120 || !validKbo(kbo) || !validVat(vat) || !/^\d{4}$/.test(input.postalCode ?? "") || !input.city?.trim()) {
-      throw new AccountInputError("Vul handelsnaam, KBO van 10 cijfers, btw-nummer, postcode en gemeente in.");
+    if (!input.tradeName?.trim() || input.tradeName.trim().length > 120) fields.tradeName = "Vul de handelsnaam van de garage in.";
+    if (!validKbo(kbo)) fields.kboNumber = "Voer een KBO-nummer van 10 cijfers in, bijvoorbeeld 0123.456.749.";
+    if (!validVat(vat)) fields.vatNumber = "Voer een Belgisch btw-nummer in, bijvoorbeeld BE0123.456.749.";
+    if (!/^\d{4}$/.test(input.postalCode ?? "")) fields.postalCode = "De postcode moet uit 4 cijfers bestaan.";
+    if (!input.city?.trim()) fields.city = "Vul de gemeente in.";
+    if (!fields.tradeName && !fields.kboNumber && !fields.vatNumber && !fields.postalCode && !fields.city) {
+      garage = { tradeName: input.tradeName!.trim(), kbo, vat, postalCode: input.postalCode ?? "", city: input.city!.trim() };
     }
-    garage = { tradeName: input.tradeName.trim(), kbo, vat, postalCode: input.postalCode ?? "", city: input.city.trim() };
   }
+  if (Object.keys(fields).length > 0) throw new AccountFieldError(fields);
 
   const existing = await withService((client) =>
     client.query<{ id: string }>("SELECT id FROM auth.users WHERE email = $1", [email]),
@@ -306,9 +308,10 @@ export async function requestPasswordReset(email: string, clientKey: string) {
   return { message: genericRecovery };
 }
 
-export async function confirmPasswordReset(token: string, password: string) {
+export async function confirmPasswordReset(token: string, password: string, passwordConfirm = "") {
   assertLocalAuthAllowed();
-  if (!validPassword(password)) throw new AccountInputError("Het nieuwe wachtwoord moet minstens 12 tekens zijn.");
+  if (passwordConfirm !== password) throw new AccountFieldError({ passwordConfirm: "De wachtwoorden komen niet overeen." });
+  if (!validPassword(password)) throw new AccountFieldError({ password: "Het nieuwe wachtwoord moet minstens 12 tekens zijn." });
   const tokenHash = hashSessionToken(token);
   const passwordHash = await hashPassword(password);
   const updated = await withService(async (client) => {

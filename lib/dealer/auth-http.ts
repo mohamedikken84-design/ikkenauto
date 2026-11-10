@@ -1,11 +1,13 @@
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { AuthConfigError, readBearerToken, resolveActor } from "@/lib/dealer/auth";
 import {
+  AccountFieldError,
   AccountInputError,
   confirmPasswordReset,
   createGarageClaim,
   loginAccount,
   logoutAccount,
+  readOwnProfile,
   registerAccount,
   requestPasswordReset,
   resendVerification,
@@ -73,8 +75,13 @@ async function readBody(request: Request) {
 }
 
 function fail(error: unknown) {
-  if (error instanceof RateLimitError) return json({ error: "te veel pogingen" }, 429);
-  if (error instanceof AuthConfigError) return json({ error: "auth-niet-beschikbaar" }, 503);
+  if (error instanceof RateLimitError) {
+    return json({ message: "U hebt te vaak geprobeerd. Wacht 15 minuten en probeer opnieuw.", error: "te veel pogingen" }, 429);
+  }
+  if (error instanceof AuthConfigError) {
+    return json({ message: "Deze functie is tijdelijk niet beschikbaar. Probeer het later opnieuw.", error: "auth-niet-beschikbaar" }, 503);
+  }
+  if (error instanceof AccountFieldError) return json({ message: error.message, fields: error.fields }, 400);
   if (error instanceof AccountInputError) return json({ message: error.message }, 400);
   throw error;
 }
@@ -93,7 +100,7 @@ export async function handleRegister(request: Request) {
         displayName: String(body.displayName ?? ""),
         email: String(body.email ?? ""),
         password: String(body.password ?? ""),
-        passwordConfirm: String(body.passwordConfirm ?? body.password ?? ""),
+        passwordConfirm: String(body.passwordConfirm ?? ""),
         acceptTerms: body.acceptTerms === true || body.acceptTerms === "on",
         locale: String(body.locale ?? "nl"),
         tradeName: String(body.tradeName ?? ""),
@@ -131,7 +138,11 @@ export async function handleLogin(request: Request) {
     const result = await loginAccount(String(body.email ?? ""), String(body.password ?? ""), clientKey(request));
     const headers = new Headers();
     if (result.token) headers.append("set-cookie", cookie(sessionCookie, result.token, 60 * 60 * 8));
-    return json({ ok: true }, 200, headers);
+    const actor = result.token ? await resolveActor(result.token) : null;
+    const profile = actor ? await readOwnProfile(actor).catch(() => null) : null;
+    const garage = profile?.garage;
+    const next = garage?.trade_name && garage.city ? "/account/voorraad" : "/account/garage?welkom=1";
+    return json({ ok: true, next }, 200, headers);
   } catch (error) {
     return fail(error);
   }
@@ -188,8 +199,8 @@ export async function handleRecoveryConfirm(request: Request) {
     assertOrigin(request);
     const body = await readBody(request);
     assertCsrf(request, String(body.csrf ?? ""));
-    await confirmPasswordReset(String(body.token ?? ""), String(body.password ?? ""));
-    return json({ message: "Wachtwoord bijgewerkt. Meld je opnieuw aan." });
+    await confirmPasswordReset(String(body.token ?? ""), String(body.password ?? ""), String(body.passwordConfirm ?? ""));
+    return json({ message: "Uw wachtwoord is bijgewerkt. Meld u opnieuw aan." });
   } catch (error) {
     return fail(error);
   }

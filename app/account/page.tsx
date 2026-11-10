@@ -9,8 +9,7 @@ import { pageMetadata } from "@/lib/metadata";
 
 export const metadata = pageMetadata({
   title: "Account",
-  description:
-    "Lokaal testbaar account voor IKKENAUTO.be. Geen gekoppelde productie-identiteitsprovider.",
+  description: "Uw IKKENAUTO-account.",
   path: "/account",
 });
 
@@ -32,10 +31,9 @@ async function AccountScreen() {
 
   return (
     <article className="mx-auto w-full max-w-3xl px-4 py-16">
-      <p className="text-xs font-semibold tracking-[0.16em] text-gold-deep uppercase">Lokaal account</p>
-      <h1 className="mt-3 font-display text-4xl">Account</h1>
+      <h1 className="font-display text-4xl">Account</h1>
       <p className="mt-4 text-lg leading-relaxed text-muted">
-        Je bent aangemeld als {kind}. Dit is een lokale testsessie, geen productie-identiteit.
+        U bent aangemeld als {kind}.
       </p>
       <dl className="mt-8 grid gap-3 text-sm">
         <div>
@@ -59,7 +57,7 @@ async function AccountScreen() {
           </Link>
         </li>
       </ul>
-      <AuthForm action="/api/auth/logout" submitLabel="Afmelden" />
+      <AuthForm action="/api/auth/logout" submitLabel="Afmelden" pendingLabel="Afmelden…" locale="nl" />
       <p className="mt-6 text-sm leading-6 text-muted">
         De privacytekst op deze site is nog niet juridisch beoordeeld. Er is geen marketinginschrijving.
       </p>

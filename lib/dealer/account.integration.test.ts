@@ -341,7 +341,7 @@ function post(path: string, context: { token: string; cookie: string; ip: string
       "x-forwarded-for": context.ip,
     },
     body: JSON.stringify(
-      path.includes("/register")
+      path.includes("/register") || path.includes("/recovery/confirm")
         ? { acceptTerms: true, passwordConfirm: "password" in body ? body.password : undefined, ...body, csrf: context.token }
         : { ...body, csrf: context.token },
     ),

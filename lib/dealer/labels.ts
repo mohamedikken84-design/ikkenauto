@@ -12,8 +12,6 @@ const verification: Record<string, Record<PortalLocale, string>> = {
   unverified: { nl: "Account bevestigd", fr: "Compte confirmé" },
   pending_review: { nl: "In behandeling", fr: "En cours d'examen" },
   verified: { nl: "Geverifieerd", fr: "Vérifié" },
-  needs_info: { nl: "Aanvulling nodig", fr: "Complément nécessaire" },
-  rejected: { nl: "Geweigerd", fr: "Refusé" },
 };
 
 export function publicationLabel(status: string, locale: PortalLocale = "nl") {

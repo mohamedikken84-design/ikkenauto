@@ -12,9 +12,8 @@ export function SiteFooter() {
           </p>
           <p className="mt-3 max-w-md text-sm leading-6 text-paper/80">
             Belgische automarktplaats in opbouw. Deze versie plaatst geen
-            analysecookies en geen marketingcookies. Een lokaal account is geen
-            productie-identiteit. Een contactbericht op een advertentie blijft
-            in deze browser en wordt niet gemaild.
+            analysecookies en geen marketingcookies. Een contactbericht op een
+            advertentie blijft in deze browser en wordt niet gemaild.
           </p>
         </div>
         <nav aria-label="Juridische informatie">
@@ -26,7 +25,7 @@ export function SiteFooter() {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className="text-sm text-paper/80 underline-offset-4 hover:text-gold hover:underline"
+                  className="inline-flex min-h-11 items-center text-sm text-paper/80 underline-offset-4 hover:text-gold hover:underline"
                 >
                   {item.label}
                 </Link>
