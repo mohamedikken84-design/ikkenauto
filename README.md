@@ -20,7 +20,7 @@ Open [http://localhost:3000](http://localhost:3000).
 - Typed seed plus `data/dealer-listings.csv` (zelfde `Listing`-model)
 - Routes voor adverteren, berichten, account, handelaars en juridische placeholders
 
-Er is nog geen externe mail, live productieauth, scraping of Car-Pass. Favorieten en contactberichten op de publieke pagina blijven in de browser. De pagina's over privacy, cookies en voorwaarden zijn nog geen geldige juridische teksten. De homepage-zoekblokwijziging zit in een sibling-PR en wordt hier niet overschreven.
+Er is nog geen externe mail, live productieauth, scraping of Car-Pass. Favorieten en contactberichten op de publieke pagina blijven in de browser. De pagina's over privacy, cookies en voorwaarden zijn nog geen geldige juridische teksten. Deze integratiebranch voegt het homepage-zoekblok uit PR #3 samen met de stock- en registratiecode uit PR #2 en #4. Het zoekblok stuurt naar `/nl/autos`. Zonder `DEV_SHOW_FICTIONAL_CATALOG=1` toont die route alleen gepubliceerde, niet-fictieve voorraad.
 
 ## Dealerstock
 

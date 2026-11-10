@@ -1,5 +1,6 @@
 import { CtaLink } from "@/components/cta-link";
-import { SearchForm } from "@/components/search-form";
+import { HomeSearch } from "@/components/home-search";
+import { knownPostcodes, modelsByMake } from "@/lib/listings/seed";
 
 const audiences = [
   {
@@ -37,6 +38,7 @@ const limits = [
 ];
 
 export default function HomePage() {
+  const groupedModels = modelsByMake();
   return (
     <>
       <section aria-labelledby="belofte" className="bg-ink text-paper">
@@ -52,14 +54,21 @@ export default function HomePage() {
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-paper/80">
             IKKENAUTO.be wordt de marktplaats waar je een auto zoekt of
-            aanbiedt, bij particulieren en later ook bij handelaars. Eén plek,
-            met merk, model en prijs als vertrekpunt.
+            aanbiedt, bij particulieren en later ook bij handelaars. Zoek in de
+            voorbeeldcatalogus op merk, model, prijs, bouwjaar en postcode.
           </p>
         </div>
       </section>
 
       <div className="mx-auto -mt-16 w-full max-w-6xl px-4">
-        <SearchForm idPrefix="home" />
+        <HomeSearch
+          makes={Object.keys(groupedModels)}
+          modelsByMake={groupedModels}
+          postcodes={knownPostcodes().map((entry) => ({
+            postalCode: entry.postalCode,
+            city: entry.city,
+          }))}
+        />
       </div>
 
       <section aria-labelledby="markt" className="mx-auto w-full max-w-6xl px-4 py-16 md:py-24">
