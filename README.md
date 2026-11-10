@@ -38,6 +38,12 @@ npm test
 
 Het bookingdatamodel (vestiging, resource, openingstijden, buffers, Europe/Brussels, overlap-uitsluiting) staat in de database. Er is geen boekingsendpoint en er wordt geen afspraak gemaakt.
 
+## Dealerportaal v1
+
+Integratiebranch `dealerportaal-v1` voegt PR #3 en PR #4 samen en gaat niet naar `main`. Migratie `006_dealerportaal.sql` is de bijgewerkte architect-spec: `garages`, `platform_admins`, `vehicle_private`, `leads`, `vehicle_events` en `audit_log`. Verificatie zet `is_public` niet aan. Zonder Supabase-URL draait auth lokaal tegen stubs (`db/local/auth_storage_stubs.sql`); in productie zonder Supabase-URL én service-role-sleutel weigert registratie. Er is geen betaalde VIN-API.
+
+Nog niet in deze stap: voorraadformulier met de extra velden, foto-upload, leads-inbox, teaser, preview-wachtwoord en de dagelijkse keep-alive.
+
 ## Lokale registratie
 
 Dit is werkende lokale auth voor tests, geen gekoppelde productie-identiteitsprovider. Wachtwoorden gaan via Argon2id (`@node-rs/argon2`). Sessies blijven de bestaande `sessions`-tabel, met intrekking. Verificatie en herstel schrijven alleen in `local_mail_messages` wanneer `MAIL_TRANSPORT=local` en de modus niet productie is. In productie weigert die sink.

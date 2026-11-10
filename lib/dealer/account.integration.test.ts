@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { after, before, describe, it } from "node:test";
-import { closePool, getPool, withTransaction } from "@/lib/db/client";
+import { closePool, withService, withTransaction } from "@/lib/db/client";
 import { handleClaim, handleLogin, handleLogout, handleRecovery, handleRecoveryConfirm, handleRegister, handleSession, handleVerify, handleCsrf } from "@/lib/dealer/auth-http";
 import { resolveActor } from "@/lib/dealer/auth";
 import { migrate } from "../../scripts/migrate";
@@ -49,15 +49,20 @@ describe("registratie en lokale auth", () => {
       password,
     }));
     assert.equal(created.status, 200);
-    assert.equal(await count("users"), 1);
-    assert.equal(await count("dealers"), 0);
-    assert.equal(await count("sessions"), 0);
+    assert.equal(await count("auth.users"), 1);
+    assert.equal(await count("garages"), 0);
+    assert.equal(await count("auth.local_sessions"), 0);
 
     const token = await latestToken();
     const verified = await handleVerify(post("/api/auth/verify", context, { token }));
     assert.equal(verified.status, 200);
-    const role = await getPool().query<{ role: string }>("SELECT role FROM users WHERE email = $1", [email]);
-    assert.equal(role.rows[0].role, "private_user");
+    const role = await withService((client) =>
+      client.query<{ account_kind: string }>(
+        "SELECT account_kind FROM profiles WHERE id = (SELECT id FROM auth.users WHERE email = $1)",
+        [email],
+      ),
+    );
+    assert.equal(role.rows[0].account_kind, "private");
 
     const login = await handleLogin(post("/api/auth/login", context, { email, password }));
     assert.equal(login.status, 200);
@@ -88,7 +93,7 @@ describe("registratie en lokale auth", () => {
       role: "platform_admin",
     }));
     assert.equal(registered.status, 400);
-    assert.equal(await count("users"), 1);
+    assert.equal(await count("auth.users"), 1);
 
     const ok = await handleRegister(post("/api/auth/register", await csrf("198.51.100.12"), {
       kind: "professioneel",
@@ -109,12 +114,14 @@ describe("registratie en lokale auth", () => {
       password: "lokaal-wachtwoord-12",
     }));
     assert.equal(again.status, 200);
-    assert.equal(await count("users"), 2);
+    assert.equal(await count("auth.users"), 2);
 
     const token = await latestToken();
     assert.equal((await handleVerify(post("/api/auth/verify", context, { token }))).status, 200);
-    const dealer = await getPool().query<{ verification_status: string; is_public: boolean; owner_user_id: string }>(
-      "SELECT verification_status, is_public, owner_user_id FROM dealers WHERE trade_name = 'Testgarage'",
+    const dealer = await withService((client) =>
+      client.query<{ verification_status: string; is_public: boolean; owner_user_id: string }>(
+        "SELECT verification_status, is_public, owner_user_id FROM garages WHERE trade_name = 'Testgarage'",
+      ),
     );
     assert.equal(dealer.rows[0].verification_status, "unverified");
     assert.equal(dealer.rows[0].is_public, false);
@@ -128,11 +135,15 @@ describe("registratie en lokale auth", () => {
       evidence: "Dit is een testaanvraag met voldoende toelichting.",
     }, session));
     assert.equal(claim.status, 200);
-    const ownerAfter = await getPool().query<{ owner_user_id: string }>("SELECT owner_user_id FROM dealers WHERE trade_name = 'Testgarage'");
+    const ownerAfter = await withService((client) =>
+      client.query<{ owner_user_id: string }>("SELECT owner_user_id FROM garages WHERE trade_name = 'Testgarage'"),
+    );
     assert.equal(ownerAfter.rows[0].owner_user_id, ownerBefore);
-    const hiddenClaims = await getPool().query("SELECT id FROM garage_claim_requests");
-    assert.equal(hiddenClaims.rows.length, 0);
-    const claims = await withTransaction({ dealerId: null, role: "platform_admin", publicRead: false }, (client) =>
+    await assert.rejects(
+      withTransaction({ userId: null, access: "anon" }, (client) => client.query("SELECT id FROM garage_claim_requests")),
+      /permission denied/i,
+    );
+    const claims = await withService((client) =>
       client.query<{ status: string; claimed_kbo: string }>("SELECT status, claimed_kbo FROM garage_claim_requests"),
     );
     assert.equal(claims.rows.length, 1);
@@ -161,8 +172,8 @@ describe("registratie en lokale auth", () => {
     });
     await assert.rejects(() => updateOwnVehicle(actor, created.id, { publicationStatus: "published" }), StockValidationError);
     assert.equal((await listPublishedVehicles()).some((vehicle) => vehicle.id === created.id), false);
-    const hidden = await withTransaction({ dealerId: null, role: "public", publicRead: true }, (client) =>
-      client.query("SELECT display_name FROM private_profiles"),
+    const hidden = await withTransaction({ userId: null, access: "anon" }, (client) =>
+      client.query("SELECT id FROM vehicles"),
     );
     assert.equal(hidden.rows.length, 0);
   });
@@ -192,12 +203,17 @@ describe("registratie en lokale auth", () => {
       password: "nog-een-wachtwoord-12",
     }));
     assert.equal(reused.status, 400);
-    await getPool().query("UPDATE auth_tokens SET expires_at = now() - interval '1 minute' WHERE used_at IS NULL");
+    await withService((client) =>
+      client.query("UPDATE auth.local_tokens SET expires_at = now() - interval '1 minute' WHERE used_at IS NULL"),
+    );
     await handleRecovery(post("/api/auth/recovery", await csrf("198.51.100.25"), { email }));
     const expired = await latestToken();
-    await getPool().query("UPDATE auth_tokens SET expires_at = now() - interval '1 minute' WHERE token_hash = $1", [
-      (await import("@/lib/dealer/auth")).hashSessionToken(expired),
-    ]);
+    const { hashSessionToken } = await import("@/lib/dealer/auth");
+    await withService((client) =>
+      client.query("UPDATE auth.local_tokens SET expires_at = now() - interval '1 minute' WHERE token_hash = $1", [
+        hashSessionToken(expired),
+      ]),
+    );
     const late = await handleRecoveryConfirm(post("/api/auth/recovery/confirm", await csrf("198.51.100.26"), {
       token: expired,
       password: "ander-wachtwoord-12",
@@ -206,7 +222,7 @@ describe("registratie en lokale auth", () => {
   });
 
   it("schrijft niets bij validatiefouten, beperkt pogingen en sluit productie", async () => {
-    const beforeUsers = await count("users");
+    const beforeUsers = await count("auth.users");
     const bad = await handleRegister(post("/api/auth/register", await csrf("198.51.100.30"), {
       kind: "particulier",
       displayName: "Kort",
@@ -214,7 +230,7 @@ describe("registratie en lokale auth", () => {
       password: "kort",
     }));
     assert.equal(bad.status, 400);
-    assert.equal(await count("users"), beforeUsers);
+    assert.equal(await count("auth.users"), beforeUsers);
 
     process.env.AUTH_RATE_LIMIT_MAX = "2";
     const limited = await csrf("198.51.100.31");
@@ -222,7 +238,7 @@ describe("registratie en lokale auth", () => {
     await handleRegister(post("/api/auth/register", limited, { kind: "nee", displayName: "A", email: "a@example.test", password: "lokaal-wachtwoord-12" }));
     const blocked = await handleRegister(post("/api/auth/register", limited, { kind: "particulier", displayName: "A", email: "nieuw@example.test", password: "lokaal-wachtwoord-12" }));
     assert.equal(blocked.status, 429);
-    assert.equal(await count("users"), beforeUsers);
+    assert.equal(await count("auth.users"), beforeUsers);
     delete process.env.AUTH_RATE_LIMIT_MAX;
 
     process.env.AUTH_MODE = "production";
@@ -244,14 +260,14 @@ describe("registratie en lokale auth", () => {
         password: "lokaal-wachtwoord-12",
       }));
       assert.equal(nodeClosed.status, 503);
-      const sessionsBefore = await count("sessions");
+      const sessionsBefore = await count("auth.local_sessions");
       const loginClosed = await handleLogin(post("/api/auth/login", await csrf("198.51.100.34"), {
         email: "particulier@example.test",
         password: "lokaal-wachtwoord-12",
       }));
       assert.equal(loginClosed.status, 503);
-      assert.equal(await count("sessions"), sessionsBefore);
-      assert.equal(await count("users"), beforeUsers);
+      assert.equal(await count("auth.local_sessions"), sessionsBefore);
+      assert.equal(await count("auth.users"), beforeUsers);
     } finally {
       process.env.AUTH_MODE = "development-session";
       process.env.MAIL_TRANSPORT = "local";
@@ -269,7 +285,7 @@ describe("registratie en lokale auth", () => {
     }));
     await closePool();
     await execFileAsync("sudo", ["pg_ctlcluster", "16", "main", "restart"]);
-    const found = await getPool().query("SELECT id FROM users WHERE email = $1", [email]);
+    const found = await withService((client) => client.query("SELECT id FROM auth.users WHERE email = $1", [email]));
     assert.equal(found.rows.length, 1);
   });
 });
@@ -281,11 +297,29 @@ function setNodeEnv(value: string | undefined) {
 }
 
 async function resetTables() {
-  await getPool().query(
-    `TRUNCATE garage_claim_requests, local_mail_messages, auth_tokens, auth_rate_limits, professional_onboardings,
-      private_profiles, password_credentials, availability_bookings, location_opening_exceptions, location_opening_hours,
-      bookable_resources, locations, stock_import_rows, vehicles, stock_import_batches, sessions, users, dealers
-     RESTART IDENTITY CASCADE`,
+  await withService((client) =>
+    client.query(
+      `TRUNCATE garage_claim_requests, local_mail_messages, auth_rate_limits, professional_onboardings,
+        vehicle_photos, import_job_rows, import_jobs, availability_bookings, location_opening_exceptions,
+        location_opening_hours, bookable_resources, locations, vehicles, garage_members, garages,
+        auth.local_sessions, auth.local_tokens, auth.users
+       RESTART IDENTITY CASCADE`,
+    ),
+  );
+  await reseedSettings("3");
+}
+
+async function reseedSettings(photoMin: string) {
+  await withService((client) =>
+    client.query(
+      `INSERT INTO app_settings (key, value) VALUES
+         ('public_closed', 'true'::jsonb),
+         ('photo_min_to_publish', to_jsonb($1::int)),
+         ('kbo_editable', 'false'::jsonb),
+         ('sold_reversible', 'false'::jsonb)
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      [Number(photoMin)],
+    ),
   );
 }
 
@@ -306,18 +340,26 @@ function post(path: string, context: { token: string; cookie: string; ip: string
       cookie,
       "x-forwarded-for": context.ip,
     },
-    body: JSON.stringify({ ...body, csrf: context.token }),
+    body: JSON.stringify(
+      path.includes("/register")
+        ? { acceptTerms: true, passwordConfirm: "password" in body ? body.password : undefined, ...body, csrf: context.token }
+        : { ...body, csrf: context.token },
+    ),
   });
 }
 
 async function count(table: string) {
-  const result = await getPool().query<{ count: string }>(`SELECT count(*)::text AS count FROM ${table}`);
+  const result = await withService((client) =>
+    client.query<{ count: string }>(`SELECT count(*)::text AS count FROM ${table}`),
+  );
   return Number(result.rows[0].count);
 }
 
 async function latestToken() {
-  const result = await getPool().query<{ body: string }>(
-    "SELECT body FROM local_mail_messages ORDER BY created_at DESC LIMIT 1",
+  const result = await withService((client) =>
+    client.query<{ body: string }>(
+      "SELECT body FROM local_mail_messages ORDER BY created_at DESC LIMIT 1",
+    ),
   );
   const match = /token=([A-Za-z0-9_-]+)/.exec(result.rows[0]?.body ?? "");
   if (!match) throw new Error("geen testtoken");

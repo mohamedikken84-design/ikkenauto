@@ -8,6 +8,7 @@ import {
   logoutAccount,
   registerAccount,
   requestPasswordReset,
+  resendVerification,
   verifyEmailToken,
 } from "@/lib/dealer/account";
 import { RateLimitError } from "@/lib/dealer/rate-limit";
@@ -92,6 +93,9 @@ export async function handleRegister(request: Request) {
         displayName: String(body.displayName ?? ""),
         email: String(body.email ?? ""),
         password: String(body.password ?? ""),
+        passwordConfirm: String(body.passwordConfirm ?? body.password ?? ""),
+        acceptTerms: body.acceptTerms === true || body.acceptTerms === "on",
+        locale: String(body.locale ?? "nl"),
         tradeName: String(body.tradeName ?? ""),
         kboNumber: String(body.kboNumber ?? ""),
         vatNumber: String(body.vatNumber ?? ""),
@@ -113,7 +117,7 @@ export async function handleVerify(request: Request) {
     assertCsrf(request, String(body.csrf ?? ""));
     const ok = await verifyEmailToken(String(body.token ?? ""));
     if (!ok) return json({ message: "Deze bevestigingslink is ongeldig of al gebruikt." }, 400);
-    return json({ message: "Adres bevestigd. Je kunt nu aanmelden." });
+    return json({ message: "Uw e-mailadres is bevestigd. U kunt zich nu aanmelden." });
   } catch (error) {
     return fail(error);
   }
@@ -126,7 +130,7 @@ export async function handleLogin(request: Request) {
     assertCsrf(request, String(body.csrf ?? ""));
     const result = await loginAccount(String(body.email ?? ""), String(body.password ?? ""), clientKey(request));
     const headers = new Headers();
-    headers.append("set-cookie", cookie(sessionCookie, result.token, 60 * 60 * 8));
+    if (result.token) headers.append("set-cookie", cookie(sessionCookie, result.token, 60 * 60 * 8));
     return json({ ok: true }, 200, headers);
   } catch (error) {
     return fail(error);
@@ -153,6 +157,18 @@ export function readAnySessionToken(request: Request) {
   const header = request.headers.get("cookie") ?? "";
   const match = /(?:^|;\s*)ikken_session=([^;]+)/.exec(header);
   return match ? decodeURIComponent(match[1]) : "";
+}
+
+export async function handleResend(request: Request) {
+  try {
+    assertOrigin(request);
+    const body = await readBody(request);
+    assertCsrf(request, String(body.csrf ?? ""));
+    const result = await resendVerification(String(body.email ?? ""), clientKey(request));
+    return json(result);
+  } catch (error) {
+    return fail(error);
+  }
 }
 
 export async function handleRecovery(request: Request) {

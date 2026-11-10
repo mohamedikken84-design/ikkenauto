@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { after, before, describe, it } from "node:test";
-import { closePool, getPool, withTransaction } from "@/lib/db/client";
+import { closePool, withService, withTransaction } from "@/lib/db/client";
 import { importDealerCsv } from "@/lib/dealer/import-stock";
 import { createOwnVehicle, listOwnStock, listPublishedVehicles, updateOwnVehicle } from "@/lib/dealer/stock";
 import {
@@ -13,7 +13,7 @@ import {
   handleUpdateStock,
 } from "@/lib/dealer/stock-http";
 import type { Actor, StockInput } from "@/lib/dealer/types";
-import { hashSessionToken } from "@/lib/dealer/auth";
+import { insertLocalSession } from "@/lib/dealer/auth";
 import { migrate } from "../../scripts/migrate";
 
 const execFileAsync = promisify(execFile);
@@ -86,7 +86,7 @@ describe("dealerstock", () => {
     );
     assert.equal(staffImport.status, 403);
 
-    const raw = await withTransaction({ dealerId: dealerA, role: "dealer_admin", publicRead: false }, (client) =>
+    const raw = await withTransaction({ userId: adminA.id, access: "authenticated" }, (client) =>
       client.query("SELECT id FROM vehicles"),
     );
     assert.deepEqual(
@@ -152,6 +152,8 @@ describe("dealerstock", () => {
     const vehicle = (await created.json()).vehicle as { id: string };
     const published = await handleUpdateStock(jsonRequest(admin.token, { publicationStatus: "published" }), vehicle.id);
     assert.equal(published.status, 200);
+    assert.equal((await listPublishedVehicles()).some((item) => item.id === vehicle.id), false);
+    await withService((client) => client.query("UPDATE app_settings SET value = 'false'::jsonb WHERE key = 'public_closed'"));
     assert.equal((await listPublishedVehicles()).some((item) => item.id === vehicle.id), true);
 
     const paused = await handleUpdateStock(jsonRequest(admin.token, { publicationStatus: "paused" }), vehicle.id);
@@ -165,48 +167,52 @@ describe("dealerstock", () => {
     const back = await handleUpdateStock(jsonRequest(admin.token, { publicationStatus: "published" }), vehicle.id);
     assert.equal(back.status, 422);
 
-    await withTransaction({ dealerId: dealer, role: "dealer_admin", publicRead: false }, (client) =>
-      client.query(
-        `INSERT INTO vehicles (
-           dealer_id, source_system, source_stock_id, fictional, provenance, source_rights, publication_status,
-           make, model, version, price_eur, mileage_km, first_registration, fuel, transmission, body, power_kw,
-           postal_code, city, vat_regime, description
-         ) VALUES (
-           $1, 'dev-seed', 'fictional-1', true, 'dev-fictional-seed', 'dev-fictional', 'published',
-           'Fictief', 'Model', 'Seed', 9000, 1000, '2020-01', 'benzine', 'manueel', 'hatchback', 60,
-           '9000', 'Gent', 'marge', 'Fictieve ontwikkeldata'
-         )`,
-        [dealer],
+    await assert.rejects(
+      withTransaction({ userId: admin.id, access: "authenticated" }, (client) =>
+        client.query(
+          `INSERT INTO vehicles (
+             garage_id, source_system, source_stock_id, fictional, provenance, source_rights, publication_status,
+             make, model, version, price_eur, mileage_km, first_registration, fuel, transmission, body, power_kw,
+             postal_code, city, vat_regime, description
+           ) VALUES (
+             $1, 'dev-seed', 'fictional-1', true, 'dev-fictional-seed', 'dev-fictional', 'published',
+             'Fictief', 'Model', 'Seed', 9000, 1000, '2020-01', 'benzine', 'manueel', 'hatchback', 60,
+             '9000', 'Gent', 'marge', 'Fictieve ontwikkeldata'
+           )`,
+          [dealer],
+        ),
       ),
     );
     const publishedIds = (await listPublishedVehicles()).map((item) => item.sourceStockId);
     assert.equal(publishedIds.includes("fictional-1"), false);
+    await withService((client) => client.query("UPDATE app_settings SET value = 'true'::jsonb WHERE key = 'public_closed'"));
   });
 
   it("weigert overlappende reserveringen en laat een geannuleerde overlap toe", async () => {
     const dealer = await createDealer("Agenda dealer");
-    const location = await withTransaction({ dealerId: dealer, role: "dealer_admin", publicRead: false }, async (client) => {
+    const owner = await createUser(dealer, "dealer_admin", "agenda@example.test");
+    const location = await withTransaction({ userId: owner.id, access: "authenticated" }, async (client) => {
       const place = await client.query<{ id: string }>(
-        "INSERT INTO locations (dealer_id, name) VALUES ($1, 'Vestiging test') RETURNING id",
+        "INSERT INTO locations (garage_id, name) VALUES ($1, 'Vestiging test') RETURNING id",
         [dealer],
       );
       const resource = await client.query<{ id: string }>(
-        `INSERT INTO bookable_resources (dealer_id, location_id, kind, display_name)
+        `INSERT INTO bookable_resources (garage_id, location_id, kind, display_name)
          VALUES ($1, $2, 'staff', 'Medewerker test') RETURNING id`,
         [dealer, place.rows[0].id],
       );
       return { locationId: place.rows[0].id, resourceId: resource.rows[0].id };
     });
 
-    await insertBooking(dealer, location, "2026-11-10T09:00:00Z", 30, "confirmed", "0 minutes");
+    await insertBooking(owner.id, dealer, location, "2026-11-10T09:00:00Z", 30, "confirmed", "0 minutes");
     await assert.rejects(
-      insertBooking(dealer, location, "2026-11-10T09:15:00Z", 30, "held", "0 minutes"),
+      insertBooking(owner.id, dealer, location, "2026-11-10T09:15:00Z", 30, "held", "0 minutes"),
       /overlap|exclusion|23P01/i,
     );
-    await insertBooking(dealer, location, "2026-11-10T09:15:00Z", 30, "cancelled", "0 minutes");
-    await insertBooking(dealer, location, "2026-11-10T09:30:00Z", 30, "confirmed", "0 minutes");
+    await insertBooking(owner.id, dealer, location, "2026-11-10T09:15:00Z", 30, "cancelled", "0 minutes");
+    await insertBooking(owner.id, dealer, location, "2026-11-10T09:30:00Z", 30, "confirmed", "0 minutes");
     await assert.rejects(
-      insertBooking(dealer, location, "2026-11-10T10:00:00Z", 30, "confirmed", "15 minutes"),
+      insertBooking(owner.id, dealer, location, "2026-11-10T10:00:00Z", 30, "confirmed", "15 minutes"),
       /overlap|exclusion|23P01/i,
     );
   });
@@ -224,31 +230,64 @@ describe("dealerstock", () => {
 });
 
 async function resetTables() {
-  await getPool().query(
-    `TRUNCATE availability_bookings, location_opening_exceptions, location_opening_hours,
-      bookable_resources, locations, stock_import_rows, vehicles, stock_import_batches, sessions, users, dealers
-     RESTART IDENTITY CASCADE`,
+  await withService((client) =>
+    client.query(
+      `TRUNCATE garage_claim_requests, professional_onboardings, vehicle_photos, import_job_rows, import_jobs,
+        availability_bookings, location_opening_exceptions, location_opening_hours, bookable_resources, locations,
+        vehicles, garage_members, garages, auth.local_sessions, auth.local_tokens, auth.users
+       RESTART IDENTITY CASCADE`,
+    ),
+  );
+  await reseedSettings("0");
+}
+
+async function reseedSettings(photoMin: string) {
+  await withService((client) =>
+    client.query(
+      `INSERT INTO app_settings (key, value) VALUES
+         ('public_closed', 'true'::jsonb),
+         ('photo_min_to_publish', to_jsonb($1::int)),
+         ('kbo_editable', 'false'::jsonb),
+         ('sold_reversible', 'false'::jsonb)
+       ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+      [Number(photoMin)],
+    ),
   );
 }
 
 async function createDealer(name: string) {
-  const result = await getPool().query<{ id: string }>(
-    "INSERT INTO dealers (name, verification_status) VALUES ($1, 'verified') RETURNING id",
-    [name],
+  const result = await withService((client) =>
+    client.query<{ id: string }>(
+      "INSERT INTO garages (name, verification_status, is_public) VALUES ($1, 'verified', true) RETURNING id",
+      [name],
+    ),
   );
   return result.rows[0].id;
 }
 
 async function createUser(dealerId: string | null, role: "platform_admin" | "dealer_admin" | "dealer_staff", email: string) {
-  const user = await getPool().query<{ id: string }>(
-    "INSERT INTO users (dealer_id, role, email, display_name) VALUES ($1, $2, $3, $4) RETURNING id",
-    [dealerId, role, email, email],
+  const user = await withService((client) =>
+    client.query<{ id: string }>(
+      `INSERT INTO auth.users (email, encrypted_password, email_confirmed_at, raw_user_meta_data)
+       VALUES ($1, 'geen-login', now(), $2::jsonb) RETURNING id`,
+      [email, JSON.stringify({ display_name: email })],
+    ),
   );
-  const token = `token-${email.replace(/[^A-Za-z0-9]/g, "")}`;
-  await getPool().query(
-    "INSERT INTO sessions (user_id, token_hash, expires_at) VALUES ($1, $2, now() + interval '2 hours')",
-    [user.rows[0].id, hashSessionToken(token)],
-  );
+  if (role === "platform_admin") {
+    await withService((client) =>
+      client.query("INSERT INTO platform_admins (user_id, note) VALUES ($1, 'testfixture')", [user.rows[0].id]),
+    );
+  }
+  if (dealerId) {
+    await withService((client) =>
+      client.query("INSERT INTO garage_members (garage_id, user_id, role) VALUES ($1, $2, $3)", [
+        dealerId,
+        user.rows[0].id,
+        role === "dealer_staff" ? "staff" : "owner",
+      ]),
+    );
+  }
+  const token = await insertLocalSession(user.rows[0].id);
   return { id: user.rows[0].id, token };
 }
 
@@ -272,6 +311,7 @@ function jsonRequest(token: string, body: unknown) {
 }
 
 async function insertBooking(
+  userId: string,
   dealerId: string,
   place: { locationId: string; resourceId: string },
   startsAt: string,
@@ -279,10 +319,10 @@ async function insertBooking(
   status: string,
   bufferBefore: string,
 ) {
-  await withTransaction({ dealerId, role: "dealer_admin", publicRead: false }, (client) =>
+  await withTransaction({ userId, access: "authenticated" }, (client) =>
     client.query(
       `INSERT INTO availability_bookings (
-         dealer_id, location_id, resource_id, status, starts_at, ends_at, buffer_before, duration_minutes
+         garage_id, location_id, resource_id, status, starts_at, ends_at, buffer_before, duration_minutes
        ) VALUES (
          $1, $2, $3, $4, $5::timestamptz, $5::timestamptz + make_interval(mins => $6), $7::interval, $6
        )`,
