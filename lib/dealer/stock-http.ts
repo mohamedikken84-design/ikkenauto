@@ -1,7 +1,7 @@
 import { AuthConfigError, DealerAccessError, requireDealerActor, resolveActor } from "@/lib/dealer/auth";
 import { readAnySessionToken } from "@/lib/dealer/auth-http";
 import { importDealerCsv } from "@/lib/dealer/import-stock";
-import { createOwnVehicle, getOwnVehicle, isDealerAccessError, listAllStockAsAdmin, listOwnStock, StockValidationError, updateOwnVehicle } from "@/lib/dealer/stock";
+import { createOwnVehicle, deleteOwnVehicle, getOwnVehicle, isDealerAccessError, listAllStockAsAdmin, listOwnStock, StockValidationError, updateOwnVehicle } from "@/lib/dealer/stock";
 import { publicationStatuses, type PublicationStatus, type StockInput } from "@/lib/dealer/types";
 
 function json(body: unknown, status = 200) {
@@ -137,6 +137,20 @@ export async function handleUpdateStock(request: Request, vehicleId: string) {
     if (error instanceof Error && /niet-geverifieerde garage|foto|verkochte auto/.test(error.message)) {
       return json({ error: error.message }, 422);
     }
+    if (error instanceof DealerAccessError) return json({ error: "forbidden" }, 403);
+    throw error;
+  }
+}
+
+export async function handleDeleteStock(request: Request, vehicleId: string) {
+  const actor = await actorFrom(request);
+  if (!isActor(actor)) return actor;
+  try {
+    const removed = await deleteOwnVehicle(actor, vehicleId);
+    if (!removed) return json({ error: "not-found" }, 404);
+    return json({ ok: true });
+  } catch (error) {
+    if (error instanceof StockValidationError) return json({ error: error.message }, 422);
     if (error instanceof DealerAccessError) return json({ error: "forbidden" }, 403);
     throw error;
   }
