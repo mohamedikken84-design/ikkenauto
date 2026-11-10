@@ -128,7 +128,7 @@ const vehicleColumns = `id, garage_id, source_system, source_stock_id, fictional
   equipment, vat_deductible, warranty_months, inspection_valid_until::text AS inspection_valid_until,
   previous_owners, description_nl, description_fr`;
 
-async function dealerContext<T>(actor: Actor, fn: (client: PoolClient, dealerId: string) => Promise<T>) {
+export async function dealerContext<T>(actor: Actor, fn: (client: PoolClient, dealerId: string) => Promise<T>) {
   const dealer = requireDealerActor(actor);
   return withTransaction(actorAccess(actor), (client) => fn(client, dealer.dealerId));
 }

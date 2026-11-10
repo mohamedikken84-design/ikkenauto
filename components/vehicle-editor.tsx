@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { PhotoUploader } from "@/components/photo-uploader";
 import { createAutosave } from "@/lib/dealer/autosave";
 import { publicationLabel } from "@/lib/dealer/labels";
 import type { DealerVehicle, PublicationStatus } from "@/lib/dealer/types";
@@ -94,6 +95,7 @@ export function VehicleEditor({ vehicle }: EditorProps) {
   return (
     <form ref={formRef} className="mt-8 grid gap-4" onSubmit={(event) => event.preventDefault()}>
       <p className="text-sm text-muted">Status: {publicationLabel(status)}. Een concept wordt automatisch bewaard.</p>
+      {vehicle ? <PhotoUploader vehicleId={vehicle.id} /> : <p className="text-sm text-muted">Sla het concept eerst op. Daarna kunt u foto&apos;s toevoegen.</p>}
       <div className="grid gap-4 md:grid-cols-2">
         <Field label="Merk" name="make" defaultValue={vehicle?.make} required />
         <Field label="Model" name="model" defaultValue={vehicle?.model} required />
