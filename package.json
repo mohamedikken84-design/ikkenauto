@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test --test-concurrency=1 lib/listings/search.test.ts lib/listings/home-search.test.ts lib/dealer/dealer.integration.test.ts lib/dealer/account.integration.test.ts lib/dealer/autosave.test.ts lib/dealer/stock-form.integration.test.ts lib/dealer/photos.integration.test.ts lib/dealer/import-preview.integration.test.ts lib/dealer/leads.integration.test.ts lib/dealer/csrf-locale.test.ts",
+    "test": "tsx --test --test-concurrency=1 lib/listings/search.test.ts lib/listings/home-search.test.ts lib/dealer/dealer.integration.test.ts lib/dealer/account.integration.test.ts lib/dealer/autosave.test.ts lib/dealer/stock-form.integration.test.ts lib/dealer/photos.integration.test.ts lib/dealer/import-preview.integration.test.ts lib/dealer/leads.integration.test.ts lib/dealer/csrf-locale.test.ts lib/dealer/qa-fixes.integration.test.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:dev-session": "tsx scripts/create-dev-session.ts"
   },
