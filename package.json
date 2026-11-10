@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test --test-concurrency=1 lib/listings/search.test.ts lib/listings/home-search.test.ts lib/dealer/dealer.integration.test.ts lib/dealer/account.integration.test.ts",
+    "test": "tsx --test --test-concurrency=1 lib/listings/search.test.ts lib/listings/home-search.test.ts lib/dealer/dealer.integration.test.ts lib/dealer/account.integration.test.ts lib/dealer/qa-fixes.integration.test.ts",
     "db:migrate": "tsx scripts/migrate.ts",
     "db:dev-session": "tsx scripts/create-dev-session.ts"
   },

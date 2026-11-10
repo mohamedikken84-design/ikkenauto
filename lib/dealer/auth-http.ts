@@ -11,6 +11,8 @@ import {
   registerAccount,
   requestPasswordReset,
   resendVerification,
+  rotateAuthLink,
+  updateOwnLocale,
   verifyEmailToken,
 } from "@/lib/dealer/account";
 import { RateLimitError } from "@/lib/dealer/rate-limit";
@@ -56,12 +58,12 @@ function assertOrigin(request: Request) {
   }
 }
 
-function assertCsrf(request: Request, token: string) {
+function assertCsrf(request: Request, token: string, locale: Locale = "nl") {
   const cookieToken = readCookie(request, csrfCookie);
   const left = Buffer.from(token);
   const right = Buffer.from(cookieToken);
   if (!token || left.length !== right.length || !timingSafeEqual(left, right)) {
-    throw new AccountInputError("Beveiligingstoken ontbreekt of is verlopen.");
+    throw new AccountInputError(copyFor(locale).csrfToken);
   }
 }
 
@@ -99,7 +101,7 @@ export async function handleRegister(request: Request) {
     assertOrigin(request);
     const body = await readBody(request);
     locale = requestLocale(request, body);
-    assertCsrf(request, String(body.csrf ?? ""));
+    assertCsrf(request, String(body.csrf ?? ""), locale);
     if (body.role || body.dealerId || body.marketingOptIn) {
       return json({ message: "Die keuze hoort niet bij registratie." }, 400);
     }
@@ -133,11 +135,14 @@ export async function handleVerify(request: Request) {
     assertOrigin(request);
     const body = await readBody(request);
     locale = requestLocale(request, body);
-    assertCsrf(request, String(body.csrf ?? ""));
+    assertCsrf(request, String(body.csrf ?? ""), locale);
     const text = copyFor(locale);
-    const ok = await verifyEmailToken(String(body.token ?? ""));
-    if (!ok) return json({ message: text.verifyInvalid }, 400);
-    return json({ message: text.verifyDone });
+    const token = String(body.token ?? "") || readCookie(request, "ikken_verify_token");
+    const ok = await verifyEmailToken(token);
+    const headers = new Headers();
+    headers.append("set-cookie", cookie("ikken_verify_token", "", 0));
+    if (!ok) return json({ message: text.verifyInvalid }, 400, headers);
+    return json({ message: text.verifyDone }, 200, headers);
   } catch (error) {
     return fail(error, locale);
   }
@@ -150,7 +155,7 @@ export async function handleLogin(request: Request) {
     assertOrigin(request);
     const body = await readBody(request);
     locale = requestLocale(request, body);
-    assertCsrf(request, String(body.csrf ?? ""));
+    assertCsrf(request, String(body.csrf ?? ""), locale);
     const result = await loginAccount(String(body.email ?? ""), String(body.password ?? ""), clientKey(request), locale);
     const headers = new Headers();
     if (result.token) headers.append("set-cookie", cookie(sessionCookie, result.token, 60 * 60 * 8));
@@ -165,16 +170,19 @@ export async function handleLogin(request: Request) {
 }
 
 export async function handleLogout(request: Request) {
+  let locale: Locale = "nl";
   try {
+    locale = requestLocale(request);
     assertOrigin(request);
     const body = await readBody(request);
-    assertCsrf(request, String(body.csrf ?? ""));
+    locale = requestLocale(request, body);
+    assertCsrf(request, String(body.csrf ?? ""), locale);
     await logoutAccount(readAnySessionToken(request));
     const headers = new Headers();
     headers.append("set-cookie", cookie(sessionCookie, "", 0));
     return json({ ok: true }, 200, headers);
   } catch (error) {
-    return fail(error);
+    return fail(error, locale);
   }
 }
 
@@ -193,7 +201,7 @@ export async function handleResend(request: Request) {
     assertOrigin(request);
     const body = await readBody(request);
     locale = requestLocale(request, body);
-    assertCsrf(request, String(body.csrf ?? ""));
+    assertCsrf(request, String(body.csrf ?? ""), locale);
     const result = await resendVerification(String(body.email ?? ""), clientKey(request), locale);
     return json(result);
   } catch (error) {
@@ -208,7 +216,7 @@ export async function handleRecovery(request: Request) {
     assertOrigin(request);
     const body = await readBody(request);
     locale = requestLocale(request, body);
-    assertCsrf(request, String(body.csrf ?? ""));
+    assertCsrf(request, String(body.csrf ?? ""), locale);
     const result = await requestPasswordReset(String(body.email ?? ""), clientKey(request), locale);
     return json(result);
   } catch (error) {
@@ -223,9 +231,12 @@ export async function handleRecoveryConfirm(request: Request) {
     assertOrigin(request);
     const body = await readBody(request);
     locale = requestLocale(request, body);
-    assertCsrf(request, String(body.csrf ?? ""));
-    await confirmPasswordReset(String(body.token ?? ""), String(body.password ?? ""), String(body.passwordConfirm ?? ""), locale);
-    return json({ message: copyFor(locale).passwordUpdated });
+    assertCsrf(request, String(body.csrf ?? ""), locale);
+    const token = String(body.token ?? "") || readCookie(request, "ikken_reset_token");
+    await confirmPasswordReset(token, String(body.password ?? ""), String(body.passwordConfirm ?? ""), locale);
+    const headers = new Headers();
+    headers.append("set-cookie", cookie("ikken_reset_token", "", 0));
+    return json({ message: copyFor(locale).passwordUpdated }, 200, headers);
   } catch (error) {
     return fail(error, locale);
   }
@@ -244,17 +255,58 @@ export async function handleSession(request: Request) {
   }
 }
 
-export async function handleClaim(request: Request) {
+export async function handleExchange(request: Request) {
+  const url = new URL(request.url);
+  const purpose = url.searchParams.get("purpose") === "reset" ? "reset_password" : "verify_email";
+  const rotated = await rotateAuthLink(purpose, url.searchParams.get("token") ?? "").catch(() => null);
+  const dest = purpose === "reset_password" ? "/account/herstel/bevestigen" : "/account/verifieer";
+  const response = new Response(null, {
+    status: 303,
+    headers: {
+      location: new URL(dest, url).toString(),
+      "referrer-policy": "no-referrer",
+    },
+  });
+  if (rotated) {
+    const name = purpose === "reset_password" ? "ikken_reset_token" : "ikken_verify_token";
+    response.headers.append("set-cookie", cookie(name, rotated, 3600));
+  }
+  return response;
+}
+
+export async function handleLocale(request: Request) {
+  let locale: Locale = "nl";
   try {
+    locale = requestLocale(request);
     assertOrigin(request);
     const body = await readBody(request);
-    assertCsrf(request, String(body.csrf ?? ""));
+    locale = requestLocale(request, body);
+    assertCsrf(request, String(body.csrf ?? ""), locale);
+    const next = body.locale === "fr" ? "fr" : "nl";
+    const actor = await resolveActor(readAnySessionToken(request));
+    if (actor) await updateOwnLocale(actor, next);
+    const headers = new Headers();
+    headers.append("set-cookie", `ikken_locale=${next}; Path=/; Max-Age=31536000; SameSite=Lax`);
+    return json({ ok: true, locale: next }, 200, headers);
+  } catch (error) {
+    return fail(error, locale);
+  }
+}
+
+export async function handleClaim(request: Request) {
+  let locale: Locale = "nl";
+  try {
+    locale = requestLocale(request);
+    assertOrigin(request);
+    const body = await readBody(request);
+    locale = requestLocale(request, body);
+    assertCsrf(request, String(body.csrf ?? ""), locale);
     const actor = await resolveActor(readAnySessionToken(request));
     if (!actor) return json({ error: "unauthorized" }, 401);
     await createGarageClaim(actor, String(body.kboNumber ?? ""), String(body.evidence ?? ""));
     return json({ message: "Aanvraag ontvangen. Er is geen garage overgedragen." });
   } catch (error) {
-    return fail(error);
+    return fail(error, locale);
   }
 }
 

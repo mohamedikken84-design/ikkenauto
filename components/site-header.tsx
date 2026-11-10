@@ -9,14 +9,30 @@ import { primaryNav, site } from "@/lib/site";
 export function SiteHeader({ locale }: { locale: Locale }) {
   const path = usePathname();
   if (path.startsWith("/account")) return <AuthHeader locale={locale} path={path} />;
-  return <MarketHeader />;
+  return <MarketHeader locale={locale} path={path} />;
 }
 
-function MarketHeader() {
+function localeHref(path: string, next: "nl" | "fr") {
+  if (path === "/nl" || path.startsWith("/nl/")) return `/${next}${path.slice(3)}` || `/${next}`;
+  if (path === "/fr" || path.startsWith("/fr/")) return `/${next}${path.slice(3)}` || `/${next}`;
+  return `/${next}`;
+}
+
+function MarketHeader({ locale, path }: { locale: Locale; path: string }) {
   return (
     <header className="border-b-2 border-gold bg-surface">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-        <Logo href="/" />
+      <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4">
+        <Logo href={`/${locale}`} />
+        <div className="flex min-w-0 flex-wrap items-center gap-4">
+          <div className="flex items-center gap-1 text-sm font-semibold">
+            <Link href={localeHref(path, "nl")} className="inline-flex size-11 items-center justify-center" hrefLang="nl" aria-current={locale === "nl" ? "true" : undefined}>
+              NL
+            </Link>
+            <span aria-hidden="true">|</span>
+            <Link href={localeHref(path, "fr")} className="inline-flex size-11 items-center justify-center" hrefLang="fr" aria-current={locale === "fr" ? "true" : undefined}>
+              FR
+            </Link>
+          </div>
         <nav aria-label="Hoofdnavigatie">
           <ul className="grid grid-cols-2 gap-x-4 gap-y-2 sm:flex sm:flex-wrap sm:gap-x-5">
             {primaryNav.map((item) => (
@@ -28,6 +44,7 @@ function MarketHeader() {
             ))}
           </ul>
         </nav>
+        </div>
       </div>
     </header>
   );
@@ -37,9 +54,20 @@ function AuthHeader({ locale, path }: { locale: Locale; path: string }) {
   const text = copyFor(locale);
   const router = useRouter();
   const onLogin = path.startsWith("/account/login");
-  function choose(next: Locale) {
+  async function choose(next: Locale) {
     document.cookie = `ikken_locale=${next}; Path=/; Max-Age=31536000; SameSite=Lax`;
     document.documentElement.lang = next;
+    try {
+      const csrfResponse = await fetch("/api/auth/csrf");
+      const csrfBody = (await csrfResponse.json()) as { token?: string };
+      await fetch("/api/account/locale", {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: window.location.origin },
+        body: JSON.stringify({ locale: next, uiLocale: next, csrf: csrfBody.token ?? "" }),
+      });
+    } catch {
+      // De cookie blijft de fallback wanneer het profiel niet bereikbaar is.
+    }
     router.refresh();
   }
   return (
