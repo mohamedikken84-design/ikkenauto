@@ -52,6 +52,7 @@ function signJwt(userId: string, email: string) {
     JSON.stringify({
       sub: userId,
       email,
+      jti: randomBytes(16).toString("base64url"),
       exp: Math.floor(Date.now() / 1000) + sessionHours * 3600,
     }),
   ).toString("base64url");
