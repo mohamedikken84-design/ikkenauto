@@ -138,3 +138,5 @@
 
 .portal-directory-number{display:block;font-size:13px;color:#90702d;font-weight:800;margin-top:22px}
 .portal-text-link{color:#936d28;text-decoration:underline;font-weight:700}
+
+.portal-resend{margin-top:12px}.portal-resend button{font-size:12px;color:#82621f;text-decoration:underline}.portal-resend p{margin-top:10px}
