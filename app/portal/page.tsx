@@ -46,7 +46,7 @@ export default async function Portal({searchParams}:Params){
  }
  const dealerName=new Map(dealers.map(d=>[d.id,d.name]));
  return <div className="portal-shell">
-  <div className="portal-top"><Link className="portal-brand" href="/portal"><span>I</span><span className="portal-brand-gold">K</span><span>KENAUTO</span><small>.BE</small></Link><span className="portal-top-caption">Dealer intelligence & voorraadbeheer</span>{user?<form action={signOut}><button className="portal-ghost">Uitloggen</button></form>:<span className="portal-secure">Beveiligd portaal</span>}</div>
+  <div className="portal-top"><Link className="portal-brand" href="/portal"><span>IK</span><span className="portal-brand-gold">K</span><span>ENAUTO</span><small>.BE</small></Link><span className="portal-top-caption">Dealer intelligence & voorraadbeheer</span>{user?<form action={signOut}><button className="portal-ghost">Uitloggen</button></form>:<span className="portal-secure">Beveiligd portaal</span>}</div>
   <div className="portal-container">
   {notices.error&&<div role="alert" className="portal-alert portal-error">{notices.error}</div>}
   {notices.success&&<div role="status" className="portal-alert portal-success">{notices.success}</div>}
