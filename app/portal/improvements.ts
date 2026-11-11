@@ -182,3 +182,12 @@ export async function reviewClaim(form:FormData){
  revalidatePath("/portal");
  redirect("/portal?success=Claim+bijgewerkt");
 }
+
+export async function resendConfirmation(_previous:Result,form:FormData):Promise<Result>{
+ const email=field(form,"email",200).toLowerCase();
+ if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return {error:"Vul een geldig e-mailadres in."};
+ const db=await createSupabaseServer();
+ const {error}=await db.auth.resend({type:"signup",email,options:{emailRedirectTo:origin()+"/portal/auth/callback"}});
+ if(error)return {error:"Nieuwe e-mail verzenden mislukt. Probeer het later opnieuw."};
+ return {error:"",message:"Als je adres nog bevestigd moet worden, ontvang je een nieuwe bevestigingsmail."};
+}
