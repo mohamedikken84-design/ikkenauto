@@ -1,12 +1,13 @@
 "use client";
 import {useActionState,useState} from "react";
-import {loginChecked,registerChecked} from "./improvements";
+import {loginChecked,registerChecked,resendConfirmation} from "./improvements";
 import {CompanyLookup} from "./directory-search";
 export function AuthPanel({directoryCount}:{directoryCount:number}){
  const [mode,setMode]=useState<"login"|"register">("login");
  const [show,setShow]=useState(false),[email,setEmail]=useState(""),[password,setPassword]=useState("");
  const [loginState,loginAction,loginPending]=useActionState(loginChecked,{error:""});
  const [registrationState,registerAction,registerPending]=useActionState(registerChecked,{error:""});
+ const [resendState,resendAction,resendPending]=useActionState(resendConfirmation,{error:""});
  const state=mode==="login"?loginState:registrationState;
  return <section className="portal-auth-layout portal-auth-simple"><div className="portal-auth-intro">
   <span className="portal-overline">IKKENAUTO VOOR PROFESSIONALS</span>
@@ -26,5 +27,6 @@ export function AuthPanel({directoryCount}:{directoryCount:number}){
    <button disabled={loginPending||registerPending} className="portal-button">{loginPending||registerPending?"Bezig…":mode==="login"?"Inloggen":"Account aanmaken"}</button>
   </form>
   <a className="portal-forgot" href="/portal/wachtwoord">Wachtwoord vergeten?</a>
+  {mode==="login"&&<form className="portal-resend" action={resendAction}><input type="hidden" name="email" value={email}/><button disabled={resendPending||!email} type="submit">Bevestigingsmail opnieuw sturen</button>{resendState.error&&<p className="portal-form-error">{resendState.error}</p>}{resendState.message&&<p className="portal-form-ok">{resendState.message}</p>}</form>}
  </div></section>;
 }
