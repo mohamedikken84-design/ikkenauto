@@ -24,7 +24,7 @@ export function VehicleEditor(){
  return <section className="portal-card"><div className="portal-card-heading"><div><span className="portal-overline">VOORRAAD</span><h2>Auto toevoegen</h2></div></div>
   <p>Vul de basisgegevens in. Extra kenmerken zijn optioneel en helpen straks met zoeken en filteren.</p>
   <form className="portal-form portal-fields" action={action}>
-   <label>Merk *{select("make",makes)}<small>Merk ontbreekt? Kies een vergelijkbaar merk niet; contacteer ons om de merkenlijst uit te breiden.</small></label>
+   <label>Merk *<input name="make" list="portal-makes" required value={form.make||""} onChange={e=>update("make",e.target.value)} placeholder="Kies of typ een merk"/><datalist id="portal-makes">{makes.map(m=><option key={m} value={m}/>)}</datalist><small>Elk automerk mogelijk. Typ ook merken buiten de suggesties.</small></label>
    <label>Model *<input name="model" value={form.model||""} onChange={e=>update("model",e.target.value)} list="portal-models" placeholder="Bijv. Golf, X5, C-Klasse" required/><datalist id="portal-models">{(modelSuggestions[form.make]||[]).map(m=><option key={m} value={m}/>)}</datalist></label>
    <label>Uitvoering{input("version","M Sport / AMG Line / Style")}</label><label>Verkoopprijs (€) *{input("price_eur","19990","number",true)}</label>
    <label>Bouwjaar *{input("year","2022","number",true)}</label><label>Kilometerstand *{input("mileage_km","58000","number",true)}</label>
