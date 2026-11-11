@@ -49,17 +49,17 @@ function priceValue(text:string){
 export async function importDealerCsv(form:FormData){
  const db=await createSupabaseServer();
  const {data:{user}}=await db.auth.getUser();
- if(!user)err("Je bent niet ingelogd.");
+ if(!user)return err("Je bent niet ingelogd.");
  const {data:dealer}=await db.from("portal_dealers").select("id").eq("owner_id",user.id).maybeSingle();
- if(!dealer)err("Maak eerst je garageprofiel aan.");
+ if(!dealer)return err("Maak eerst je garageprofiel aan.");
  const file=form.get("csv");
- if(!(file instanceof File)||!file.size||file.size>3_000_000)err("Kies een CSV-bestand tot 3 MB.");
- let rows:string[][];
- try{rows=parseCSV(await file.text());}catch{err("CSV kan niet worden gelezen.");}
+ if(!(file instanceof File)||!file.size||file.size>3_000_000)return err("Kies een CSV-bestand tot 3 MB.");
+ let rows:string[][]=[];
+ try{rows=parseCSV(await (file as File).text());}catch{return err("CSV kan niet worden gelezen.");}
  if(rows.length<2||rows.length>1501)err("Het CSV-bestand moet 1 tot 1.500 auto's bevatten.");
  const headings=rows[0].map(norm);
  const ix=(name:string)=>headings.findIndex(h=>names[name].map(norm).includes(h));
- if(["make","model","price"].some(key=>ix(key)<0))err("CSV mist merk, model of prijs. Download ons voorbeeldbestand.");
+ if(["make","model","price"].some(key=>ix(key)<0))return err("CSV mist merk, model of prijs. Download ons voorbeeldbestand.");
  const col=(r:string[],name:string)=>{const i=ix(name);return i>=0?(r[i]||"").trim():"";};
  let errors=0;const references=new Map<string,Record<string,unknown>>(),without:Record<string,unknown>[]=[];
  for(const row of rows.slice(1)){
