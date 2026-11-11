@@ -72,3 +72,5 @@
 .portal-footer{color:#919daa;text-align:center;font-size:11px;padding:40px 0 4px}
 @media(max-width:850px){.portal-auth-layout{grid-template-columns:1fr;gap:30px;min-height:auto}.portal-auth-card{justify-self:stretch;max-width:none}.portal-stats{grid-template-columns:1fr 1fr}.portal-grid{grid-template-columns:1fr}.portal-heading{align-items:start;flex-direction:column}.portal-identity{text-align:left}.portal-top-caption{display:none}}
 @media(max-width:480px){.portal-stats{grid-template-columns:1fr 1fr;gap:8px}.portal-stat{padding:14px}.portal-stat strong{font-size:26px}.portal-container{padding:25px 4%}.portal-auth-card,.portal-card{padding:19px}.portal-fields{grid-template-columns:1fr}.portal-full{grid-column:auto}.portal-auth-intro h1{font-size:39px}.portal-brand{font-size:21px}}
+
+.portal-pagination{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:20px 2px 2px;font-size:12px;color:#687482;font-weight:700}.portal-pagination a{color:#9b7634;text-decoration:underline}

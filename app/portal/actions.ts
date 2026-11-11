@@ -173,8 +173,8 @@ export async function importVehicles(form: FormData) {
 export async function uploadVehiclePhoto(form: FormData) {
   const {db,dealer}=await ownDealer();
   const vehicleId=value(form,"vehicle_id",40), file=form.get("photo");
-  if(!(file instanceof File)||file.size===0||file.size>5_242_880||
-    !["image/jpeg","image/png","image/webp"].includes(file.type)) go("Gebruik JPG, PNG of WebP (maximaal 5 MB).");
+  if(!(file instanceof File)||file.size===0||file.size>3_500_000||
+    !["image/jpeg","image/png","image/webp"].includes(file.type)) go("Gebruik JPG, PNG of WebP (maximaal 3,5 MB).");
   const {data:vehicle}=await db.from("portal_vehicles").select("id").eq("id",vehicleId).eq("dealer_id",dealer.id).maybeSingle();
   if(!vehicle)go("Deze auto hoort niet bij je garage.");
   const suffix=file.type==="image/png"?"png":file.type==="image/webp"?"webp":"jpg";
