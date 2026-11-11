@@ -1,0 +1,3 @@
+import Link from "next/link";
+import { requestPasswordReset } from "./actions";
+export default function PasswordRecovery(){return <article className="mx-auto max-w-xl px-6 py-20"><Link href="/portal">← Terug naar IKKENAUTO</Link><h1 className="mt-6 text-4xl font-bold">Wachtwoord herstellen</h1><p className="mt-4">Je ontvangt een herstelmail als het adres bij ons bekend is.</p><form action={requestPasswordReset} className="mt-8 grid gap-4"><label>E-mailadres<input className="mt-2 w-full rounded border border-gray-300 p-3" name="email" type="email" required/></label><button className="rounded bg-black p-3 font-semibold text-white">Herstellink versturen</button></form></article>}
