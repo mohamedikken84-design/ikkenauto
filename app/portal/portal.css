@@ -135,3 +135,6 @@
 @media(max-width:1100px){.portal-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:850px){.portal-auth-layout{grid-template-columns:1fr}.portal-auth-card{justify-self:stretch;max-width:none}}
 @media(max-width:480px){.portal-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.portal-inner-fields,.portal-options{grid-template-columns:1fr}.portal-auth-card,.portal-card{padding:20px}}
+
+.portal-directory-number{display:block;font-size:13px;color:#90702d;font-weight:800;margin-top:22px}
+.portal-text-link{color:#936d28;text-decoration:underline;font-weight:700}
