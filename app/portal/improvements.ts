@@ -38,7 +38,7 @@ export async function registerChecked(_previous:Result,form:FormData):Promise<Re
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return {error:"Controleer het e-mailadres."};
  if(password.length<10)return {error:"Gebruik een wachtwoord van minstens 10 tekens."};
  const {error}=await db.auth.signUp({email,password,options:{emailRedirectTo:origin()+"/portal/auth/callback"}});
- if(error)return {error:"Registreren mislukt: "+error.message};
+ if(error)return {error:"Registreren lukt momenteel niet. Controleer je gegevens of probeer later opnieuw."};
  return {error:"",message:"Account aangemaakt. Controleer je mailbox en bevestig je e-mailadres."};
 }
 function kboValid(raw:string){
@@ -140,8 +140,8 @@ export async function importDirectory(form:FormData){
  const headers=parsed[0].map(x=>x.trim().toLowerCase());
  function val(row:string[],key:string,limit:number){const i=headers.indexOf(key);return i===-1?"":(row[i]||"").trim().slice(0,limit);}
  let total=0;
- for(let start=1;start<parsed.length;start+=120){
-  const chunk=parsed.slice(start,start+120).map((r,offset)=>{
+ for(let start=1;start<parsed.length;start+=400){
+  const chunk=parsed.slice(start,start+400).map((r,offset)=>{
    const source_row=start+offset+1,name=val(r,"naam",160);
    if(!name)return null;
    return {source_row,name,city:val(r,"plaats",120)||null,address:val(r,"adres",250)||null,
@@ -151,7 +151,7 @@ export async function importDirectory(form:FormData){
   if(!chunk.length)continue;
   const {error}=await db.from("portal_directory").upsert(chunk,{onConflict:"source_row"});
   if(error)redirect("/portal?error="+encodeURIComponent("Import onderbroken bij rij "+start+". Je mag hetzelfde bestand veilig opnieuw uploaden."));
-  const contacts=parsed.slice(start,start+120).map((r,offset)=>{
+  const contacts=parsed.slice(start,start+400).map((r,offset)=>{
    if(!val(r,"naam",160))return null;
    return {source_row:start+offset+1,email:val(r,"email",250)||null,phone:val(r,"telefoon",100)||null};
   }).filter((v):v is NonNullable<typeof v>=>Boolean(v));
