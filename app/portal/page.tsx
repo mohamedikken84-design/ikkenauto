@@ -4,7 +4,6 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { addProspect, createDealer, createVehicle, deleteVehicle, importVehicles, setDealerStatus, setProspectStage, signIn, signOut, signUp, uploadVehiclePhoto, vehicleStatus } from "./actions";
 import type { Metadata } from "next";
 
-export const dynamic = "force-dynamic";
 export const metadata:Metadata={title:"Dealerportaal | IKKENAUTO",description:"Veilig beheer voor garages en IKKENAUTO."};
 const euro=(v:unknown)=>new Intl.NumberFormat("nl-BE",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(Number(v)||0);
 type Params={ searchParams: Promise<{error?:string;success?:string}> };
