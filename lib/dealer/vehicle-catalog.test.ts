@@ -12,4 +12,7 @@ test("model suggestions work for the selected make and are case insensitive",()=
  assert.ok(suggestedModels("volkswagen").includes("Golf"));
  assert.ok(suggestedModels("Mercedes-Benz").includes("GLS"));
  assert.deepEqual(suggestedModels("Onbekend Merk"),[]);
+ assert.deepEqual(suggestedModels(undefined),[],"an empty form must not crash during server rendering");
+ assert.deepEqual(suggestedModels(null),[],"missing make values must be handled safely");
+ assert.deepEqual(suggestedModels("   "),[]);
 });

@@ -554,8 +554,8 @@ export const modelSuggestions: Record<string,readonly string[]> = {
 };
 
 /** Normalize common spelling differences for suggestions, never rewrite saved dealer data. */
-export function suggestedModels(make:string):readonly string[]{
- const normalized=make.trim().toLocaleLowerCase("nl-BE");
+export function suggestedModels(make:string|null|undefined):readonly string[]{
+ const normalized=(typeof make==="string"?make:"").trim().toLocaleLowerCase("nl-BE");
  const key=Object.keys(modelSuggestions).find(x=>x.toLocaleLowerCase("nl-BE")===normalized);
  return key?modelSuggestions[key]:[];
 }
