@@ -360,3 +360,29 @@
   .portal-shell .dealer-hero-actions .portal-button { align-self: stretch; }
   .portal-shell .dealer-hero-actions .dealer-link-button { align-self: flex-start; }
 }
+
+
+/* Functional secondary actions and readable inventory cards on mobile. */
+.portal-shell .portal-button.portal-button-secondary {
+  background: #f4f3f1;
+  border: 1px solid #dcdcd8;
+  color: #242424;
+}
+.portal-shell .portal-button.portal-button-secondary:hover { background: #eae9e6; }
+@media(max-width: 760px) {
+  .dealer-stock-table-wrap { overflow: visible; }
+  .dealer-stock-table, .dealer-stock-table tbody { display: block; width: 100%; }
+  .dealer-stock-table thead { display: none; }
+  .dealer-stock-table tbody tr {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px 10px;
+    padding: 17px 0; border-bottom: 1px solid #e9e9e7;
+  }
+  .dealer-stock-table tbody tr:last-child { border-bottom: 0; }
+  .dealer-stock-table tbody td { display: block; border: 0; padding: 0; }
+  .dealer-stock-table tbody td:first-child { grid-column: 1; grid-row: 1; }
+  .dealer-stock-table tbody td:nth-child(2) { grid-column: 2; grid-row: 1; text-align: right; }
+  .dealer-stock-table tbody td:nth-child(3), .dealer-stock-table tbody td:nth-child(4) { grid-column: 1 / -1; }
+  .dealer-stock-status-form { margin: 10px 0 0; }
+  .dealer-row-actions { padding-top: 10px; border-top: 1px dashed #e9e9e6; margin-top: 8px; gap: 17px; }
+  .dealer-price-cell { font-size: 13px; }
+}
