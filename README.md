@@ -42,6 +42,22 @@ Directoryrecords zijn **geen** dealeraccounts. De publieke marktplaats is nog ni
 
 De oudere /account-routes en hun lokale PostgreSQL-/sessiemodel zijn historische code voor de marketplace. De actieve dealerportal gebruikt Supabase Auth via /portal. Verwijder deze oudere routes pas nadat hun afhankelijkheden en eventuele gebruikers gemigreerd zijn.
 
+## Automotive uitbreiding (12 november 2026)
+
+Op de Luxury Minimal ontwikkelbranch is een **additieve** Supabase-catalogus toegevoegd:
+- 115 merken, 364 modelvoorstellen, vier bron-gecontroleerde generatiereferenties.
+- Tabellen voor generatie, motorisatie en uitvoering, met administratieve aanvullingen via /portal/admin/catalog. Motorisaties en uitvoeringen zijn **niet** automatisch verzonnen of uit een gesloten database gekopieerd.
+- 224 doorzoekbare uitrustingskenmerken in de database, met EV-/PHEV-/bestelwagencompatibiliteit; ontbrekende opties kunnen beheerders toevoegen.
+- /portal/api/catalog biedt cachebare merk- en optiegegevens, met afhankelijke model-, generatie- en uitvoeringsopties.
+- De voertuigwizard heeft acht stappen en 60+ optionele technische/EV/conditionele specificaties, prijs/btw en private fotoupload.
+- Nieuwe voertuigen blijven privéconcepten; de publieke marktplaats is niet ingeschakeld.
+- De privévoorraad heeft server-side filters voor merk/model/stocknummer, status, brandstof, uitrusting, prijs, kilometerstand, bouwjaar, carrosserie en transmissie.
+- Link-import via AutoScout24, mobile.de, 2dehands en garagewebsites bewaart voorlopig alleen de URL; externe fetch/sync is nog **niet** geactiveerd. CSV-import blijft de werkende bulkmethode.
+- Belgisch ondernemingsnummer wordt genormaliseerd en gecontroleerd met mod-97; dit is **geen** live verificatie van de officiële KBO-gegevens, waarvoor gekwalificeerde toegang nodig is.
+- Latency-verbeteringen: Vercel Dublin naast Supabase Ierland, minder gegevens per scherm, cache en indexes voor stock/filters/foto's/leads.
+
+Zie het verificatie- en testoverzicht in [COMPETITOR_VEHICLE_FIELDS.md](COMPETITOR_VEHICLE_FIELDS.md). Geen volledige functionele pariteit of licentie voor overname van concurrentgegevens wordt geclaimd. Browser-E2E/SMTP/API-integraties moeten apart worden geverifieerd.
+
 ## Lokaal ontwikkelen
 
 Installeer de Node-versie die de CI gebruikt. In de repository-root: voer npm ci uit, vervolgens npm run lint, npm test, npm run build en npm run dev. Voor integratietests is een lokale PostgreSQL-testdatabase nodig; de CI-configuratie staat in .github/workflows/ci.yml.
