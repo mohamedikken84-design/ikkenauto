@@ -12,6 +12,13 @@ function closedToCrawlers() {
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  // Keep the future public marketplace separate: only the dealer subdomain
+  // opens the dealer portal at its root.
+  if (pathname === "/" && request.nextUrl.hostname === "portal.ikkenauto.be") {
+    const response = NextResponse.redirect(new URL("/portal", request.url));
+    if (closedToCrawlers()) response.headers.set("X-Robots-Tag", "noindex, nofollow");
+    return response;
+  }
   if (pathname === "/") {
     const cookie = request.cookies.get("ikken_locale")?.value;
     const locale = cookie === "fr" || cookie === "nl" ? cookie : localeFromAccept(request.headers.get("accept-language") ?? "");
