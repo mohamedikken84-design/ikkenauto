@@ -5,7 +5,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { portalOrigin } from "@/lib/portal-origin";
 import { specFieldByKey, normalizeSpecifications, isApplicable } from "@/lib/dealer/vehicle-fields";
 
-type Result = { error: string; message?:string };
+type Result = { error: string; message?:string; vehicleId?:string };
 function field(form:FormData,name:string,max=250){return String(form.get(name)??"").trim().slice(0,max);}
 async function authenticate(){
  const db=await createSupabaseServer();
@@ -175,7 +175,7 @@ export async function vehicleChecked(_previous:Result,form:FormData):Promise<Res
  const {data:created,error}=await db.from("portal_vehicles").insert(record).select("id").single();
  if(error||!created)return {error:"Auto niet opgeslagen. Controleer onder andere of het stocknummer al bestaat."};
  revalidatePath("/portal");
- redirect("/portal/voorraad/"+created.id+"/bewerken?success="+encodeURIComponent("Voertuig opgeslagen als concept. Voeg foto's toe en controleer daarna de voorraadstatus.")+"#photos");
+ return {error:"",message:"Concept aangemaakt.",vehicleId:String(created.id)};
 }
 
 export async function queueExternalLink(_previous:Result,form:FormData):Promise<Result>{
