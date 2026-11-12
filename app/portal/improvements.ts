@@ -6,7 +6,7 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 type Result = { error: string; message?:string };
 const ok:Result={error:""};
 function field(form:FormData,name:string,max=250){return String(form.get(name)??"").trim().slice(0,max);}
-function origin(){return (process.env.PORTAL_ORIGIN||"https://ikkenauto-cursor-keep-alive-6ada.vercel.app").replace(/\/$/,"");}
+function origin(){const preview=process.env.VERCEL_ENV==="preview"&&process.env.VERCEL_URL;return (preview?"https://"+process.env.VERCEL_URL:process.env.PORTAL_ORIGIN||"https://ikkenauto-cursor-keep-alive-6ada.vercel.app").replace(/\/$/,"");}
 async function authenticate(){
  const db=await createSupabaseServer();
  const {data:{user}}=await db.auth.getUser();
