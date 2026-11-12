@@ -35,7 +35,7 @@ export function AuthPanel({initialView="welcome"}:{initialView?:View}) {
         <h2 id="dealer-steps-title">Bereid je garage voor op de lancering</h2>
         <div className="dealer-steps-grid">
           <div><span className="dealer-step-number">01</span><h3>Registreer je garage</h3><p>Maak een account aan en vul je bedrijfsgegevens aan.</p></div>
-          <div><span className="dealer-step-number">02</span><h3>Voeg voertuigen toe</h3><p>Beheer je voorraad en foto's in een afgeschermd dashboard.</p></div>
+          <div><span className="dealer-step-number">02</span><h3>Voeg voertuigen toe</h3><p>Beheer je voorraad en foto&apos;s in een afgeschermd dashboard.</p></div>
           <div><span className="dealer-step-number">03</span><h3>Bereid je voor</h3><p>Je gegevens blijven bewaard voor de publieke lancering. Publicatie gebeurt niet automatisch.</p></div>
         </div>
       </section>
