@@ -5,10 +5,11 @@ import {createBrowserClient} from "@supabase/ssr";
 import {supabaseBrowserConfig} from "@/lib/supabase/env";
 import {vehicleChecked} from "./improvements";
 import {CatalogVehicleSelector} from "./catalog-vehicle-selector";
+import {EquipmentSelection} from "./equipment-selection";
 import {loadInitialCatalog,type CatalogMake,type EquipmentItem} from "@/lib/dealer/catalog-client";
 import {vehicleSpecificationFields,isApplicable,type SpecField} from "@/lib/dealer/vehicle-fields";
 
-const steps=["Voertuig","Techniek","Uitrusting","Kleuren en interieur","Staat en onderhoud","Prijs en btw","Foto's en tekst","Controle"];
+const sections=[["voertuig","Voertuig"],["techniek","Techniek"],["uitrusting","Uitrusting"],["uiterlijk","Uiterlijk"],["historiek","Staat en onderhoud"],["prijs","Prijs en btw"],["media","Foto’s en tekst"],["overzicht","Controleren"]] as const;
 const fuels=["Benzine","Diesel","Elektrisch","Hybride","Plug-in hybride","LPG","CNG","Waterstof","Overig"];
 const scalar=["make","model","version","vehicle_class","generation_code","motorization","trim_line","year","mileage_km","price_eur","fuel","transmission","body_type","power_hp","power_kw","emission_class","color","interior_color","drivetrain","condition","seats","doors","first_registration","vin","source_ref","description","vat_regime","condition_notes","maintenance_history","accident_history","warranty_months","catalog_make_id","catalog_model_id","catalog_generation_id","catalog_powertrain_id","catalog_trim_id"];
 const technical=new Set(["displacement_cc","cylinders","power_kw","torque_nm","gears","top_speed_kmh","acceleration_0_100_s","co2_g_km","consumption_l_100km","emission_test","weight_kg","gross_weight_kg","towing_braked_kg","towing_unbraked_kg","wheelbase_mm","length_mm","width_mm","height_mm","engine_emission_standard","battery_capacity_kwh","battery_usable_kwh","battery_soh_percent","wltp_range_km","real_world_range_km","ac_charge_kw","dc_charge_kw","charge_10_80_minutes","electric_consumption_kwh_100km","charging_socket","battery_owned","battery_health_test_date","payload_kg","cargo_length_mm","cargo_width_mm","cargo_height_mm","pallet_capacity","operating_hours","axle_count","sleeping_capacity","water_tank_l","length_category"]);
@@ -19,10 +20,8 @@ const mappedFuel=(value:string)=>value==="Elektrisch"?"electric":value==="Plug-i
 export function VehicleEditor({dealerId}:{dealerId:string}){
  const router=useRouter();
  const [result,submit,pending]=useActionState(vehicleChecked,{error:""});
- const [step,setStep]=useState(0);
  const [values,setValues]=useState<Record<string,string>>({vehicle_class:"car",vat_regime:"op_aanvraag"});
  const [codes,setCodes]=useState<string[]>([]);
- const [query,setQuery]=useState("");
  const [makes,setMakes]=useState<CatalogMake[]>([]);
  const [equipment,setEquipment]=useState<EquipmentItem[]>([]);
  const [catalogError,setCatalogError]=useState("");
@@ -43,7 +42,7 @@ export function VehicleEditor({dealerId}:{dealerId:string}){
   try{const saved=sessionStorage.getItem(draftKey);
    if(saved){const parsed=JSON.parse(saved);if(parsed.values)setValues({...parsed.values,vin:""});
     if(Array.isArray(parsed.codes))setCodes(parsed.codes);
-    if(Number.isInteger(parsed.step)&&parsed.step>=0&&parsed.step<=7)setStep(parsed.step);}
+}
   }catch{}
   ready.current=true;
  },[draftKey]);
@@ -51,10 +50,10 @@ export function VehicleEditor({dealerId}:{dealerId:string}){
   if(!ready.current||result.vehicleId)return;
   const timeout=window.setTimeout(()=>{
    try{const {vin,...safe}=values;void vin;
-    sessionStorage.setItem(draftKey,JSON.stringify({values:safe,codes,step}));}catch{}
+    sessionStorage.setItem(draftKey,JSON.stringify({values:safe,codes}));}catch{}
   },500);
   return ()=>window.clearTimeout(timeout);
- },[values,codes,step,draftKey,result.vehicleId]);
+ },[values,codes,draftKey,result.vehicleId]);
  useEffect(()=>{
   const vehicleId=result.vehicleId;if(!vehicleId||finished.current)return;finished.current=true;
   try{sessionStorage.removeItem(draftKey);}catch{}
@@ -109,47 +108,40 @@ export function VehicleEditor({dealerId}:{dealerId:string}){
   </label>;
  }
  const specGroup=(ids:Set<string>)=><div className="dealer-form-grid">{vehicleSpecificationFields.filter(f=>ids.has(f.key)).map(spec)}</div>;
- const candidates=equipment.filter(e=>(!e.compatible_fuels.length||e.compatible_fuels.includes(mappedFuel(fuel))||e.compatible_fuels.includes(className))&&
-  (!query||e.label_nl.toLocaleLowerCase("nl-BE").includes(query.toLocaleLowerCase("nl-BE"))||e.category.toLocaleLowerCase("nl-BE").includes(query.toLocaleLowerCase("nl-BE"))));
- const categories=[...new Set(candidates.map(e=>e.category))];
  const specifications=Object.fromEntries(Object.entries(values).filter(([k,v])=>k.startsWith("spec.")&&v!=="").map(([k,v])=>[k.slice(5),v==="true"?true:v]));
- function next(){
-  if(step===0&&(!values.make?.trim()||!values.model?.trim()))return setFeedback("Kies een merk en model of vul ze zelf in.");
-  if(step===1){
-   const y=Number(values.year||0),km=Number(values.mileage_km||-1);
-   if(!Number.isInteger(y)||y<1900||y>new Date().getFullYear()+1)return setFeedback("Controleer het bouwjaar.");
-   if(!values.mileage_km?.trim()||!Number.isInteger(km)||km<0||km>5000000)return setFeedback("Controleer de kilometerstand.");
-  }
-  if(step===5){const p=Number((values.price_eur||"").replace(",","."));if(!Number.isFinite(p)||p<=0)return setFeedback("Vul een geldige verkoopprijs in.");}
-  if(step===6&&(photos.length>10||photos.some(p=>p.size===0||p.size>3500000||!["image/jpeg","image/png","image/webp"].includes(p.type))))
-   return setFeedback("Maximaal 10 foto's (JPG/PNG/WebP), elk maximaal 3,5 MB.");
-  setFeedback("");setStep(i=>Math.min(7,i+1));
+ function validateBeforeSubmit(){
+  let message="",section="voertuig";
+  const y=Number(values.year||0),km=Number(values.mileage_km??-1),price=Number((values.price_eur||"").replace(",","."));
+  if(!values.make?.trim()||!values.model?.trim())message="Merk en model zijn verplicht.";
+  else if(!values.year?.trim()||!Number.isInteger(y)||y<1900||y>new Date().getFullYear()+1){message="Controleer het bouwjaar.";section="techniek";}
+  else if(!values.mileage_km?.trim()||!Number.isInteger(km)||km<0||km>5000000){message="Controleer de kilometerstand.";section="techniek";}
+  else if(!values.price_eur?.trim()||!Number.isFinite(price)||price<=0||price>100000000){message="Vul een geldige prijs in.";section="prijs";}
+  else if(photos.length>10||photos.some(p=>p.size<=0||p.size>3500000||!["image/jpeg","image/png","image/webp"].includes(p.type))){message="Maximaal 10 JPG-, PNG- of WebP-foto's van 3,5 MB per stuk.";section="media";}
+  else if(codes.length&&equipment.length===0){message="De uitrustingscatalogus moet eerst geladen worden.";section="uitrusting";}
+  if(message){setFeedback(message);document.getElementById("vehicle-section-"+section)?.scrollIntoView({behavior:"smooth",block:"start"});return false;}
+  setFeedback("");return true;
  }
  function reset(){
   if(!window.confirm("Alle tijdelijke formuliergegevens wissen?"))return;
-  setValues({vehicle_class:"car",vat_regime:"op_aanvraag"});setCodes([]);setPhotos([]);setStep(0);
+  setValues({vehicle_class:"car",vat_regime:"op_aanvraag"});setCodes([]);setPhotos([]);
   try{sessionStorage.removeItem(draftKey);}catch{}
  }
  return <div className="dealer-wizard dealer-full-wizard">
   <div className="dealer-wizard-top">
    <div><span className="dealer-eyebrow">IKKENAUTO · VOERTUIGBEHEER</span><h1>Voertuig toevoegen</h1>
-    <p>Vul stapsgewijs alle relevante voertuiggegevens in. Een onbekende uitvoering mag je zelf toevoegen.</p></div>
+    <p>Alle informatie op één overzichtelijke pagina. Vul in wat je weet en bewaar je voertuig als concept.</p></div>
    <button className="dealer-draft-reset" type="button" onClick={reset} disabled={pending||!!result.vehicleId}>Formulier wissen</button>
   </div>
-  <nav className="dealer-wizard-stepnav" aria-label="Voortgang">
-   <ol>{steps.map((label,i)=><li key={label}>
-    <button type="button" className={step===i?"active":i<step?"complete":""} disabled={i>=step||pending||!!result.vehicleId}
-     onClick={()=>{setStep(i);setFeedback("");}} aria-current={step===i?"step":undefined}>
-     <span>{i<step?"✓":i+1}</span><small>{label}</small></button>
-   </li>)}</ol>
-  </nav>
-  <div className="dealer-wizard-main">
-   <div className="dealer-wizard-section-heading"><span className="dealer-step-counter">STAP {step+1} VAN 8</span><h2>{steps[step]}</h2></div>
-   {step===0&&<section>
+  <nav className="dealer-form-toc" aria-label="Snel naar onderdeel">
+    {sections.map(([id,label],i)=><a key={id} href={"#vehicle-section-"+id}><span>{String(i+1).padStart(2,"0")}</span>{label}</a>)}
+   </nav>
+   <div className="dealer-wizard-main">
+   <p className="dealer-form-intro">Alle velden zijn direct zichtbaar. Niet-verplichte gegevens mogen leeg blijven. Dit formulier bewaart tijdelijk je invoer in deze browsersessie.</p>
+   <section className="dealer-long-section" id="vehicle-section-voertuig"><div className="dealer-long-section-heading"><span>01 / 08</span><h2>Voertuig selecteren</h2></div>
     <CatalogVehicleSelector values={values} makes={makes} update={update}/>
     <p className="dealer-wizard-footnote">De catalogus bevat suggesties, geen automatisch bevestigde voertuigkenmerken. Onbekende generaties en uitvoeringen kun je vrij invullen.</p>
-   </section>}
-   {step===1&&<section>
+   </section>
+   <section className="dealer-long-section" id="vehicle-section-techniek"><div className="dealer-long-section-heading"><span>02 / 08</span><h2>Technische gegevens</h2></div>
     <div className="dealer-form-grid">
      {field("year","Bouwjaar *","number","Bijv. 2022")}
      {field("mileage_km","Kilometerstand (km) *","number","Bijv. 58000")}
@@ -160,24 +152,12 @@ export function VehicleEditor({dealerId}:{dealerId:string}){
      {field("first_registration","Eerste inschrijving","text","MM/JJJJ")}
      {field("vin","Chassisnummer (VIN)","text","Optioneel")}
     </div>
-    <details className="dealer-spec-disclosure"><summary>Geavanceerde technische details en elektrische laadgegevens</summary>{specGroup(technical)}</details>
-   </section>}
-   {step===2&&<section>
-    <div className="dealer-equipment-toolbar"><label className="dealer-form-field"><span>Zoek in 224 uitrustingskenmerken</span>
-     <input type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Bijv. stoelmassage, luchtvering, matrix-led, warmtepomp"/></label>
-     <p>{codes.length} geselecteerd</p>
-    </div>
-    {catalogError&&<p role="alert" className="portal-form-error">{catalogError}</p>}
-    {!equipment.length&&!catalogError&&<p>Uitrusting laden…</p>}
-    {categories.map(category=><details key={category+(query?"-q":"")} open={query?true:undefined} className="dealer-equipment-group dealer-equipment-search-group">
-     <summary>{category} <span>{candidates.filter(e=>e.category===category&&codes.includes(e.code)).length} geselecteerd</span></summary>
-     <div className="dealer-equipment-grid">{candidates.filter(e=>e.category===category).map(e=><label className="dealer-equipment-option" key={e.code}>
-      <input type="checkbox" checked={codes.includes(e.code)} onChange={ev=>setCodes(old=>ev.target.checked?[...old,e.code]:old.filter(x=>x!==e.code))}/>
-      <span>{e.label_nl}</span></label>)}</div>
-    </details>)}
-    {!categories.length&&equipment.length>0&&<p>Geen overeenkomende opties gevonden.</p>}
-   </section>}
-   {step===3&&<section>
+    <div className="dealer-spec-expanded"><h3>Geavanceerde technische details en elektrische laadgegevens</h3>{specGroup(technical)}</div>
+   </section>
+   <section className="dealer-long-section" id="vehicle-section-uitrusting"><div className="dealer-long-section-heading"><span>03 / 08</span><h2>Uitrusting en opties</h2></div>
+    <EquipmentSelection equipment={equipment} selectedCodes={codes} setSelectedCodes={setCodes} fuel={fuel} vehicleClass={className} error={catalogError}/>
+   </section>
+   <section className="dealer-long-section" id="vehicle-section-uiterlijk"><div className="dealer-long-section-heading"><span>04 / 08</span><h2>Carrosserie, kleuren en interieur</h2></div>
     <div className="dealer-form-grid">
      {select("body_type","Carrosserie",["SUV","Berline","Hatchback","Break","Coupé","Cabrio","Monovolume","Bestelwagen","Pick-up","Camper","Andere"])}
      {field("color","Exterieurkleur","text","Bijv. Selenietgrijs metallic")}
@@ -186,9 +166,9 @@ export function VehicleEditor({dealerId}:{dealerId:string}){
      {select("seats","Zitplaatsen",Array.from({length:30},(_,i)=>String(i+1)))}
      {select("doors","Aantal deuren",["1","2","3","4","5","6","7","8"])}
     </div>
-    <details className="dealer-spec-disclosure"><summary>Velgen, banden, interieurmateriaal en afwerking</summary>{specGroup(appearance)}</details>
-   </section>}
-   {step===4&&<section>
+    <div className="dealer-spec-expanded"><h3>Velgen, banden, interieurmateriaal en afwerking</h3>{specGroup(appearance)}</div>
+   </section>
+   <section className="dealer-long-section" id="vehicle-section-historiek"><div className="dealer-long-section-heading"><span>05 / 08</span><h2>Staat en onderhoud</h2></div>
     <div className="dealer-form-grid">{select("condition","Staat",["Nieuw","Tweedehands","Demowagen","Oldtimer","Schadevoertuig","Niet rijklaar"])}
      {field("warranty_months","Garantie (maanden)","number","Bijv. 12")}
      {field("source_ref","Eigen stocknummer","text","Bijv. CAR-003")}</div>
@@ -196,9 +176,9 @@ export function VehicleEditor({dealerId}:{dealerId:string}){
      <span>{["Onderhoudshistoriek","Schadehistoriek","Opmerkingen over de staat"][i]}</span>
      <textarea rows={3} maxLength={2000} value={values[key]||""} onChange={e=>update({[key]:e.target.value})}
       placeholder="Vermeld uitsluitend informatie die je kunt bevestigen."/></label>)}
-    <details className="dealer-spec-disclosure"><summary>Car-Pass, onderhoud, vorige eigenaars en keuring</summary>{specGroup(history)}</details>
-   </section>}
-   {step===5&&<section>
+    <div className="dealer-spec-expanded"><h3>Car-Pass, onderhoud, vorige eigenaars en keuring</h3>{specGroup(history)}</div>
+   </section>
+   <section className="dealer-long-section" id="vehicle-section-prijs"><div className="dealer-long-section-heading"><span>06 / 08</span><h2>Prijs en btw</h2></div>
     <div className="dealer-form-grid">{field("price_eur","Verkoopprijs (€) *","number","Bijv. 29990")}
      <label className="dealer-form-field"><span>BTW-regime</span>
       <select value={values.vat_regime||"op_aanvraag"} onChange={e=>update({vat_regime:e.target.value})}>
@@ -207,9 +187,9 @@ export function VehicleEditor({dealerId}:{dealerId:string}){
        <option value="particulier">Particulier</option></select>
       <small>Controleer zelf het fiscale regime.</small>
      </label></div>
-    <details className="dealer-spec-disclosure"><summary>Onderhandelen, leasing en beschikbaarheid</summary>{specGroup(finance)}</details>
-   </section>}
-   {step===6&&<section>
+    <div className="dealer-spec-expanded"><h3>Onderhandelen, leasing en beschikbaarheid</h3>{specGroup(finance)}</div>
+   </section>
+   <section className="dealer-long-section" id="vehicle-section-media"><div className="dealer-long-section-heading"><span>07 / 08</span><h2>Foto’s en beschrijving</h2></div>
     <p className="dealer-wizard-footnote">Foto&apos;s worden na het opslaan van het privéconcept direct naar de beveiligde opslag geüpload. Gebruik eigen of toegestane foto&apos;s.</p>
     <label className="dealer-form-field"><span>Foto&apos;s kiezen (maximaal 10 tegelijk, 3,5 MB per foto)</span>
      <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={e=>setPhotos(Array.from(e.target.files||[]))}/></label>
@@ -217,8 +197,8 @@ export function VehicleEditor({dealerId}:{dealerId:string}){
     <label className="dealer-form-field dealer-full-row"><span>Advertentiebeschrijving</span>
      <textarea rows={7} maxLength={4000} value={values.description||""} onChange={e=>update({description:e.target.value})}
       placeholder="Beschrijf de werkelijke staat, onderhoud en uitrusting. Geen onbevestigde claims."/></label>
-   </section>}
-   {step===7&&<section>
+   </section>
+   <section className="dealer-long-section" id="vehicle-section-overzicht"><div className="dealer-long-section-heading"><span>08 / 08</span><h2>Overzicht en opslaan</h2></div>
     <div className="dealer-review-list">
      {[["Merk en model",(values.make||"")+" "+(values.model||"")],["Generatie",values.generation_code||"Niet opgegeven"],
       ["Motorisatie",values.motorization||"Niet opgegeven"],["Uitvoering",values.trim_line||"Niet opgegeven"],
@@ -228,21 +208,20 @@ export function VehicleEditor({dealerId}:{dealerId:string}){
     </div>
     <div className="dealer-note-box"><strong>Concept, nog niet publiek</strong>
      <p>IKKENAUTO slaat je auto eerst privé op en uploadt daarna de gekozen foto&apos;s. Er verschijnt nog geen publieke advertentie op de niet-gelanceerde marktplaats.</p></div>
-    <form id="dealer-wizard-submit" action={submit}>
+    <form id="dealer-wizard-submit" action={submit} onSubmit={event=>{if(!validateBeforeSubmit())event.preventDefault();}}>
      {scalar.map(key=><input type="hidden" key={key} name={key} value={key==="power_kw"?(values["spec.power_kw"]||""):values[key]||""}/>)}
      <input type="hidden" name="specifications" value={JSON.stringify(specifications)}/>
      {codes.map(code=><input key={code} type="hidden" name="equipment_codes" value={code}/>)}
      {result.error&&<p role="alert" className="portal-form-error">{result.error} Ingevoerde gegevens zijn behouden.</p>}
      {uploading&&<p role="status" className="dealer-upload-progress">{uploading}</p>}
     </form>
-   </section>}
+   </section>
    {feedback&&<p role="alert" className="portal-form-error dealer-wizard-error">{feedback}</p>}
-   <div className="dealer-wizard-actions">
-    {step>0?<button type="button" className="dealer-button-secondary" onClick={()=>{setStep(s=>Math.max(0,s-1));setFeedback("");}} disabled={pending||!!result.vehicleId}>Vorige</button>:
-     <span className="dealer-wizard-helper">* verplicht · tijdelijk automatisch bewaard in deze browsersessie</span>}
-    {step<7?<button type="button" onClick={next} className="portal-button dealer-wizard-next">Volgende →</button>:
+   <div className="dealer-wizard-actions dealer-long-submit">
+     <span className="dealer-wizard-helper">* Verplicht · Opslaan maakt alleen een privéconcept aan.</span>
      <button type="submit" form="dealer-wizard-submit" disabled={pending||!!result.vehicleId} className="portal-button dealer-wizard-next">
-      {pending||result.vehicleId?"Concept verwerken…":"Concept opslaan en foto's uploaden"}</button>}
+      {pending||result.vehicleId?"Concept verwerken…":"Voertuig opslaan en foto's uploaden"}
+     </button>
    </div>
   </div>
  </div>;
