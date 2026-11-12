@@ -77,6 +77,17 @@ export default async function CatalogManagement({searchParams}:{searchParams:Pro
       {engines.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}
      </select></label>
     </CatalogAdd>
+    <CatalogAdd title="Nieuwe uitrustingsoptie" type="equipment">
+     <label>Categorie<select name="category" required defaultValue="">
+      <option value="" disabled>Kies een categorie</option>
+      {["Veiligheid","Rijassistentie","Comfort","Infotainment","Verlichting","Exterieur","Onderstel en aandrijving","Elektrisch en laden","Bestelwagen en bedrijfsvoertuig","Overige opties"].map(x=><option key={x} value={x}>{x}</option>)}
+     </select></label>
+     <label>Compatibiliteit<select name="scope" defaultValue="all">
+      <option value="all">Alle voertuigtypes</option>
+      <option value="electric">Elektrische en plug-inhybride auto's</option>
+      <option value="commercial">Bestelwagens</option>
+     </select></label>
+    </CatalogAdd>
    </div>
    <p className="dealer-wizard-footnote">Voeg geen technische specificaties of opties toe zonder bron. Dealerinvoer blijft mogelijk, ook als de catalogus nog niet volledig is.</p>
   </main>
