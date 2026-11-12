@@ -20,28 +20,41 @@ export function AuthPanel({initialView="welcome"}:{initialView?:View}) {
   return <>
     {view==="welcome" ? <>
       <section className="dealer-hero" aria-labelledby="dealer-hero-title">
-        <div className="dealer-hero-copy">
-          <p className="dealer-eyebrow">Voor professionele autohandelaars</p>
-          <h1 id="dealer-hero-title">IKKENAUTO voor autohandelaars</h1>
-          <p className="dealer-hero-lead">IKKENAUTO bereidt een nieuwe Belgische automarktplaats voor. Registreer je garage en beheer je voertuigen alvast via ons dealerportaal.</p>
-          <div className="dealer-hero-actions">
-            <button type="button" className="portal-button dealer-primary" onClick={()=>choose("register")}>Garage registreren</button>
-            <button type="button" className="dealer-link-button" onClick={()=>choose("login")}>Inloggen</button>
+        <div className="dealer-hero-layout">
+          <div className="dealer-hero-copy">
+            <p className="dealer-eyebrow">IKKENAUTO · VOOR PROFESSIONELE AUTOBEDRIJVEN</p>
+            <h1 id="dealer-hero-title">Jouw garage.<br/>Jouw voorraad.<br/><span>Alles op één plek.</span></h1>
+            <p className="dealer-hero-lead">Een eenvoudige werkruimte om je garageprofiel en voertuigen voor te bereiden op de lancering van IKKENAUTO. Zonder onnodige stappen of ingewikkelde software.</p>
+            <div className="dealer-hero-actions">
+              <button type="button" className="portal-button dealer-primary" onClick={() => choose("register")}>Garage registreren <span aria-hidden="true">→</span></button>
+              <button type="button" className="dealer-link-button" onClick={() => choose("login")}>Ik heb al een account</button>
+            </div>
+            <p className="dealer-hero-note">Registratie is gratis. De marktplaats is nog in voorbereiding.</p>
           </div>
-          <p className="dealer-hero-note">Registreren is gratis · Voor professionele autohandelaars</p>
+          <aside className="dealer-hero-product" aria-label="Wat je kunt beheren">
+            <div className="dealer-product-top"><span>DEALERWERKRUIMTE</span><span>IKKENAUTO</span></div>
+            <h2>Eerst je garage.<br/>Dan je voertuigen.</h2>
+            <p>Alles wat je nodig hebt om voorbereid te zijn op de publieke lancering.</p>
+            <div className="dealer-product-features">
+              <div><span>01</span><div><strong>Garageprofiel</strong><small>Bedrijfsgegevens, logo en contact</small></div><span aria-hidden="true">↗</span></div>
+              <div><span>02</span><div><strong>Voertuigen beheren</strong><small>Gegevens, prijzen en foto&apos;s</small></div><span aria-hidden="true">↗</span></div>
+              <div><span>03</span><div><strong>Voorraad importeren</strong><small>CSV-bestanden met controle vooraf</small></div><span aria-hidden="true">↗</span></div>
+            </div>
+            <div className="dealer-product-footer"><span>Je gegevens blijven voorlopig privé</span><span className="dealer-product-dot"/></div>
+          </aside>
         </div>
       </section>
       <section className="dealer-steps" aria-labelledby="dealer-steps-title">
-        <h2 id="dealer-steps-title">Bereid je garage voor op de lancering</h2>
+        <div className="dealer-section-heading"><span className="dealer-eyebrow">IN DRIE STAPPEN</span><h2 id="dealer-steps-title">Van registratie tot je eerste auto</h2></div>
         <div className="dealer-steps-grid">
-          <div><span className="dealer-step-number">01</span><h3>Registreer je garage</h3><p>Maak een account aan en vul je bedrijfsgegevens aan.</p></div>
-          <div><span className="dealer-step-number">02</span><h3>Voeg voertuigen toe</h3><p>Beheer je voorraad en foto&apos;s in een afgeschermd dashboard.</p></div>
-          <div><span className="dealer-step-number">03</span><h3>Bereid je voor</h3><p>Je gegevens blijven bewaard voor de publieke lancering. Publicatie gebeurt niet automatisch.</p></div>
+          <div><span className="dealer-step-number">01</span><h3>Maak je account</h3><p>Registreer met je zakelijke e-mailadres en bevestig je e-mail.</p></div>
+          <div><span className="dealer-step-number">02</span><h3>Voeg je garage toe</h3><p>Zoek je bestaande bedrijfsvermelding of vul je garagegegevens zelf in.</p></div>
+          <div><span className="dealer-step-number">03</span><h3>Beheer je voorraad</h3><p>Voeg voertuigen en foto&apos;s toe of importeer bestaande stock via CSV.</p></div>
         </div>
       </section>
       <section className="dealer-directory-intro">
-        <div><h2>Heb je al een bedrijfsvermelding?</h2><p>Je kunt je garage tijdens de registratie opzoeken en bekende gegevens gebruiken.</p></div>
-        <button type="button" className="dealer-link-button" onClick={()=>choose("register")}>Garage opzoeken</button>
+        <div><h2>Staat je garage al in onze bedrijvengids?</h2><p>Je kunt bekende bedrijfsgegevens gebruiken tijdens de registratie. Een bedrijfsvermelding is nog geen actief account.</p></div>
+        <button type="button" className="dealer-link-button" onClick={() => choose("register")}>Zoek je garage tijdens registratie →</button>
       </section>
     </> : <section className="dealer-auth-screen" id="account" aria-labelledby="account-title">
       <button type="button" className="dealer-back" onClick={()=>choose("welcome")}>← Terug naar overzicht</button>
