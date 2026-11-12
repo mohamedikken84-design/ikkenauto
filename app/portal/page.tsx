@@ -83,17 +83,29 @@ export default async function Portal({searchParams}:Params){
   // this removes up to six unnecessary Supabase round trips per navigation.
   const ownerId=dealer.id;
   if(dealerTab==="overzicht"){
-   const [stock,vc,rc,sc,lc]=await Promise.all([
+   // One RLS-secured counts RPC replaces four Supabase requests.
+   const [stock,counts]=await Promise.all([
     db.from("portal_vehicles").select("id,dealer_id,make,model,version,year,mileage_km,price_eur,status,created_at,source_ref")
-      .eq("dealer_id",ownerId).order("created_at",{ascending:false}).limit(5),
-    db.from("portal_vehicles").select("id",{head:true,count:"exact"}).eq("dealer_id",ownerId),
-    db.from("portal_vehicles").select("id",{head:true,count:"exact"}).eq("dealer_id",ownerId).eq("status","ready"),
-    db.from("portal_vehicles").select("id",{head:true,count:"exact"}).eq("dealer_id",ownerId).eq("status","sold"),
-    db.from("portal_leads").select("id",{head:true,count:"exact"}).eq("dealer_id",ownerId),
+     .eq("dealer_id",ownerId).order("created_at",{ascending:false}).limit(5),
+    db.rpc("portal_dealer_dashboard_counts").maybeSingle(),
    ]);
    vehicles=(stock.data||[]) as Vehicle[];
-   totalVehicles=vc.count??0;totalReady=rc.count??0;totalSold=sc.count??0;totalLeads=lc.count??0;
-   databaseError=[stock.error,vc.error,rc.error,sc.error,lc.error].filter(Boolean).map(e=>e?.message).join(" ");
+   if(counts.data){
+    totalVehicles=Number(counts.data.total_vehicles)||0;
+    totalReady=Number(counts.data.ready_vehicles)||0;
+    totalSold=Number(counts.data.sold_vehicles)||0;
+    totalLeads=Number(counts.data.total_leads)||0;
+   }else{
+    // Backwards-compatible fallback if the RPC is unavailable in a test environment.
+    const [vc,rc,sc,lc]=await Promise.all([
+     db.from("portal_vehicles").select("id",{head:true,count:"exact"}).eq("dealer_id",ownerId),
+     db.from("portal_vehicles").select("id",{head:true,count:"exact"}).eq("dealer_id",ownerId).eq("status","ready"),
+     db.from("portal_vehicles").select("id",{head:true,count:"exact"}).eq("dealer_id",ownerId).eq("status","sold"),
+     db.from("portal_leads").select("id",{head:true,count:"exact"}).eq("dealer_id",ownerId),
+    ]);
+    totalVehicles=vc.count??0;totalReady=rc.count??0;totalSold=sc.count??0;totalLeads=lc.count??0;
+   }
+   databaseError=stock.error?.message||"";
   }else if(dealerTab==="voertuigen"){
    // Exact filtered count comes back with the page data: one Supabase request, not two.
    let stockQuery=db.from("portal_vehicles")
