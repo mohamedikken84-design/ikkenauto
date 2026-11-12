@@ -11,7 +11,7 @@ import { DirectoryAdmin } from "./directory-admin";
 
 export const metadata:Metadata={title:"Dealerportaal | IKKENAUTO",description:"Veilig beheer voor garages en IKKENAUTO."};
 const euro=(v:unknown)=>new Intl.NumberFormat("nl-BE",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(Number(v)||0);
-type Params={ searchParams: Promise<{error?:string;success?:string;dealerPage?:string;vehiclePage?:string;prospectPage?:string;leadPage?:string}> };
+type Params={ searchParams: Promise<{error?:string;success?:string;view?:string;dealerPage?:string;vehiclePage?:string;prospectPage?:string;leadPage?:string}> };
 type Vehicle={id:string;dealer_id:string;make:string;model:string;version:string|null;year:number|null;mileage_km:number|null;price_eur:number;status:string;created_at:string;source_ref:string|null};
 type Dealer={id:string;name:string;city:string;email:string;status:string;created_at:string;phone:string|null;owner_id:string};
 const stageNames:{[k:string]:string}={nieuw:"Nieuw",gecontacteerd:"Gecontacteerd",interesse:"Interesse",aangesloten:"Aangesloten",geen_interesse:"Geen interesse"};
@@ -22,8 +22,6 @@ export default async function Portal({searchParams}:Params){
  const db=await createSupabaseServer();
  const {data:{user}}=await db.auth.getUser();
  let isAdmin=false;
- let publicDirectoryCount=0;
- if(!user){const {count}=await db.from("portal_directory").select("id",{head:true,count:"exact"});publicDirectoryCount=count??0;}
  let dealer:Dealer|null=null;
  if(user){
   const [{data:role},{data:owned}]=await Promise.all([
@@ -72,12 +70,12 @@ export default async function Portal({searchParams}:Params){
  const dealerName=new Map([...dealers.map(d=>[d.id,d.name] as const),...relatedNames.map(d=>[d.id,d.name] as const)]);
  const stockCount=new Map(dealerCounts.map(d=>[d.dealer_id,d.total]));
  return <div className="portal-shell">
-  <div className="portal-top"><Link className="portal-brand" href="/portal"><span>IK</span><span className="portal-brand-gold">K</span><span>ENAUTO</span><small>.BE</small></Link><span className="portal-top-caption">Dealer intelligence & voorraadbeheer</span>{user?<form action={signOut}><button className="portal-ghost">Uitloggen</button></form>:<span className="portal-secure">Beveiligd portaal</span>}</div>
+  <div className="portal-top"><Link className="portal-brand" href="/portal"><span>IK</span><span className="portal-brand-gold">K</span><span>ENAUTO</span><small>.BE</small></Link><span className="portal-top-caption">Dealerportaal · Pre-lancering</span>{user?<form action={signOut}><button className="portal-ghost">Uitloggen</button></form>:<nav className="portal-top-links"><Link href="/portal?view=login#portal-account">Inloggen</Link><Link href="/portal?view=register#portal-account" className="portal-top-register">Garage registreren</Link></nav>}</div>
   <div className="portal-container">
   {notices.error&&<div role="alert" className="portal-alert portal-error">{notices.error}</div>}
   {notices.success&&<div role="status" className="portal-alert portal-success">{notices.success}</div>}
   {databaseError&&<div className="portal-alert portal-error">Databasefout: {databaseError}</div>}
-  {!user?<AuthPanel directoryCount={publicDirectoryCount}/>:
+  {!user?<AuthPanel initialView={notices.view==="login"?"login":notices.view==="register"?"register":"intro"}/>:
    <>
     <div className="portal-heading"><div><span className="portal-overline">{isAdmin?"PLATFORMBEHEER":dealer?"DEALER WORKSPACE":"EERSTE KEER"}</span><h1>{isAdmin?"IKKENAUTO Control Center":dealer?dealer.name:"Welkom bij IKKENAUTO"}</h1><p>{isAdmin?"Alle aangesloten handelaars, alle auto's en alle prospecten in één omgeving.":dealer?"Beheer je voorraad voor de lancering. Alleen jouw garage ziet deze gegevens.":"Vul je bedrijfsgegevens in om je dealeromgeving te activeren."}</p></div><div className="portal-identity">{user.email}<br/><strong>{isAdmin?"Platformbeheer":dealer?"Dealeraccount":"Nieuw account"}</strong></div></div>
     {isAdmin?<><div className="portal-stats"><Stat label="Aangesloten dealers" number={totalDealers}/><Stat label="Auto's in databank" number={totalVehicles}/><Stat label="Verkoopklaar" number={totalReady}/><Stat label="Prospecten" number={totalProspects}/><Stat label="Bedrijvengids" number={directoryTotal}/></div>
@@ -91,7 +89,7 @@ export default async function Portal({searchParams}:Params){
        <section className="portal-card portal-wide"><span className="portal-overline">AANVRAGEN</span><h2>Leads voor je garage</h2><LeadList leads={leads}/></section>
       </div></>:<DealerSetup/>}
    </>}
-  <div className="portal-footer">IKKENAUTO · Professionele voorraadverzameling · Privé tot officiële lancering</div>
+  {user&&<div className="portal-footer">IKKENAUTO · Voorbereiding publieke lancering · Voertuigen nog niet openbaar</div>}
   </div>
  </div>;
 }
