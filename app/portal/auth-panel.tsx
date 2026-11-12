@@ -67,7 +67,7 @@ export function AuthPanel({initialView="welcome"}:{initialView?:View}) {
             <details className="dealer-company-details">
               <summary>Staat jouw garage al bij IKKENAUTO? Zoek je bedrijf.</summary>
               <p className="portal-note">De vermelding is nog niet geclaimd. Je kunt deze na e-mailbevestiging laten controleren.</p>
-              <CompanyLookup title="Bedrijfsnaam" onSelect={setCompany}/>
+              <CompanyLookup title="Bedrijfsnaam" onSelect={setCompany} onClear={()=>setCompany(null)}/>
               {company&&<p className="dealer-company-selected">Geselecteerd: <strong>{company.name}</strong> {company.city&&"· "+company.city}</p>}
             </details>
             <input type="hidden" name="directory_row" value={company?.source_row??""}/>

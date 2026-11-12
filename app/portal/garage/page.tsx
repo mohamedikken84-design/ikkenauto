@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import {redirect} from "next/navigation";
 import {createSupabaseServer} from "@/lib/supabase/server";
 import {GarageProfileForm} from "./garage-form";
 import {uploadGarageMedia} from "./actions";
 export const metadata={title:"Garageprofiel | IKKENAUTO"};
 export default async function GarageProfile({searchParams}:{searchParams:Promise<{success?:string;error?:string}>}){
+ await connection();
  const notice=await searchParams,db=await createSupabaseServer(),{data:{user}}=await db.auth.getUser();
  if(!user)redirect("/portal?aanmelden=1");
  const {data:g}=await db.from("portal_dealers").select("id,owner_id,name,city,postal_code,street,phone,website,description,kbo_number,status,logo_path,cover_path").eq("owner_id",user.id).maybeSingle();

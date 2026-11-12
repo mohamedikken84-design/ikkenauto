@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import Link from "next/link";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { updatePassword } from "./actions";
 export default async function NewPassword(){
+ await connection();
  const db=await createSupabaseServer();
  const {data:{user}}=await db.auth.getUser();
  if(!user)redirect("/portal?error="+encodeURIComponent("Vraag een nieuwe herstellink aan."));

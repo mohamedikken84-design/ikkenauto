@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { redirect, notFound } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { VehicleEditForm } from "@/app/portal/vehicle-edit-form";
@@ -7,6 +8,7 @@ import { removeVehiclePhoto } from "@/app/portal/vehicle-edit-actions";
 import type { Metadata } from "next";
 export const metadata:Metadata={title:"Voertuig bewerken | IKKENAUTO"};
 export default async function EditVehicle({params,searchParams}:{params:Promise<{id:string}>,searchParams:Promise<{success?:string}>}){
+ await connection();
  const {id}=await params,{success}=await searchParams;
  const db=await createSupabaseServer();
  const {data:{user}}=await db.auth.getUser();
@@ -27,7 +29,7 @@ export default async function EditVehicle({params,searchParams}:{params:Promise<
    {success&&<p className="portal-alert portal-success" role="status">{success}</p>}
    <div className="portal-grid">
     <article className="portal-card"><span className="portal-overline">VOERTUIGGEGEVENS</span><h2>Bewerken</h2><VehicleEditForm vehicle={vehicle}/></article>
-    <aside className="portal-card"><span className="portal-overline">FOTO&apos;S</span><h2>Foto&apos;s beheren</h2>
+    <aside id="photos" className="portal-card"><span className="portal-overline">FOTO&apos;S</span><h2>Foto&apos;s beheren</h2>
       <p>JPG, PNG of WebP, maximaal 3,5 MB per bestand. Foto&apos;s zijn alleen toegankelijk voor je garage tijdens de voorbereiding.</p>
       <form action={uploadVehiclePhoto} className="portal-form">
        <input type="hidden" name="vehicle_id" value={id}/><input type="hidden" name="return_to" value="edit"/>
