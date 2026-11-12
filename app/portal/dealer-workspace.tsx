@@ -59,7 +59,7 @@ function StockRows({ vehicles, filtered = false }: { vehicles: DealerVehicle[]; 
     </tr>)}</tbody>
   </table></div>;
 }
-function Pagination({ page, total, tab, field = "vehiclePage", anchor = "vehicles", q = "", status = "", fuel = "", equipment = "" }: { page: number; total: number; tab: DealerTab; field?: string; anchor?: string; q?: string; status?: string; fuel?: string; equipment?: string }) {
+function Pagination({ page, total, tab, field = "vehiclePage", anchor = "vehicles", q = "", status = "", fuel = "", equipment = "", minYear = "", maxYear = "", minPrice = "", maxPrice = "", maxMileage = "", inventoryBody = "", inventoryTransmission = "" }: { page: number; total: number; tab: DealerTab; field?: string; anchor?: string; q?: string; status?: string; fuel?: string; equipment?: string; minYear?: string; maxYear?: string; minPrice?: string; maxPrice?: string; maxMileage?: string; inventoryBody?: string; inventoryTransmission?: string }) {
   const last = Math.max(1, Math.ceil(total / 100));
   if (last < 2) return null;
   function toPage(next: number) {
@@ -68,6 +68,13 @@ function Pagination({ page, total, tab, field = "vehiclePage", anchor = "vehicle
     if (tab === "voertuigen" && status) params.set("status", status);
     if (tab === "voertuigen" && fuel) params.set("fuel", fuel);
     if (tab === "voertuigen" && equipment) params.set("equipment", equipment);
+    if (tab === "voertuigen" && minYear) params.set("minYear",minYear);
+    if (tab === "voertuigen" && maxYear) params.set("maxYear",maxYear);
+    if (tab === "voertuigen" && minPrice) params.set("minPrice",minPrice);
+    if (tab === "voertuigen" && maxPrice) params.set("maxPrice",maxPrice);
+    if (tab === "voertuigen" && maxMileage) params.set("maxMileage",maxMileage);
+    if (tab === "voertuigen" && inventoryBody) params.set("body",inventoryBody);
+    if (tab === "voertuigen" && inventoryTransmission) params.set("transmission",inventoryTransmission);
     return "/portal?" + params.toString() + "#" + anchor;
   }
   return <nav className="dealer-pager" aria-label="Pagina's">
@@ -78,10 +85,10 @@ function Pagination({ page, total, tab, field = "vehiclePage", anchor = "vehicle
 }
 
 export function DealerWorkspace({
-  name, tab, vehicles, leads, vehiclePage, leadPage, inventorySearch, inventoryStatus, inventoryFuel, inventoryEquipment, totalVehicles, totalReady, totalSold, totalLeads,
+  name, tab, vehicles, leads, vehiclePage, leadPage, inventorySearch, inventoryStatus, inventoryFuel, inventoryEquipment, minYear,maxYear,minPrice,maxPrice,maxMileage,inventoryBody,inventoryTransmission, totalVehicles, totalReady, totalSold, totalLeads,
 }: {
   name: string; tab: DealerTab; vehicles: DealerVehicle[]; leads: DealerLead[];
-  vehiclePage: number; leadPage: number; inventorySearch: string; inventoryStatus: string; inventoryFuel: string; inventoryEquipment: string; totalVehicles: number; totalReady: number; totalSold: number; totalLeads: number;
+  vehiclePage: number; leadPage: number; inventorySearch: string; inventoryStatus: string; inventoryFuel: string; inventoryEquipment: string; minYear:string;maxYear:string;minPrice:string;maxPrice:string;maxMileage:string;inventoryBody:string;inventoryTransmission:string; totalVehicles: number; totalReady: number; totalSold: number; totalLeads: number;
 }) {
   const sections: { tab: DealerTab; title: string }[] = [
     { tab: "overzicht", title: "Overzicht" },
@@ -133,8 +140,8 @@ export function DealerWorkspace({
       {tab === "voertuigen" && <section className="dealer-content-panel" id="vehicles">
         <div className="dealer-panel-heading"><div><h2>Voorraad</h2><p>{number(totalVehicles)} {inventorySearch || inventoryStatus ? "gevonden voertuigen" : "voertuigen in je eigen voorraad"}.</p></div>
           <Link href="/portal?tab=importeren" className="dealer-text-link">CSV importeren →</Link></div>
-        <DealerInventoryFilters q={inventorySearch} status={inventoryStatus} fuel={inventoryFuel} equipment={inventoryEquipment}/>
-        <StockRows vehicles={vehicles} filtered={Boolean(inventorySearch||inventoryStatus||inventoryFuel||inventoryEquipment)}/><Pagination tab={tab} page={vehiclePage} total={totalVehicles} q={inventorySearch} status={inventoryStatus} fuel={inventoryFuel} equipment={inventoryEquipment}/>
+        <DealerInventoryFilters q={inventorySearch} status={inventoryStatus} fuel={inventoryFuel} equipment={inventoryEquipment} minYear={minYear} maxYear={maxYear} minPrice={minPrice} maxPrice={maxPrice} maxMileage={maxMileage} body={inventoryBody} transmission={inventoryTransmission}/>
+        <StockRows vehicles={vehicles} filtered={Boolean(inventorySearch||inventoryStatus||inventoryFuel||inventoryEquipment||minYear||maxYear||minPrice||maxPrice||maxMileage||inventoryBody||inventoryTransmission)}/><Pagination tab={tab} page={vehiclePage} total={totalVehicles} q={inventorySearch} status={inventoryStatus} fuel={inventoryFuel} equipment={inventoryEquipment} minYear={minYear} maxYear={maxYear} minPrice={minPrice} maxPrice={maxPrice} maxMileage={maxMileage} inventoryBody={inventoryBody} inventoryTransmission={inventoryTransmission}/>
       </section>}
 
       {tab === "importeren" && <section className="dealer-content-panel dealer-import-page">
