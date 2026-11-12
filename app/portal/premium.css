@@ -631,3 +631,55 @@
 @media(max-width:530px) {
  .portal-shell .dealer-stock-filters .dealer-stock-advanced-grid { grid-template-columns:minmax(0,1fr); }
 }
+
+
+/* IKKENAUTO — single-page automotive editor, Luxury Minimal (no wizard). */
+.portal-shell .dealer-full-wizard {max-width:1250px;margin:0 auto;}
+.portal-shell .dealer-full-wizard .dealer-wizard-top {margin-bottom:20px;}
+.portal-shell .dealer-form-toc {position:sticky;top:0;z-index:15;display:flex;align-items:center;gap:6px;
+ padding:9px 0;margin:0 0 20px;overflow-x:auto;scrollbar-width:thin;background:#f7f7f5;
+ border-bottom:1px solid var(--ia-border);overscroll-behavior-inline:contain;}
+.portal-shell .dealer-form-toc a {display:inline-flex;align-items:center;gap:8px;flex:none;padding:10px 12px;
+ min-height:40px;border-radius:5px;color:#55524d;font-weight:650;font-size:12px;white-space:nowrap;text-decoration:none;}
+.portal-shell .dealer-form-toc a:hover,.portal-shell .dealer-form-toc a:focus-visible {color:#181818;background:#eae7e0;}
+.portal-shell .dealer-form-toc a span {color:#9a7e48;font-variant-numeric:tabular-nums;font-size:10px;}
+.portal-shell .dealer-form-intro {font-size:13px;line-height:1.65;color:#68645e;max-width:680px;margin:0 0 23px;}
+.portal-shell .dealer-long-section {scroll-margin-top:90px;padding:25px 0 31px;border-bottom:1px solid #e5e3de;}
+.portal-shell .dealer-long-section:first-of-type {padding-top:0;}
+.portal-shell .dealer-long-section:last-of-type {border-bottom:0;}
+.portal-shell .dealer-long-section-heading {display:flex;align-items:center;gap:13px;margin:0 0 18px;}
+.portal-shell .dealer-long-section-heading span {border:1px solid #dad4c6;border-radius:5px;color:#8e7140;
+ padding:7px 8px;font-size:10px;font-weight:750;letter-spacing:.03em;white-space:nowrap;}
+.portal-shell .dealer-long-section-heading h2 {font-size:19px!important;font-weight:730;line-height:1.25;margin:0;letter-spacing:-.025em;color:#242424;}
+.portal-shell .dealer-spec-expanded {margin:18px 0 0;padding:0;border:0;background:transparent;}
+.portal-shell .dealer-spec-expanded h3 {font-size:13px;font-weight:700;color:#4c4943;margin:0 0 14px;}
+.portal-shell .dealer-spec-expanded .dealer-form-grid {padding:0;}
+.portal-shell .dealer-equipment-editor {min-width:0;}
+.portal-shell .dealer-equipment-category {padding:18px 0 16px;border-top:1px solid #e9e6e0;
+ content-visibility:auto;contain-intrinsic-size:auto 170px;}
+.portal-shell .dealer-equipment-category h3 {display:flex;justify-content:space-between;align-items:baseline;
+ gap:8px;margin:0 0 12px;font-size:14px;line-height:1.4;color:#30302e;font-weight:700;}
+.portal-shell .dealer-equipment-category h3 small {font-size:11px;font-weight:500;color:#8b7e6a;}
+.portal-shell .dealer-equipment-category .dealer-equipment-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;}
+.portal-shell .dealer-equipment-category .dealer-equipment-option {margin:0;border:1px solid #eae7e1;border-radius:5px;
+ padding:10px 11px;min-height:42px;background:#fdfcfb;align-items:center;}
+.portal-shell .dealer-equipment-category .dealer-equipment-option:hover {background:#f6f3ec;border-color:#d8c9ae;}
+.portal-shell .dealer-equipment-counter {font-size:12px;white-space:nowrap;color:#746e65;}
+.portal-shell .dealer-long-submit {position:sticky;bottom:0;z-index:16;background:#f7f7f5;
+ border-top:1px solid #dbd8d1;box-shadow:0 -8px 22px rgba(20,20,20,.035);padding:14px 0!important;margin:0!important;}
+.portal-shell .dealer-long-submit button {min-width:190px;}
+.portal-shell .dealer-full-wizard .dealer-wizard-main {padding:22px clamp(18px,4vw,45px);}
+.portal-shell .dealer-full-wizard .dealer-form-field input[type="text"],.portal-shell .dealer-full-wizard .dealer-form-field input[type="number"],
+.portal-shell .dealer-full-wizard .dealer-form-field select,.portal-shell .dealer-full-wizard .dealer-form-field textarea {font-size:14px;}
+@media(max-width:980px) {.portal-shell .dealer-equipment-category .dealer-equipment-grid {grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:620px) {
+ .portal-shell .dealer-form-toc {margin:0 -14px 12px;padding:8px 14px;}
+ .portal-shell .dealer-form-toc a {padding:10px 11px;font-size:11px;}
+ .portal-shell .dealer-long-section {padding:24px 0;scroll-margin-top:75px;}
+ .portal-shell .dealer-long-section-heading {align-items:flex-start;gap:9px;}
+ .portal-shell .dealer-long-section-heading h2 {font-size:17px!important;}
+ .portal-shell .dealer-equipment-category .dealer-equipment-grid {grid-template-columns:minmax(0,1fr);}
+ .portal-shell .dealer-long-submit {flex-wrap:wrap;gap:12px;bottom:0;padding:13px 4px!important;}
+ .portal-shell .dealer-long-submit button {width:100%;min-height:48px;}
+ .portal-shell .dealer-long-submit .dealer-wizard-helper {font-size:11px;}
+}
