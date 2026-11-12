@@ -1,7 +1,4 @@
-/* Dealer onboarding has its own navigation. Do not duplicate the marketplace header and footer. */
-body:has(.portal-shell) > header,
-body:has(.portal-shell) > footer { display: none; }
-
+/* The dealer shell is rendered without the marketplace navigation on the server. */
 
 /* IKKENAUTO professional portal. Scoped to avoid changing legacy routes. */
 .portal-shell{min-height:100vh;background:#f5f6f8;color:#17212e;font-family:Arial,Helvetica,sans-serif}

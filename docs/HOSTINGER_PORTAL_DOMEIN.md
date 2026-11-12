@@ -31,3 +31,10 @@ Daarna in Vercel de domeinstatus opnieuw controleren. DNS-propagatie kan tijd ko
 
 ## Onderhoud
 Gebruik Vercel voor applicatiedeployments en Hostinger enkel voor domein/DNS en bestaande mail. Verplaats de hoofdwebsite niet voor de dealerportal-lancering.
+
+## Dealer-only wijziging (12 november 2026)
+- Het portal-project gebruikt `IKKENAUTO_PORTAL_ONLY=true` op Vercel (production/preview) om marketing-/marketplace-routes te blokkeren.
+- De host `portal.ikkenauto.be` is ook zonder vlag dealer-only.
+- `/registreren` is de voorkeurslink; `/registreer` blijft als doorverwijzing werken.
+- Het root-layout verbergt de algemene marketplaceheader en -footer voor alle dealerpagina's.
+- Voertuigmerken en modelsuggesties komen uit één gedeelde lijst; handelaars mogen nog steeds zelf een ander merk/model typen.

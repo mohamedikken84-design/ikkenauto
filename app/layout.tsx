@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { headers } from "next/headers";
 import { Fraunces, Source_Sans_3 } from "next/font/google";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -44,28 +45,30 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <Suspense fallback={<Shell locale="nl">{children}</Shell>}>
+    <Suspense fallback={<Shell locale="nl" dealerShell>{children}</Shell>}>
       <LocalizedShell>{children}</LocalizedShell>
     </Suspense>
   );
 }
 
 async function LocalizedShell({ children }: { children: React.ReactNode }) {
-  return <Shell locale={await getLocale()}>{children}</Shell>;
+  const [locale, incomingHeaders]=await Promise.all([getLocale(),headers()]);
+  const dealerShell=incomingHeaders.get("x-ikken-dealer-shell")==="1";
+  return <Shell locale={locale} dealerShell={dealerShell}>{children}</Shell>;
 }
 
-function Shell({ locale, children }: { locale: "nl" | "fr"; children: React.ReactNode }) {
+function Shell({ locale, children, dealerShell=false }: { locale: "nl" | "fr"; children: React.ReactNode; dealerShell?:boolean }) {
   return (
     <html lang={locale} className={`${sourceSans.variable} ${fraunces.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-paper font-sans text-ink">
         <a className="skip-link" href="#inhoud">
           {locale === "fr" ? "Aller au contenu" : "Ga naar de inhoud"}
         </a>
-        <SiteHeader locale={locale} />
+        {!dealerShell && <SiteHeader locale={locale} />}
         <main id="inhoud" className="flex-1">
           {children}
         </main>
-        <SiteFooter locale={locale} />
+        {!dealerShell && <SiteFooter locale={locale} />}
       </body>
     </html>
   );

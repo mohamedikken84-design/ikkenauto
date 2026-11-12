@@ -1,5 +1,5 @@
 "use client";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { loginChecked, registerChecked, resendConfirmation } from "./improvements";
 import { CompanyLookup } from "./directory-search";
 
@@ -8,6 +8,7 @@ type Company = { source_row:number; name:string; city:string|null; address:strin
 
 export function AuthPanel({initialView="welcome"}:{initialView?:View}) {
   const [view,setView]=useState<View>(initialView);
+ useEffect(()=>{setView(initialView)},[initialView]);
   const [showPassword,setShowPassword]=useState(false);
   const [email,setEmail]=useState("");
   const [password,setPassword]=useState("");

@@ -1,6 +1,7 @@
 "use client";
 import { useActionState, useState } from "react";
 import { updateVehicle } from "./vehicle-edit-actions";
+import {vehicleMakes,suggestedModels} from "@/lib/dealer/vehicle-catalog";
 
 type VehicleRecord = {
   id:string;make:string;model:string;version:string|null;price_eur:number;year:number|null;
@@ -37,7 +38,8 @@ export function VehicleEditForm({vehicle}:{vehicle:VehicleRecord}){
  const allOptions=Array.from(new Set([...equipment,...selectedOptions]));
  return <form action={action} className="portal-form portal-fields" id="vehicle-edit-form">
    <input name="vehicle_id" type="hidden" value={vehicle.id}/>
-   {input("make","Merk *",{required:true})}{input("model","Model *",{required:true})}
+   <label>Merk *<input name="make" list="edit-vehicle-makes" required value={values.make} onChange={e=>change("make",e.target.value)} placeholder="Zoek of typ het merk"/><datalist id="edit-vehicle-makes">{vehicleMakes.map(brand=><option key={brand} value={brand}/>)}</datalist><small>{vehicleMakes.length} merksuggesties. Vrij invoeren blijft mogelijk.</small></label>
+   <label>Model *<input name="model" list="edit-vehicle-models" required value={values.model} onChange={e=>change("model",e.target.value)} placeholder="Zoek of typ het model"/><datalist id="edit-vehicle-models">{suggestedModels(values.make).map(model=><option key={model} value={model}/>)}</datalist><small>Je kunt ook een model buiten de suggesties invoeren.</small></label>
    {input("version","Uitvoering")}
    {input("price_eur","Prijs (€) *",{type:"number",required:true})}
    {input("year","Bouwjaar",{type:"number"})}
