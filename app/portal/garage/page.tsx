@@ -13,8 +13,13 @@ export default async function GarageProfile({searchParams}:{searchParams:Promise
  const {data:g}=await db.from("portal_dealers").select("id,owner_id,name,city,postal_code,street,phone,website,description,kbo_number,status,logo_path,cover_path").eq("owner_id",user.id).maybeSingle();
  if(!g)redirect("/portal");
  const store=db.storage.from("portal-garage-media");
- const logoUrl=g.logo_path?(await store.createSignedUrl(g.logo_path,3600)).data?.signedUrl:null;
- const coverUrl=g.cover_path?(await store.createSignedUrl(g.cover_path,3600)).data?.signedUrl:null;
+ // Fetch private brand media in parallel; do not delay the cover behind the logo.
+ const [logoResult,coverResult]=await Promise.all([
+  g.logo_path?store.createSignedUrl(g.logo_path,3600):Promise.resolve(null),
+  g.cover_path?store.createSignedUrl(g.cover_path,3600):Promise.resolve(null),
+ ]);
+ const logoUrl=logoResult?.data?.signedUrl||null;
+ const coverUrl=coverResult?.data?.signedUrl||null;
  return <div className="portal-shell">
   <div className="portal-top"><PortalLogo/><span className="portal-top-caption">Garageprofiel</span></div>
   <div className="portal-container">
@@ -25,9 +30,9 @@ export default async function GarageProfile({searchParams}:{searchParams:Promise
    <div className="portal-grid">
     <article className="portal-card"><span className="portal-overline">GARAGE</span><h2>Bedrijfsprofiel</h2><GarageProfileForm garage={g}/></article>
     <aside className="portal-card"><span className="portal-overline">BEDRIJFSFOTO&apos;S</span><h2>Logo en omslagfoto</h2>
-      <div className="dealer-media-block"><h3>Logo</h3>{logoUrl?<img className="dealer-profile-logo" src={logoUrl} alt="Bedrijfslogo" loading="lazy"/>:<p className="portal-note">Nog geen logo.</p>}
+      <div className="dealer-media-block"><h3>Logo</h3>{logoUrl?<img className="dealer-profile-logo" src={logoUrl} alt="Bedrijfslogo" width={160} height={160} loading="lazy" decoding="async"/>:<p className="portal-note">Nog geen logo.</p>}
        <form action={uploadGarageMedia} className="portal-form"><input type="hidden" name="kind" value="logo"/><label>Logo (max. 3 MB)<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" required/></label><button className="portal-button portal-button-secondary">Logo opslaan</button></form></div>
-      <div className="dealer-media-block"><h3>Omslagfoto</h3>{coverUrl?<img className="dealer-profile-cover" src={coverUrl} alt="Omslagfoto garage" loading="lazy"/>:<p className="portal-note">Nog geen omslagfoto.</p>}
+      <div className="dealer-media-block"><h3>Omslagfoto</h3>{coverUrl?<img className="dealer-profile-cover" src={coverUrl} alt="Omslagfoto garage" width={640} height={320} loading="lazy" decoding="async"/>:<p className="portal-note">Nog geen omslagfoto.</p>}
        <form action={uploadGarageMedia} className="portal-form"><input type="hidden" name="kind" value="cover"/><label>Omslagfoto (max. 3 MB)<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" required/></label><button className="portal-button portal-button-secondary">Foto opslaan</button></form></div>
     </aside>
    </div>

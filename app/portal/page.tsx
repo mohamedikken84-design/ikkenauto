@@ -2,18 +2,16 @@ import {PortalLogo} from "@/app/portal/portal-logo";
 import Link from "next/link";
 import { connection } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { addProspect, setDealerStatus, setProspectStage, signOut, vehicleStatus } from "./actions";
+import { addProspect, setDealerStatus, setProspectStage, signOut } from "./actions";
 import type { Metadata } from "next";
 import { AuthPanel } from "./auth-panel";
 import { DealerSetup } from "./dealer-setup";
-import { VehicleEditor } from "./vehicle-editor";
-import { QuickImport } from "./quick-import";
+import { DealerWorkspace, type DealerTab } from "./dealer-workspace";
 import { DirectoryAdmin } from "./directory-admin";
-import { ConfirmDelete } from "./confirm-delete";
 
 export const metadata:Metadata={title:"Dealerportaal | IKKENAUTO",description:"Veilig beheer voor garages en IKKENAUTO."};
 const euro=(v:unknown)=>new Intl.NumberFormat("nl-BE",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(Number(v)||0);
-type Params={ searchParams: Promise<{error?:string;success?:string;registreren?:string;aanmelden?:string;dealerPage?:string;vehiclePage?:string;prospectPage?:string;leadPage?:string}> };
+type Params={ searchParams: Promise<{error?:string;success?:string;registreren?:string;aanmelden?:string;dealerPage?:string;vehiclePage?:string;prospectPage?:string;leadPage?:string;tab?:string;q?:string;status?:string;fuel?:string;equipment?:string;minYear?:string;maxYear?:string;minPrice?:string;maxPrice?:string;maxMileage?:string;body?:string;transmission?:string;make?:string;model?:string;generation?:string;motorization?:string;trim?:string;color?:string}> };
 type Vehicle={id:string;dealer_id:string;make:string;model:string;version:string|null;year:number|null;mileage_km:number|null;price_eur:number;status:string;created_at:string;source_ref:string|null};
 type Dealer={id:string;name:string;city:string;email:string;status:string;created_at:string;phone:string|null;owner_id:string};
 const stageNames:{[k:string]:string}={nieuw:"Nieuw",gecontacteerd:"Gecontacteerd",interesse:"Interesse",aangesloten:"Aangesloten",geen_interesse:"Geen interesse"};
@@ -22,6 +20,25 @@ export default async function Portal({searchParams}:Params){
  const notices=await searchParams;
  const safePage=(v?:string)=>Math.max(1,Math.min(100000,Number.isInteger(Number(v))?Number(v)||1:1));
  const dealerPage=safePage(notices.dealerPage),vehiclePage=safePage(notices.vehiclePage),prospectPage=safePage(notices.prospectPage),leadPage=safePage(notices.leadPage);
+ const dealerTab:DealerTab=notices.tab==="voertuigen"||notices.tab==="importeren"||notices.tab==="aanvragen"?notices.tab:"overzicht";
+ const inventorySearch=(notices.q||"").replace(/[^\p{L}\p{N}\s-]/gu,"").replace(/\s+/g," ").trim().slice(0,60);
+ const inventoryStatus=notices.status==="draft"||notices.status==="ready"||notices.status==="sold"?notices.status:"";
+ const inventoryFuel=["Benzine","Diesel","Elektrisch","Hybride","Plug-in hybride","LPG","CNG","Waterstof"].includes(notices.fuel||"")?notices.fuel||"":"";
+ const inventoryEquipment=/^[a-z0-9_]{1,90}$/.test(notices.equipment||"")?notices.equipment||"":"";
+ const bounded=(s:string|undefined,max:number)=>s&&/^\d+$/.test(s)&&Number(s)<=max?String(Number(s)):"";
+ const minYear=bounded(notices.minYear,2100),maxYear=bounded(notices.maxYear,2100);
+ const minPrice=bounded(notices.minPrice,100000000),maxPrice=bounded(notices.maxPrice,100000000);
+ const maxMileage=bounded(notices.maxMileage,5000000);
+ const inventoryBody=["SUV","Berline","Hatchback","Break","Coupé","Cabrio","Monovolume","Bestelwagen","Pick-up","Camper","Andere"].includes(notices.body||"")?notices.body||"":"";
+ const inventoryTransmission=["Manueel","Automaat","Semi-automaat","DSG","CVT","Andere"].includes(notices.transmission||"")?notices.transmission||"":"";
+ const vehicleTerm=(value:string|undefined,max:number)=>(value||"").replace(/[^\p{L}\p{N}\s.\/-]/gu,"").replace(/\s+/g," ").trim().slice(0,max);
+ const inventoryMake=vehicleTerm(notices.make,70);
+ const inventoryModel=vehicleTerm(notices.model,90);
+ const inventoryGeneration=vehicleTerm(notices.generation,60);
+ const inventoryMotorization=vehicleTerm(notices.motorization,100);
+ const inventoryTrim=vehicleTerm(notices.trim,120);
+ const inventoryColor=vehicleTerm(notices.color,70);
+
  const db=await createSupabaseServer();
  const {data:{user}}=await db.auth.getUser();
  let isAdmin=false;
@@ -68,19 +85,76 @@ export default async function Portal({searchParams}:Params){
   if(dealers.length){const res=await db.from("portal_dealer_stock_counts").select("dealer_id,total").in("dealer_id",dealers.map(d=>d.id));dealerCounts=res.data||[];}
   if(vehicles.length){const res=await db.from("portal_dealers").select("id,name").in("id",[...new Set(vehicles.map(v=>v.dealer_id))]);relatedNames=res.data||[];}
  } else if(user&&dealer){
-  // Paginate dealer data too: a 1,000-row limit gave misleading stock totals.
-  const [a,b,vc,rc,sc,lc]=await Promise.all([
-   db.from("portal_vehicles").select("id,dealer_id,make,model,version,year,mileage_km,price_eur,status,created_at,source_ref").eq("dealer_id",dealer.id).order("created_at",{ascending:false}).range((vehiclePage-1)*100,vehiclePage*100-1),
-   db.from("portal_leads").select("id,dealer_id,buyer_name,buyer_email,message,status,created_at").eq("dealer_id",dealer.id).order("created_at",{ascending:false}).range((leadPage-1)*100,leadPage*100-1),
-   db.from("portal_vehicles").select("id",{head:true,count:"exact"}).eq("dealer_id",dealer.id),
-   db.from("portal_vehicles").select("id",{head:true,count:"exact"}).eq("dealer_id",dealer.id).eq("status","ready"),
-   db.from("portal_vehicles").select("id",{head:true,count:"exact"}).eq("dealer_id",dealer.id).eq("status","sold"),
-   db.from("portal_leads").select("id",{head:true,count:"exact"}).eq("dealer_id",dealer.id),
-  ]);
-  vehicles=(a.data||[]) as Vehicle[];leads=b.data||[];
-  databaseError=[a.error,b.error,vc.error,rc.error,sc.error,lc.error].filter(Boolean).map(e=>e?.message).join(" ");
-  totalVehicles=vc.count??0;totalReady=rc.count??0;totalSold=sc.count??0;totalLeads=lc.count??0;
+  // Load only the data needed by the active dealer screen.
+  // Import screen has no inventory/inbox database request. On large dealer accounts
+  // this removes up to six unnecessary Supabase round trips per navigation.
+  const ownerId=dealer.id;
+  if(dealerTab==="overzicht"){
+   // One RLS-secured counts RPC replaces four Supabase requests.
+   const [stock,counts]=await Promise.all([
+    db.from("portal_vehicles").select("id,dealer_id,make,model,version,year,mileage_km,price_eur,status,created_at,source_ref")
+     .eq("dealer_id",ownerId).order("created_at",{ascending:false}).limit(5),
+    db.rpc("portal_dealer_dashboard_counts").maybeSingle(),
+   ]);
+   vehicles=(stock.data||[]) as Vehicle[];
+   const summary=counts.data as {total_vehicles:number;ready_vehicles:number;sold_vehicles:number;total_leads:number}|null;
+   if(summary){
+    totalVehicles=Number(summary.total_vehicles)||0;
+    totalReady=Number(summary.ready_vehicles)||0;
+    totalSold=Number(summary.sold_vehicles)||0;
+    totalLeads=Number(summary.total_leads)||0;
+   }else{
+    // Backwards-compatible fallback if the RPC is unavailable in a test environment.
+    const [vc,rc,sc,lc]=await Promise.all([
+     db.from("portal_vehicles").select("id",{head:true,count:"exact"}).eq("dealer_id",ownerId),
+     db.from("portal_vehicles").select("id",{head:true,count:"exact"}).eq("dealer_id",ownerId).eq("status","ready"),
+     db.from("portal_vehicles").select("id",{head:true,count:"exact"}).eq("dealer_id",ownerId).eq("status","sold"),
+     db.from("portal_leads").select("id",{head:true,count:"exact"}).eq("dealer_id",ownerId),
+    ]);
+    totalVehicles=vc.count??0;totalReady=rc.count??0;totalSold=sc.count??0;totalLeads=lc.count??0;
+   }
+   databaseError=stock.error?.message||"";
+  }else if(dealerTab==="voertuigen"){
+   // Exact filtered count comes back with the page data: one Supabase request, not two.
+   let stockQuery=db.from("portal_vehicles")
+    .select("id,dealer_id,make,model,version,year,mileage_km,price_eur,status,created_at,source_ref",{count:"exact"})
+    .eq("dealer_id",ownerId);
+   if(inventoryStatus)stockQuery=stockQuery.eq("status",inventoryStatus);
+   if(inventoryFuel)stockQuery=stockQuery.eq("fuel",inventoryFuel);
+   if(inventoryEquipment)stockQuery=stockQuery.contains("equipment_codes",[inventoryEquipment]);
+   if(inventoryMake)stockQuery=stockQuery.ilike("make",inventoryMake);
+   if(inventoryModel)stockQuery=stockQuery.ilike("model",inventoryModel);
+   if(inventoryGeneration)stockQuery=stockQuery.ilike("generation_code",inventoryGeneration);
+   if(inventoryMotorization)stockQuery=stockQuery.ilike("motorization",inventoryMotorization);
+   if(inventoryTrim)stockQuery=stockQuery.ilike("trim_line",inventoryTrim);
+   if(inventoryColor)stockQuery=stockQuery.ilike("color",inventoryColor);
+   if(minYear)stockQuery=stockQuery.gte("year",Number(minYear));
+   if(maxYear)stockQuery=stockQuery.lte("year",Number(maxYear));
+   if(minPrice)stockQuery=stockQuery.gte("price_eur",Number(minPrice));
+   if(maxPrice)stockQuery=stockQuery.lte("price_eur",Number(maxPrice));
+   if(maxMileage)stockQuery=stockQuery.lte("mileage_km",Number(maxMileage));
+   if(inventoryBody)stockQuery=stockQuery.eq("body_type",inventoryBody);
+   if(inventoryTransmission)stockQuery=stockQuery.eq("transmission",inventoryTransmission);
+
+   if(inventorySearch){
+    // Whitelist user search characters before building PostgREST OR operators.
+    const term=inventorySearch;
+    stockQuery=stockQuery.or("make.ilike.*"+term+"*,model.ilike.*"+term+"*,version.ilike.*"+term+"*,source_ref.ilike.*"+term+"*");
+   }
+   const stock=await stockQuery.order("created_at",{ascending:false}).range((vehiclePage-1)*100,vehiclePage*100-1);
+   vehicles=(stock.data||[]) as Vehicle[];totalVehicles=stock.count??0;
+   databaseError=stock.error?.message||"";
+  }else if(dealerTab==="aanvragen"){
+   const [inbox,lc]=await Promise.all([
+    db.from("portal_leads").select("id,dealer_id,buyer_name,buyer_email,message,status,created_at")
+      .eq("dealer_id",ownerId).order("created_at",{ascending:false}).range((leadPage-1)*100,leadPage*100-1),
+    db.from("portal_leads").select("id",{head:true,count:"exact"}).eq("dealer_id",ownerId),
+   ]);
+   leads=(inbox.data||[]) as typeof leads;totalLeads=lc.count??0;
+   databaseError=[inbox.error,lc.error].filter(Boolean).map(e=>e?.message).join(" ");
+  }
  }
+
  const dealerName=new Map([...dealers.map(d=>[d.id,d.name] as const),...relatedNames.map(d=>[d.id,d.name] as const)]);
  const stockCount=new Map(dealerCounts.map(d=>[d.dealer_id,d.total]));
  return <div className="portal-shell">
@@ -91,17 +165,13 @@ export default async function Portal({searchParams}:Params){
   {databaseError&&<div className="portal-alert portal-error">Databasefout: {databaseError}</div>}
   {!user?<AuthPanel key={notices.registreren==="1"?"register":notices.aanmelden==="1"?"login":"welcome"} initialView={notices.registreren==="1"?"register":notices.aanmelden==="1"?"login":"welcome"}/>:
    <>
-    <div className="portal-heading"><div><span className="portal-overline">{isAdmin?"PLATFORMBEHEER":dealer?"DEALER WORKSPACE":"EERSTE KEER"}</span><h1>{isAdmin?"IKKENAUTO Control Center":dealer?dealer.name:"Welkom bij IKKENAUTO"}</h1><p>{isAdmin?"Alle aangesloten handelaars, alle auto's en alle prospecten in één omgeving.":dealer?"Beheer je voorraad voor de lancering. Alleen jouw garage ziet deze gegevens.":"Vul je bedrijfsgegevens in om je dealeromgeving te activeren."}</p>{dealer&&!isAdmin&&<Link className="dealer-profile-link" href="/portal/garage">Garageprofiel beheren</Link>}</div><div className="portal-identity">{user.email}<br/><strong>{isAdmin?"Platformbeheer":dealer?"Dealeraccount":"Nieuw account"}</strong></div></div>
-    {isAdmin?<><div className="portal-stats"><Stat label="Aangesloten dealers" number={totalDealers}/><Stat label="Auto's in databank" number={totalVehicles}/><Stat label="Verkoopklaar" number={totalReady}/><Stat label="Prospecten" number={totalProspects}/><Stat label="Bedrijvengids" number={directoryTotal}/></div>
+    {isAdmin && <div className="portal-heading"><div><span className="portal-overline">{isAdmin?"PLATFORMBEHEER":dealer?"DEALER WORKSPACE":"EERSTE KEER"}</span><h1>{isAdmin?"IKKENAUTO Control Center":dealer?dealer.name:"Welkom bij IKKENAUTO"}</h1><p>{isAdmin?"Alle aangesloten handelaars, alle auto's en alle prospecten in één omgeving.":dealer?"Beheer je voorraad voor de lancering. Alleen jouw garage ziet deze gegevens.":"Vul je bedrijfsgegevens in om je dealeromgeving te activeren."}</p>{dealer&&!isAdmin&&<Link className="dealer-profile-link" href="/portal/garage">Garageprofiel beheren</Link>}</div><div className="portal-identity">{user.email}<br/><strong>{isAdmin?"Platformbeheer":dealer?"Dealeraccount":"Nieuw account"}</strong></div></div>}
+    {isAdmin?<><div className="dealer-admin-tools"><Link href="/portal/admin/catalog" className="portal-button portal-button-secondary">Voertuigcatalogus beheren</Link><span>Voeg merken, modellen, generaties en uitvoeringen veilig toe.</span></div><div className="portal-stats"><Stat label="Aangesloten dealers" number={totalDealers}/><Stat label="Auto's in databank" number={totalVehicles}/><Stat label="Verkoopklaar" number={totalReady}/><Stat label="Prospecten" number={totalProspects}/><Stat label="Bedrijvengids" number={directoryTotal}/></div>
       <div className="portal-grid"><section id="dealers" className="portal-card portal-wide"><div className="portal-card-heading"><div><span className="portal-overline">DEALERNETWERK</span><h2>Alle autohandelaars</h2></div><span className="portal-count">{totalDealers} accounts</span></div><div className="portal-table-wrap"><table className="portal-table"><thead><tr><th>Garage</th><th>Plaats</th><th>Contact</th><th>Voertuigen</th><th>Goedkeuring</th></tr></thead><tbody>{dealers.map(d=><tr key={d.id}><td><strong>{d.name}</strong><small>{d.id.slice(0,8)}</small></td><td>{d.city}</td><td><a href={"mailto:"+d.email}>{d.email}</a>{d.phone&&<small>{d.phone}</small>}</td><td>{stockCount.get(d.id)??0}</td><td><form action={setDealerStatus} className="portal-inline"><input type="hidden" name="id" value={d.id}/><select name="status" defaultValue={d.status}><option value="pending">In beoordeling</option><option value="verified">Geverifieerd</option><option value="suspended">Geblokkeerd</option></select><button>Opslaan</button></form></td></tr>)}</tbody></table>{dealers.length===0&&<Empty>Er zijn nog geen geregistreerde garages op deze pagina.</Empty>}</div><Pagination page={dealerPage} total={totalDealers} field="dealerPage" anchor="dealers"/></section>
       <section id="vehicles" className="portal-card portal-wide"><div className="portal-card-heading"><div><span className="portal-overline">TOTALE STOCK</span><h2>Auto&apos;s van alle dealers</h2></div><span className="portal-count">{totalVehicles} voertuigen</span></div><VehicleTable vehicles={vehicles} dealerName={dealerName}/><Pagination page={vehiclePage} total={totalVehicles} field="vehiclePage" anchor="vehicles"/></section>
       <section id="prospects" className="portal-card portal-wide"><div className="portal-card-heading"><div><span className="portal-overline">ACQUISITIE</span><h2>Te contacteren handelaars</h2></div><span className="portal-count">{totalProspects} prospecten</span></div><form action={addProspect} className="portal-form portal-fields"><label>Garagenaam<input name="name" required placeholder="Naam autohandelaar"/></label><label>Gemeente<input name="city" placeholder="Mechelen"/></label><label>E-mail<input name="email" type="email" placeholder="info@garage.be"/></label><label>Telefoon<input name="phone"/></label><button className="portal-button">Prospect toevoegen</button></form><div className="portal-table-wrap"><table className="portal-table"><thead><tr><th>Handelaar</th><th>Contact</th><th>Opvolging</th></tr></thead><tbody>{prospects.map(p=><tr key={p.id}><td><strong>{p.name}</strong><small>{p.city||"—"}</small></td><td>{p.email||"—"}<small>{p.phone||""}</small></td><td><form action={setProspectStage} className="portal-inline"><input type="hidden" name="id" value={p.id}/><select name="stage" defaultValue={p.stage}>{Object.entries(stageNames).map(([k,n])=><option key={k} value={k}>{n}</option>)}</select><button>Opslaan</button></form></td></tr>)}</tbody></table></div><Pagination page={prospectPage} total={totalProspects} field="prospectPage" anchor="prospects"/></section>
       <section id="leads" className="portal-card portal-wide"><div className="portal-card-heading"><div><span className="portal-overline">INBOX</span><h2>Alle aanvragen</h2></div><span className="portal-count">{totalLeads}</span></div><LeadList leads={leads} dealerName={dealerName}/><Pagination page={leadPage} total={totalLeads} field="leadPage" anchor="leads"/></section><DirectoryAdmin count={directoryTotal} claims={directoryClaims}/></div>
-     </>:dealer?<><div className="portal-stats"><Stat label="Mijn voertuigen" number={totalVehicles}/><Stat label="Klaar voor lancering" number={totalReady}/><Stat label="Verkocht" number={totalSold}/><Stat label="Aanvragen" number={totalLeads}/></div><div className="portal-grid">
-       <div id="voorraad-toevoegen" className="dealer-stock-tools portal-wide"><details className="dealer-add-disclosure" open={totalVehicles===0}><summary>Voertuig handmatig toevoegen</summary><VehicleEditor/></details><QuickImport/></div>
-       <section id="vehicles" className="portal-card portal-wide"><div className="portal-card-heading"><div><span className="portal-overline">MIJN STOCK</span><h2>Voertuigen</h2></div><span className="portal-count">{totalVehicles} auto&apos;s</span></div>{vehicles.length===0?<Empty>Voeg je eerste voertuig toe of importeer je bestaande voorraad.</Empty>:<div className="portal-table-wrap"><table className="portal-table"><thead><tr><th>Auto</th><th>Prijs</th><th>Voortgang</th><th>Foto</th><th>Actie</th></tr></thead><tbody>{vehicles.map(v=><tr key={v.id}><td><strong>{v.make} {v.model}</strong><small>{v.version||""} {v.year||""} · {v.mileage_km??"—"} km</small></td><td>{euro(v.price_eur)}</td><td><form action={vehicleStatus} className="portal-inline"><input type="hidden" name="vehicle_id" value={v.id}/><select name="status" defaultValue={v.status}><option value="draft">Concept</option><option value="ready">Klaar</option><option value="sold">Verkocht</option></select><button>Opslaan</button></form></td><td><Link href={"/portal/voorraad/"+v.id+"/bewerken#photos"} className="dealer-edit-link">Beheren</Link></td><td><div className="dealer-stock-actions"><Link href={"/portal/voorraad/"+v.id+"/bewerken"} className="dealer-edit-link">Bewerken</Link><ConfirmDelete vehicleId={v.id}/></div></td></tr>)}</tbody></table></div>}<Pagination page={vehiclePage} total={totalVehicles} field="vehiclePage" anchor="vehicles"/></section>
-       <section id="leads" className="portal-card portal-wide"><span className="portal-overline">AANVRAGEN</span><h2>Leads voor je garage</h2><LeadList leads={leads}/><Pagination page={leadPage} total={totalLeads} field="leadPage" anchor="leads"/></section>
-      </div></>:<DealerSetup suggestedCompany={suggestedCompany}/>}
+     </>:dealer?<DealerWorkspace name={dealer.name} tab={dealerTab} vehicles={vehicles} leads={leads} vehiclePage={vehiclePage} leadPage={leadPage} inventorySearch={inventorySearch} inventoryStatus={inventoryStatus} inventoryFuel={inventoryFuel} inventoryEquipment={inventoryEquipment} minYear={minYear} maxYear={maxYear} minPrice={minPrice} maxPrice={maxPrice} maxMileage={maxMileage} inventoryBody={inventoryBody} inventoryTransmission={inventoryTransmission} inventoryMake={inventoryMake} inventoryModel={inventoryModel} inventoryGeneration={inventoryGeneration} inventoryMotorization={inventoryMotorization} inventoryTrim={inventoryTrim} inventoryColor={inventoryColor} totalVehicles={totalVehicles} totalReady={totalReady} totalSold={totalSold} totalLeads={totalLeads}/>:<DealerSetup suggestedCompany={suggestedCompany}/>}
    </>}
   <footer className="portal-footer dealer-footer"><span>© {new Date().getFullYear()} IKKENAUTO · Publieke marktplaats in voorbereiding</span><nav aria-label="Informatie"><a href="mailto:info@ikkenauto.be">Contact</a><Link href="/privacy">Privacy</Link><Link href="/voorwaarden">Voorwaarden</Link><a href="mailto:info@ikkenauto.be?subject=Bedrijfsgegevens">Bedrijfsgegevens</a></nav></footer>
   </div>

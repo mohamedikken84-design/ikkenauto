@@ -1,73 +1,71 @@
-# IKKENAUTO.be
+# IKKENAUTO — dealerportaal en toekomstige automarktplaats
 
-Belgische automarktplaats. Deze repository bevat het eerste web-skelet: Next.js 16, React 19 en Tailwind 4.
+IKKENAUTO is een Belgisch platform voor autohandelaars. **De eerste release is het privédealerportaal; de publieke automarktplaats is nog in ontwikkeling.** Dealers kunnen zich met e-mail aanmelden, een garageprofiel maken, voertuigen beheren, foto's uploaden en een CSV-import uitvoeren.
 
-## Starten
+## Eén project: source of truth
 
-```bash
-npm install
-npm run dev
-```
+| Onderdeel | Actieve omgeving | Doel |
+| --- | --- | --- |
+| Code | GitHub: mohamedikken84-design/ikkenauto | Eén repository |
+| Webapp | Vercel: ikkenauto-cursor-keep-alive-6ada | Next.js webapp en portal.ikkenauto.be |
+| Database en auth | Supabase: mprzchltmidpuglzzupt | Dealers, privévoorraad, aanvragen, login, foto-opslag |
+| Domein en e-mail | Hostinger | ikkenauto.be DNS en bestaande mail |
+| Design | DESIGN.md | **Luxury Minimal:** zwart/wit, subtiel goud; alleen de tweede K goud |
 
-Open [http://localhost:3000](http://localhost:3000).
+**Huidige branches:** op 12 november 2026 draait productie nog van audit/dealer-onboarding-2026-11-12. De verbeteringen staan in design/dealer-dashboard-design-md-2026-11-12 en concept-PR #15. De default main bevat nog oudere startcode. Breng main pas na gecontroleerde migratie naar de goedgekeurde versie. De migratie is nog niet uitgevoerd.
 
-## Wat er nu staat
+Zie docs/PROJECT_CLEANUP_PLAN.md voor het consolidatie- en opruimplan. Verwijder geen actieve infrastructuur of klantdata alleen om oude namen op te ruimen.
 
-- Thema in wit, zwart en goud
-- Gedeelde header en footer
-- Homepage met zoekbalk naar de dealerseed
-- `/nl/autos` met filters, resultaatkaarten en advertentiedetail
-- Typed seed plus `data/dealer-listings.csv` (zelfde `Listing`-model)
-- Routes voor adverteren, berichten, account, handelaars en juridische placeholders
+## Product
 
-Er is nog geen externe mail, live productieauth, scraping of Car-Pass. Favorieten en contactberichten op de publieke pagina blijven in de browser. De pagina's over privacy, cookies en voorwaarden zijn nog geen geldige juridische teksten. Deze integratiebranch voegt het homepage-zoekblok uit PR #3 samen met de stock- en registratiecode uit PR #2 en #4. Het zoekblok stuurt naar `/nl/autos`. Zonder `DEV_SHOW_FICTIONAL_CATALOG=1` toont die route alleen gepubliceerde, niet-fictieve voorraad.
+- **Dealerregistratie:** Supabase Auth met e-mailbevestiging; het claimen van een vermelding vraagt verificatie.
+- **Garageprofiel:** bedrijfsgegevens, logo en omslagfoto.
+- **Dashboard:** overzicht, privévoorraad, invoer, CSV-import, aanvragen en garageprofiel.
+- **Auto toevoegen:** één lange, overzichtelijke pagina met alle zichtbare secties, catalogusrelaties, technische gegevens, uitrusting, historie, BTW, foto's en één opslaanknop voor een privéconcept.
+- **Foto's:** directe browserupload naar privé-Supabase Storage met eigenaars-RLS; maximaal 10 bestanden per selectie, 25 per voertuig, maximaal 3,5 MB per bestand.
+- **Voorraad:** zoeken op merk/model/stocknummer, filteren op status, pagina-indeling en beheeracties.
+- **CSV:** preview, maximaal 1.500 voertuigen, bijwerken via stocknummer. AutoScout24 en 2dehands worden **niet automatisch** gesynchroniseerd.
 
-## Dealerstock
+Directoryrecords zijn **geen** dealeraccounts. De publieke marktplaats is nog niet live; status 'klaar voor lancering' publiceert geen advertentie.
 
-Deze stap zit in een vervolg-PR op de UI-branch en is nog niet de productie. PostgreSQL is lokaal. `AUTH_MODE=development-session` is geen login en weigert in productie. Er is geen identiteitsprovider gekoppeld. Een sessietoken komt uit de database, nooit uit een rol die de browser zelf kiest.
+## De belangrijkste routes
 
-```bash
-bash scripts/setup-local-db.sh
-export DATABASE_URL=postgres://ikkenauto:local-dev-only@127.0.0.1:5432/ikkenauto_test
-export AUTH_MODE=development-session
-npm run db:migrate
-npm test
-```
+| Route | Taak |
+| --- | --- |
+| /portal | Start, aanmelden, dashboard |
+| /portal/voorraad/nieuw | Auto toevoegen |
+| /portal?tab=voertuigen | Voorraad, zoek- en statusfilters |
+| /portal?tab=importeren | CSV-import |
+| /portal?tab=aanvragen | Aanvragen |
+| /portal/garage | Garageprofiel |
+| /portal/wachtwoord | Wachtwoordherstel |
 
-`npm run db:dev-session` maakt een ontwikkelsessie en print een token. Daarmee kan een dealer zijn eigen auto's invoeren, pauzeren, publiceren of als verkocht markeren via `/api/dealer/stock`. CSV-import staat op `/api/dealer/import` en wist geen voorraad bij een lege of foute feed. `/nl/autos` toont alleen gepubliceerde, niet-fictieve records. Zet `DEV_SHOW_FICTIONAL_CATALOG=1` buiten productie om de oude seed apart te zien, gelabeld als fictieve ontwikkeldata.
+De oudere /account-routes en hun lokale PostgreSQL-/sessiemodel zijn historische code voor de marketplace. De actieve dealerportal gebruikt Supabase Auth via /portal. Verwijder deze oudere routes pas nadat hun afhankelijkheden en eventuele gebruikers gemigreerd zijn.
 
-Het bookingdatamodel (vestiging, resource, openingstijden, buffers, Europe/Brussels, overlap-uitsluiting) staat in de database. Er is geen boekingsendpoint en er wordt geen afspraak gemaakt.
+## Automotive uitbreiding (13 november 2026)
 
-## Dealerportaal v1
+Op de Luxury Minimal ontwikkelbranch is een **additieve** Supabase-catalogus toegevoegd:
+- 115 merken, 364 modelvoorstellen, vier bron-gecontroleerde generatiereferenties.
+- Tabellen voor generatie, motorisatie en uitvoering, met administratieve aanvullingen via /portal/admin/catalog. Motorisaties en uitvoeringen zijn **niet** automatisch verzonnen of uit een gesloten database gekopieerd.
+- 224 doorzoekbare uitrustingskenmerken in de database, met EV-/PHEV-/bestelwagencompatibiliteit; ontbrekende opties kunnen beheerders toevoegen.
+- /portal/api/catalog biedt cachebare merk- en optiegegevens, met afhankelijke model-, generatie- en uitvoeringsopties.
+- Het handmatige voertuigformulier is **één doorlopende pagina** met acht direct zichtbare onderdelen, niet acht stappen. De pagina omvat 60+ technische/EV/conditionele velden, prijs/btw, uitrusting en private fotoupload.
+- Nieuwe voertuigen blijven privéconcepten; de publieke marktplaats is niet ingeschakeld.
+- De privévoorraad heeft server-side filters voor merk/model/stocknummer, status, brandstof, uitrusting, prijs, kilometerstand, bouwjaar, carrosserie en transmissie.
+- Link-import via AutoScout24, mobile.de, 2dehands en garagewebsites bewaart voorlopig alleen de URL; externe fetch/sync is nog **niet** geactiveerd. CSV-import blijft de werkende bulkmethode.
+- Belgisch ondernemingsnummer wordt genormaliseerd en gecontroleerd met mod-97; dit is **geen** live verificatie van de officiële KBO-gegevens, waarvoor gekwalificeerde toegang nodig is.
+- Latency-verbeteringen: Vercel Dublin naast Supabase Ierland, minder gegevens per scherm, cache en indexes voor stock/filters/foto's/leads.
 
-Integratiebranch `dealerportaal-v1` voegt PR #3 en PR #4 samen en gaat niet naar `main`. Migratie `006_dealerportaal.sql` is de bijgewerkte architect-spec: `garages`, `platform_admins`, `vehicle_private`, `leads`, `vehicle_events` en `audit_log`. Verificatie zet `is_public` niet aan. Zonder Supabase-URL draait auth lokaal tegen stubs (`db/local/auth_storage_stubs.sql`); in productie zonder Supabase-URL én service-role-sleutel weigert registratie. Er is geen betaalde VIN-API.
+Zie het verificatie- en testoverzicht in [COMPETITOR_VEHICLE_FIELDS.md](COMPETITOR_VEHICLE_FIELDS.md). Geen volledige functionele pariteit of licentie voor overname van concurrentgegevens wordt geclaimd. Browser-E2E/SMTP/API-integraties moeten apart worden geverifieerd.
 
-Nog niet in deze stap: voorraadformulier met de extra velden, foto-upload, leads-inbox, teaser, preview-wachtwoord en de dagelijkse keep-alive.
+## Lokaal ontwikkelen
 
-## Lokale registratie
+Installeer de Node-versie die de CI gebruikt. In de repository-root: voer npm ci uit, vervolgens npm run lint, npm test, npm run build en npm run dev. Voor integratietests is een lokale PostgreSQL-testdatabase nodig; de CI-configuratie staat in .github/workflows/ci.yml.
 
-Dit is werkende lokale auth voor tests, geen gekoppelde productie-identiteitsprovider. Wachtwoorden gaan via Argon2id (`@node-rs/argon2`). Sessies blijven de bestaande `sessions`-tabel, met intrekking. Verificatie en herstel schrijven alleen in `local_mail_messages` wanneer `MAIL_TRANSPORT=local` en de modus niet productie is. In productie weigert die sink.
+Voor de portal zijn de openbare Supabase URL en anon/publishable key nodig. Bewaar omgevingsvariabelen in lokale .env-bestanden of Vercel-instellingen; zet nooit een service-role key in de browser of repository. Zie .env.example.
 
-```bash
-export MAIL_TRANSPORT=local
-export APP_ORIGIN=http://127.0.0.1:3000
-export AUTH_MODE=development-session
-```
+## Release- en beveiligingscontrole
 
-Migratie `db/migrations/005_registration_auth.sql` voegt `private_user`, wachtwoordhashes, privéprofielen, professionele onboardings, tokens, de lokale post, de pogingenlimiet en garageclaims toe. Starten heeft geen externe dienst nodig: PostgreSQL lokaal, `MAIL_TRANSPORT=local` en `APP_ORIGIN`. Zonder die mailinstelling of met `AUTH_MODE=production` of `NODE_ENV=production` schrijft registratie niets en geeft de API 503. Wachtwoordlogin, bevestigen en herstel weigeren in die productiestand eveneens. Een bestaande dealersessie via het ontwikkelscript blijft de oude sessietabel, maar dat script weigert zelf in productie.
+Laat de designbranch slagen voor lint, tests en de Next.js production build. Controleer daarna in een browser met twee testdealers: registratie en verificatie, garageprofiel, auto toevoegen/bewerken, meerdere foto's, uploadverwijdering, CSV, statuswijzigingen, filters, mobiel en RLS-eigenaarschap. Bevestig Auth Redirect URL's, SMTP en juridische teksten vóór dealeruitnodigingen.
 
-Open `/account/registreren`. Kies particulier of professioneel. Het verificatiebericht staat in de tabel `local_mail_messages`, niet in een externe mailbox. Daarna aanmelden, afmelden, en desnoods herstellen. Een professionele garage blijft `unverified` en niet openbaar. Een claim maakt alleen een aanvraag en wijzigt geen eigenaar.
-
-De limiet is 5 pogingen per 15 minuten per actie en cliënt, opgeslagen in `auth_rate_limits`. Productie negeert `AUTH_RATE_LIMIT_MAX`. In test of ontwikkeling mag die variabele 1 tot 20 zijn. Er is geen marketingvinkje en geen abonnement. De privacytekst is nog niet juridisch beoordeeld.
-
-`npm run db:dev-session` blijft een ontwikkelfixture. Dat token is geen gebruikerslogin.
-
-## Zoeken uitproberen
-
-Zonder database toont `/nl/autos` geen echte voorraad. De voorbeeldseed zie je alleen met `DEV_SHOW_FICTIONAL_CATALOG=1` tijdens `npm run dev`, onder het label fictieve ontwikkeldata.
-
-- Filter op merk, dan model. De fictieve telling hoort te dalen.
-- Zet postcode `2000` en straal `10 km`: alleen Antwerpen in die fictieve lijst.
-- Een onmogelijke combinatie, bijvoorbeeld Golf onder € 1.000, toont nul fictieve resultaten en voorstellen om een filter te lossen.
-
-Gepubliceerde dealerstock verschijnt pas na een sessie, een auto en status `published`. Een auto met status `sold` verdwijnt daar weer.
+Maak pas daarna de gekozen codeversie canoniek en ruim overbodige Vercel-projecten en branches op. **Behoud de bestaande Supabase-database, klantdata, Hostinger DNS en e-mail.**

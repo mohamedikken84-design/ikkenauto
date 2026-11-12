@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase/server";
+import {normalizeSpecifications} from "@/lib/dealer/vehicle-fields";
 
 type UpdateState = { error: string };
 const clean=(f:FormData,k:string,max=250)=>String(f.get(k)??"").trim().slice(0,max);
@@ -26,27 +27,60 @@ export async function updateVehicle(_previous:UpdateState,form:FormData):Promise
    return {error:"Controleer bouwjaar, kilometerstand, zitplaatsen, deuren en vermogen."};
  const {data:found}=await db.from("portal_vehicles").select("id").eq("dealer_id",dealerId).eq("id",id).maybeSingle();
  if(!found)return {error:"Deze auto behoort niet tot je garage."};
+ const vehicleClass=clean(form,"vehicle_class",25)||"car";
+ if(!["car","commercial","motorhome","truck","motorcycle","other"].includes(vehicleClass))return {error:"Ongeldige voertuigcategorie."};
+ const vatRegime=clean(form,"vat_regime",25)||"op_aanvraag";
+ if(!["btw","marge","particulier","vrijgesteld","op_aanvraag"].includes(vatRegime))return {error:"Ongeldig BTW-regime."};
+ const warranty=number(form,"warranty_months");
+ if(!integer(warranty,0,120))return {error:"Garantie mag maximaal 120 maanden zijn."};
+ let specifications:Record<string,string|number|boolean>={};
+ try{specifications=normalizeSpecifications(JSON.parse(clean(form,"specifications",14000)||"{}"));}
+ catch{return {error:"Technische velden zijn niet goed leesbaar."};}
+ const codes=[...new Set(form.getAll("equipment_codes").map(String))].filter(x=>/^[a-z0-9_]{1,90}$/.test(x)).slice(0,240);
+ const catalogLoaded=form.get("catalog_equipment_loaded")==="yes";
+ const {data:accepted,error:catalogError}=codes.length?await db.from("portal_vehicle_equipment_catalog")
+   .select("code,label_nl,compatible_fuels").in("code",codes).eq("enabled",true):{data:[],error:null};
+ if(catalogError||accepted?.length!==codes.length)return {error:"Eén van de gekozen uitrustingsopties is niet meer beschikbaar."};
+ const fuel=clean(form,"fuel",50);
+ const fuelToken=fuel==="Elektrisch"?"electric":fuel==="Plug-in hybride"?"plug_in_hybrid":"other";
+ if((accepted||[]).some(v=>Array.isArray(v.compatible_fuels)&&v.compatible_fuels.length>0&&
+   !v.compatible_fuels.includes(fuelToken)&&!v.compatible_fuels.includes(vehicleClass)))return {error:"Controleer uitrusting die niet bij de brandstof hoort."};
  const status=clean(form,"status",12);
  if(!["draft","ready","sold"].includes(status))return {error:"Ongeldige voorraadstatus."};
  const {error}=await db.from("portal_vehicles").update({
+  vehicle_class:vehicleClass,
+  generation_code:clean(form,"generation_code",60)||null,
+  motorization:clean(form,"motorization",100)||null,
+  trim_line:clean(form,"trim_line",150)||null,
+  vat_regime:vatRegime,
+  specifications,
+  equipment_codes:codes,
+  maintenance_history:clean(form,"maintenance_history",2000)||null,
+  accident_history:clean(form,"accident_history",2000)||null,
+  condition_notes:clean(form,"condition_notes",2000)||null,
+  warranty_months:warranty,
   make,model,price_eur:price,year,mileage_km:mileage,seats,doors,power_hp:power,status,
   version:clean(form,"version",150)||null,
   fuel:clean(form,"fuel",50)||null,
   transmission:clean(form,"transmission",50)||null,
   body_type:clean(form,"body_type",60)||null,
   color:clean(form,"color",70)||null,
+  interior_color:clean(form,"interior_color",70)||null,
+  drivetrain:clean(form,"drivetrain",50)||null,
+  first_registration:clean(form,"first_registration",20)||null,
+  vin:clean(form,"vin",32)||null,
   emission_class:clean(form,"emission_class",30)||null,
   condition:clean(form,"condition",40)||null,
   source_ref:clean(form,"source_ref",150)||null,
   description:clean(form,"description",4000)||null,
-  vat_deductible:form.get("vat_deductible")==="on",
-  options:form.getAll("options").map(v=>String(v).slice(0,80)).slice(0,90),
+  vat_deductible:vatRegime==="btw",
+  options:catalogLoaded?[...new Set([...(accepted||[]).map(v=>v.label_nl),...form.getAll("options").map(v=>String(v).trim().slice(0,80))])].slice(0,240):form.getAll("options").map(v=>String(v).slice(0,80)).slice(0,240),
   updated_at:new Date().toISOString()
  }).eq("id",id).eq("dealer_id",dealerId);
  if(error)return {error:"Opslaan mislukt. Controleer het stocknummer en de gegevens."};
  revalidatePath("/portal");
  revalidatePath("/portal/voorraad/"+id+"/bewerken");
- redirect("/portal?success="+encodeURIComponent("Voertuiggegevens opgeslagen."));
+ redirect("/portal/voorraad/"+id+"/bewerken?success="+encodeURIComponent("Voertuiggegevens opgeslagen.")+"#vehicle-edit-form");
 }
 export async function removeVehiclePhoto(form:FormData) {
  const {db,dealerId}=await owner();

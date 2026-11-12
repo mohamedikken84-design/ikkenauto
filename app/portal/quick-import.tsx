@@ -50,8 +50,8 @@ export function QuickImport(){
   }catch{setPreview({valid:false,headers:[],samples:[],count:0,duplicates:0,hasRefs:false,message:"Het CSV-bestand kan niet worden gelezen. Controleer het formaat."});}
   finally{setReading(false);}
  }
- return <details className="dealer-import-disclosure">
-  <summary>CSV-import</summary>
+ return <div className="dealer-import-disclosure">
+  <div className="dealer-import-heading">CSV-bestand kiezen</div>
   <div className="dealer-import-content">
    <p className="portal-note">Voor een exportbestand met meerdere auto&apos;s. Eén voertuig voeg je via ‘Auto toevoegen’ in.</p>
    <form action={importDealerCsv} className="portal-form">
@@ -70,5 +70,5 @@ export function QuickImport(){
    </form>
    <p className="portal-note">Directe synchronisatie via AutoScout24 of 2dehands is nog niet beschikbaar. Een advertentielink wordt niet als voltooide import voorgesteld.</p>
   </div>
- </details>;
+ </div>;
 }

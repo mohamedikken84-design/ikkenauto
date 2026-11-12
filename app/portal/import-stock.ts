@@ -2,7 +2,7 @@
 import {createSupabaseServer} from "@/lib/supabase/server";
 import {revalidatePath} from "next/cache";
 import {redirect} from "next/navigation";
-const err=(msg:string):never=>redirect("/portal?error="+encodeURIComponent(msg));
+const err=(msg:string):never=>redirect("/portal?tab=importeren&error="+encodeURIComponent(msg));
 function parseCSV(raw:string){
  const text=raw.replace(/^\ufeff/,""),first=text.split(/\r?\n/,1)[0];
  const d=first.includes(";")?";":first.includes("\t")?"\t":",";
@@ -87,5 +87,5 @@ export async function importDealerCsv(form:FormData){
   }
  }
  revalidatePath("/portal");
- redirect("/portal?success="+encodeURIComponent(saved+" auto's geïmporteerd, "+errors+" rijen overgeslagen. Zonder stocknummer kan een herhaalde import duplicaten opleveren."));
+ redirect("/portal?tab=voertuigen&success="+encodeURIComponent(saved+" auto's geïmporteerd, "+errors+" rijen overgeslagen. Zonder stocknummer kan een herhaalde import duplicaten opleveren.")+"#vehicles");
 }

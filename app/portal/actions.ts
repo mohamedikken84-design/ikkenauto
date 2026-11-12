@@ -1,6 +1,5 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase/server";
@@ -106,7 +105,7 @@ export async function vehicleStatus(form: FormData) {
     .eq("id",id).eq("dealer_id",dealer.id);
   if (error) go("Status aanpassen mislukt.");
   revalidatePath("/portal");
-  go("Voorraadstatus bijgewerkt.",true);
+  redirect("/portal?tab=voertuigen&success="+encodeURIComponent("Voorraadstatus bijgewerkt.")+"#vehicles");
 }
 export async function deleteVehicle(form: FormData) {
   const {db,dealer}=await ownDealer();
@@ -121,7 +120,7 @@ export async function deleteVehicle(form: FormData) {
   const {error}=await db.from("portal_vehicles").delete().eq("id",id).eq("dealer_id",dealer.id);
   if(error) go("Auto verwijderen mislukt.");
   revalidatePath("/portal");
-  go("Auto verwijderd.",true);
+  redirect("/portal?tab=voertuigen&success="+encodeURIComponent("Auto verwijderd.")+"#vehicles");
 }
 // Handles quoted CSV fields, embedded commas and CRLF. Rejects incomplete quoted cells.
 function parseCsv(input: string) {
@@ -175,25 +174,6 @@ export async function importVehicles(form: FormData) {
   }
   revalidatePath("/portal");
   go(accepted+" voertuigen verwerkt"+(errors?"; "+errors+" rijen overgeslagen":"")+".",true);
-}
-export async function uploadVehiclePhoto(form: FormData) {
-  const {db,dealer}=await ownDealer();
-  const vehicleId=value(form,"vehicle_id",40), file=form.get("photo");
-  if(!(file instanceof File)||file.size===0||file.size>3_500_000||
-    !["image/jpeg","image/png","image/webp"].includes(file.type)) go("Gebruik JPG, PNG of WebP (maximaal 3,5 MB).");
-  const {data:vehicle}=await db.from("portal_vehicles").select("id").eq("id",vehicleId).eq("dealer_id",dealer.id).maybeSingle();
-  if(!vehicle)go("Deze auto hoort niet bij je garage.");
-  const suffix=file.type==="image/png"?"png":file.type==="image/webp"?"webp":"jpg";
-  const path=dealer.id+"/"+vehicleId+"/"+randomUUID()+"."+suffix;
-  const {error}=await db.storage.from("portal-vehicles").upload(path,Buffer.from(await file.arrayBuffer()),{
-    contentType:file.type,upsert:false,
-  });
-  if(error)go("Foto uploaden mislukt.");
-  const saved=await db.from("portal_vehicle_photos").insert({dealer_id:dealer.id,vehicle_id:vehicleId,storage_path:path});
-  if(saved.error){await db.storage.from("portal-vehicles").remove([path]);go("Foto registreren mislukt.");}
-  revalidatePath("/portal");
-  if(value(form,"return_to",10)==="edit")redirect("/portal/voorraad/"+vehicleId+"/bewerken?success=Foto+opgeslagen");
-  go("Foto opgeslagen.",true);
 }
 export async function addProspect(form: FormData) {
   const db=await admin(),name=value(form,"name",140),email=value(form,"email",200);
