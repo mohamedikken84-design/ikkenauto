@@ -7,6 +7,10 @@ export async function GET(request:Request){
  const code=url.searchParams.get("code");
  const tokenHash=url.searchParams.get("token_hash");
  const type=url.searchParams.get("type");
+ // Supabase may redirect to the callback with an error when a link expires.
+ if(url.searchParams.has("error")||url.searchParams.has("error_code")){
+   return NextResponse.redirect(url.origin+"/portal?error="+encodeURIComponent("De bevestigingslink is verlopen of ongeldig. Vraag een nieuwe aan."));
+ }
  if(code){
   const {error}=await db.auth.exchangeCodeForSession(code);
   if(error)return NextResponse.redirect(url.origin+"/portal?error="+encodeURIComponent("De bevestigingslink is ongeldig of verlopen."));

@@ -8,7 +8,7 @@ test("dealer hostname is isolated even without environment flag",()=>{
  assert.equal(isDealerOnlyHost("ikkenauto.vercel.app","true"),true);
 });
 test("dealer URLs and legal routes stay available",()=>{
- for(const path of ["/portal","/portal/garage","/portal/auth/callback","/portal/api/directory","/registreer","/registreren","/inloggen","/privacy","/voorwaarden","/_next/static/a.js"]){
+ for(const path of ["/portal","/portal/garage","/portal/auth/callback","/portal/api/directory","/registreer","/registreren","/inloggen","/auth/confirm","/auth/callback","/privacy","/voorwaarden","/_next/static/a.js"]){
   assert.equal(dealerRouteKind(path),"allow",path);
  }
  assert.equal(dealerRouteKind("/"),"home");
