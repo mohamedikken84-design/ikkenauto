@@ -386,3 +386,23 @@
   .dealer-row-actions { padding-top: 10px; border-top: 1px dashed #e9e9e6; margin-top: 8px; gap: 17px; }
   .dealer-price-cell { font-size: 13px; }
 }
+
+
+/* Lightweight, noninteractive loading state. */
+.dealer-loading-layout { display: grid; grid-template-columns: 206px minmax(0,1fr); gap: 38px; margin-top: 16px; }
+.dealer-loading-sidebar { border-right: 1px solid #e5e5e2; padding: 19px 25px 0 7px; display: grid; align-content: start; gap: 27px; }
+.dealer-loading-line { background: #e6e6e3; height: 10px; border-radius: 3px; }
+.dealer-loading-content { padding: 16px 0 20px; }
+.dealer-loading-title { width: 30%; height: 26px; }
+.dealer-loading-label { color: #777; font-size: 12px; margin: 13px 0 25px; }
+.dealer-loading-metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 12px; margin-bottom: 21px; }
+.dealer-loading-metric { background: #fff; border: 1px solid #e5e5e2; border-radius: 9px; height: 125px; padding: 20px; display: grid; align-content: space-between; }
+.dealer-loading-value { height: 29px; width: 32%; }
+.dealer-loading-panel { background: #fff; border: 1px solid #e5e5e2; border-radius: 9px; padding: 24px; }
+.dealer-loading-row { border-bottom: 1px solid #eee; display: flex; justify-content: space-between; padding: 20px 0; }
+@media(max-width:760px) {
+  .dealer-loading-layout { display: block; }
+  .dealer-loading-sidebar { display: none; }
+  .dealer-loading-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .dealer-loading-title { width: 65%; }
+}
