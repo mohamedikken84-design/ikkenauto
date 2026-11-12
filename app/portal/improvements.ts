@@ -99,10 +99,10 @@ export async function vehicleChecked(_previous:Result,form:FormData):Promise<Res
   source_ref:field(form,"source_ref",150)||null,
   vat_deductible:form.get("vat_deductible")==="on",options
  };
- const {error}=await db.from("portal_vehicles").insert(record);
- if(error)return {error:"Auto niet opgeslagen. Controleer of je stocknummer al bestaat."};
+ const {data:created,error}=await db.from("portal_vehicles").insert(record).select("id").single();
+ if(error||!created)return {error:"Auto niet opgeslagen. Controleer of je stocknummer al bestaat."};
  revalidatePath("/portal");
- redirect("/portal?success="+encodeURIComponent("Auto opgeslagen."));
+ redirect("/portal/voorraad/"+created.id+"/bewerken?success="+encodeURIComponent("Auto opgeslagen als concept. Voeg nu foto's toe.")+"#photos");
 }
 export async function queueExternalLink(_previous:Result,form:FormData):Promise<Result>{
  let ctx:Awaited<ReturnType<typeof getDealer>>;
