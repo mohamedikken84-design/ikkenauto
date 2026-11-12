@@ -208,3 +208,15 @@
 @media(max-width:640px){.portal-editor-card{padding:20px}.portal-editor-card .portal-fields{grid-template-columns:1fr}.portal-wizard-steps li{font-size:0}.portal-wizard-steps li span{font-size:12px}.portal-wizard-controls .portal-primary,.portal-wizard-controls .portal-secondary{min-width:120px}}
 
 .portal-import-single{max-width:790px;margin:34px auto}.portal-import-single .portal-card{margin-top:15px}
+
+.portal-import-wizard{max-width:850px;margin:auto}
+.portal-import-wizard h2{font-size:26px}
+.portal-import-upload{display:flex;justify-content:space-between;gap:20px;align-items:center;flex-wrap:wrap;border:1px solid #ddd;padding:18px;border-radius:9px}
+.portal-import-upload label{min-width:250px;flex:1}
+.portal-import-upload input[type=file]{font-size:12px}
+.portal-import-review{border:1px solid #e3e3e3;border-radius:10px;padding:20px}
+.portal-import-review-top{display:flex;justify-content:space-between;gap:12px;font-size:13px}
+.portal-import-review-top span{color:#666}
+.portal-import-warning{padding:12px;border:1px solid #ebcf9a;background:#fffaf0;border-radius:8px;font-size:12px}
+.portal-import-confirm{display:flex!important;align-items:center;gap:9px;font-size:12px!important;font-weight:500!important;margin-top:15px}
+.portal-import-confirm input{width:auto!important;min-width:0!important}
