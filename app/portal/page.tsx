@@ -10,14 +10,14 @@ import { ConfirmDelete } from "./confirm-delete";
 
 export const metadata:Metadata={title:"Dealerportaal | IKKENAUTO",description:"Veilig beheer voor garages en IKKENAUTO."};
 const euro=(v:unknown)=>new Intl.NumberFormat("nl-BE",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(Number(v)||0);
-type Params={ searchParams: Promise<{error?:string;success?:string;view?:string;dealerPage?:string;vehiclePage?:string;prospectPage?:string;leadPage?:string}> };
+type Params={ searchParams: Promise<{error?:string;success?:string;view?:string;dealerPage?:string;vehiclePage?:string;prospectPage?:string;leadPage?:string;stockPage?:string}> };
 type Vehicle={id:string;dealer_id:string;make:string;model:string;version:string|null;year:number|null;mileage_km:number|null;price_eur:number;status:string;created_at:string;source_ref:string|null};
 type Dealer={id:string;name:string;city:string;email:string;status:string;created_at:string;phone:string|null;owner_id:string};
 const stageNames:{[k:string]:string}={nieuw:"Nieuw",gecontacteerd:"Gecontacteerd",interesse:"Interesse",aangesloten:"Aangesloten",geen_interesse:"Geen interesse"};
 export default async function Portal({searchParams}:Params){
  const notices=await searchParams;
  const safePage=(v?:string)=>Math.max(1,Math.min(100000,Number.isInteger(Number(v))?Number(v)||1:1));
- const dealerPage=safePage(notices.dealerPage),vehiclePage=safePage(notices.vehiclePage),prospectPage=safePage(notices.prospectPage),leadPage=safePage(notices.leadPage);
+ const dealerPage=safePage(notices.dealerPage),vehiclePage=safePage(notices.vehiclePage),prospectPage=safePage(notices.prospectPage),leadPage=safePage(notices.leadPage),stockPage=safePage(notices.stockPage);
  const db=await createSupabaseServer();
  const {data:{user}}=await db.auth.getUser();
  let isAdmin=false;
@@ -41,6 +41,8 @@ export default async function Portal({searchParams}:Params){
  let prospects:{id:string;name:string;city:string|null;email:string|null;phone:string|null;stage:string;created_at:string}[]=[];
  let leads:{id:string;dealer_id:string;buyer_name:string;buyer_email:string;message:string;status:string;created_at:string}[]=[];
  let databaseError="";
+ let myTotal=0,myReady=0,mySold=0,myLeadTotal=0;
+ let photoUrls:Record<string,string>={};
  let totalDealers=0,totalVehicles=0,totalReady=0,totalProspects=0,totalLeads=0,directoryTotal=0;
  let directoryClaims:{id:number;source_row:number;user_id:string;status:string;evidence:string|null;created_at:string}[]=[];
  let directoryCompanyNames:Record<number,string>={};
@@ -80,11 +82,27 @@ export default async function Portal({searchParams}:Params){
   if(vehicles.length){const res=await db.from("portal_dealers").select("id,name").in("id",[...new Set(vehicles.map(v=>v.dealer_id))]);relatedNames=res.data||[];}
  } else if(user&&dealer){
   const [a,b]=await Promise.all([
-   db.from("portal_vehicles").select("id,dealer_id,make,model,version,year,mileage_km,price_eur,status,created_at,source_ref").eq("dealer_id",dealer.id).order("created_at",{ascending:false}).limit(1000),
+   db.from("portal_vehicles").select("id,dealer_id,make,model,version,year,mileage_km,price_eur,status,created_at,source_ref").eq("dealer_id",dealer.id).order("created_at",{ascending:false}).range((stockPage-1)*50,stockPage*50-1),
    db.from("portal_leads").select("id,dealer_id,buyer_name,buyer_email,message,status,created_at").eq("dealer_id",dealer.id).order("created_at",{ascending:false}).limit(100),
   ]);
   vehicles=(a.data||[]) as Vehicle[];leads=b.data||[];
   databaseError=[a.error,b.error].filter(Boolean).map(e=>e?.message).join(" ");
+  const [allCount,readyCount,soldCount,leadCount]=await Promise.all([
+   db.from("portal_vehicles").select("id",{head:true,count:"exact"}).eq("dealer_id",dealer.id),
+   db.from("portal_vehicles").select("id",{head:true,count:"exact"}).eq("dealer_id",dealer.id).eq("status","ready"),
+   db.from("portal_vehicles").select("id",{head:true,count:"exact"}).eq("dealer_id",dealer.id).eq("status","sold"),
+   db.from("portal_leads").select("id",{head:true,count:"exact"}).eq("dealer_id",dealer.id)
+  ]);
+  myTotal=allCount.count??0;myReady=readyCount.count??0;mySold=soldCount.count??0;myLeadTotal=leadCount.count??0;
+  if(vehicles.length){
+   const {data:photos}=await db.from("portal_vehicle_photos").select("vehicle_id,storage_path").in("vehicle_id",vehicles.map(v=>v.id)).limit(250);
+   const first=new Map<string,string>();
+   for(const row of photos||[])if(!first.has(row.vehicle_id))first.set(row.vehicle_id,row.storage_path);
+   await Promise.all([...first].map(async ([vehicleId,path])=>{
+    const {data}=await db.storage.from("portal-vehicles").createSignedUrl(path,600);
+    if(data?.signedUrl)photoUrls[vehicleId]=data.signedUrl;
+   }));
+  }
  }
  const dealerName=new Map([...dealers.map(d=>[d.id,d.name] as const),...relatedNames.map(d=>[d.id,d.name] as const)]);
  const stockCount=new Map(dealerCounts.map(d=>[d.dealer_id,d.total]));
@@ -102,9 +120,9 @@ export default async function Portal({searchParams}:Params){
       <section id="vehicles" className="portal-card portal-wide"><div className="portal-card-heading"><div><span className="portal-overline">TOTALE STOCK</span><h2>Auto's van alle dealers</h2></div><span className="portal-count">{totalVehicles} voertuigen</span></div><VehicleTable vehicles={vehicles} dealerName={dealerName}/><Pagination page={vehiclePage} total={totalVehicles} field="vehiclePage" anchor="vehicles"/></section>
       <section id="prospects" className="portal-card portal-wide"><div className="portal-card-heading"><div><span className="portal-overline">ACQUISITIE</span><h2>Te contacteren handelaars</h2></div><span className="portal-count">{totalProspects} prospecten</span></div><form action={addProspect} className="portal-form portal-fields"><label>Garagenaam<input name="name" required placeholder="Naam autohandelaar"/></label><label>Gemeente<input name="city" placeholder="Mechelen"/></label><label>E-mail<input name="email" type="email" placeholder="info@garage.be"/></label><label>Telefoon<input name="phone"/></label><button className="portal-button">Prospect toevoegen</button></form><div className="portal-table-wrap"><table className="portal-table"><thead><tr><th>Handelaar</th><th>Contact</th><th>Opvolging</th></tr></thead><tbody>{prospects.map(p=><tr key={p.id}><td><strong>{p.name}</strong><small>{p.city||"—"}</small></td><td>{p.email||"—"}<small>{p.phone||""}</small></td><td><form action={setProspectStage} className="portal-inline"><input type="hidden" name="id" value={p.id}/><select name="stage" defaultValue={p.stage}>{Object.entries(stageNames).map(([k,n])=><option key={k} value={k}>{n}</option>)}</select><button>Opslaan</button></form></td></tr>)}</tbody></table></div><Pagination page={prospectPage} total={totalProspects} field="prospectPage" anchor="prospects"/></section>
       <section id="leads" className="portal-card portal-wide"><div className="portal-card-heading"><div><span className="portal-overline">INBOX</span><h2>Alle aanvragen</h2></div><span className="portal-count">{totalLeads}</span></div><LeadList leads={leads} dealerName={dealerName}/><Pagination page={leadPage} total={totalLeads} field="leadPage" anchor="leads"/></section><DirectoryAdmin count={directoryTotal} claims={directoryClaims} companyNames={directoryCompanyNames} dealerNames={directoryDealerNames}/></div>
-     </>:dealer?<><div className="portal-stats"><Stat label="Mijn voertuigen" number={vehicles.length}/><Stat label="Klaar voor lancering" number={vehicles.filter(v=>v.status==="ready").length}/><Stat label="Verkocht" number={vehicles.filter(v=>v.status==="sold").length}/><Stat label="Aanvragen" number={leads.length}/></div><div className="portal-grid">
+     </>:dealer?<><div className="portal-stats"><Stat label="Mijn voertuigen" number={myTotal}/><Stat label="Klaar voor lancering" number={myReady}/><Stat label="Verkocht" number={mySold}/><Stat label="Aanvragen" number={myLeadTotal}/></div><div className="portal-grid">
        <div className="portal-dashboard-actions portal-wide"><Link href="/portal/garage" className="portal-secondary">Garageprofiel beheren</Link><Link href="/portal/voertuigen/nieuw" className="portal-primary">Auto toevoegen</Link><Link href="/portal/voertuigen/importeren" className="portal-secondary">Auto\u0027s importeren</Link></div>
-       <section className="portal-card portal-wide"><div className="portal-card-heading"><div><span className="portal-overline">MIJN STOCK</span><h2>Voertuigen</h2></div><span className="portal-count">{vehicles.length} auto's</span></div>{vehicles.length===0?<Empty>Voeg je eerste voertuig toe of importeer je bestaande voorraad.</Empty>:<div className="portal-table-wrap"><table className="portal-table"><thead><tr><th>Auto</th><th>Prijs</th><th>Voortgang</th><th>Foto</th><th>Actie</th></tr></thead><tbody>{vehicles.map(v=><tr key={v.id}><td><strong>{v.make} {v.model}</strong><small>{v.version||""} {v.year||""} · {v.mileage_km??"—"} km</small><Link href={"/portal/voertuigen/"+v.id+"/bewerken"} className="portal-text-link">Bewerken</Link></td><td>{euro(v.price_eur)}</td><td><form action={vehicleStatus} className="portal-inline"><input type="hidden" name="vehicle_id" value={v.id}/><select name="status" defaultValue={v.status}><option value="draft">Concept</option><option value="ready">Klaar</option><option value="sold">Verkocht</option></select><button>Opslaan</button></form></td><td><form action={uploadVehiclePhoto} className="portal-inline"><input type="hidden" name="vehicle_id" value={v.id}/><input name="photo" type="file" accept="image/png,image/jpeg,image/webp" required/><button>Upload</button></form></td><td><ConfirmDelete vehicleId={v.id}/></td></tr>)}</tbody></table></div>}</section>
+       <section id="my-stock" className="portal-card portal-wide"><div className="portal-card-heading"><div><span className="portal-overline">MIJN STOCK</span><h2>Voertuigen</h2></div><span className="portal-count">{vehicles.length} auto's</span></div>{vehicles.length===0?<Empty>Voeg je eerste voertuig toe of importeer je bestaande voorraad.</Empty>:<div className="portal-table-wrap"><table className="portal-table"><thead><tr><th>Auto</th><th>Prijs</th><th>Voortgang</th><th>Foto</th><th>Actie</th></tr></thead><tbody>{vehicles.map(v=><tr key={v.id}><td><strong>{v.make} {v.model}</strong><small>{v.version||""} {v.year||""} · {v.mileage_km??"—"} km</small><Link href={"/portal/voertuigen/"+v.id+"/bewerken"} className="portal-text-link">Bewerken</Link></td><td>{euro(v.price_eur)}</td><td><form action={vehicleStatus} className="portal-inline"><input type="hidden" name="vehicle_id" value={v.id}/><select name="status" defaultValue={v.status}><option value="draft">Concept</option><option value="ready">Klaar</option><option value="sold">Verkocht</option></select><button>Opslaan</button></form></td><td>{photoUrls[v.id]&&<img className="portal-stock-photo" src={photoUrls[v.id]} alt={"Foto van "+v.make+" "+v.model}/>}<form action={uploadVehiclePhoto} className="portal-inline"><input type="hidden" name="vehicle_id" value={v.id}/><input name="photo" type="file" accept="image/png,image/jpeg,image/webp" required/><button>Upload</button></form></td><td><ConfirmDelete vehicleId={v.id}/></td></tr>)}</tbody></table></div>}<Pagination page={stockPage} total={myTotal} field="stockPage" anchor="my-stock"/></section>
        <section className="portal-card portal-wide"><span className="portal-overline">AANVRAGEN</span><h2>Leads voor je garage</h2><LeadList leads={leads}/></section>
       </div></>:<DealerSetup initialCompany={proposedCompany}/>}
    </>}

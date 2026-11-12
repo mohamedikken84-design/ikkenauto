@@ -239,3 +239,5 @@
 .portal-cover-media img{width:100%;height:100%;object-fit:cover}
 .portal-media-placeholder{color:#777;font-size:12px}
 @media(max-width:800px){.portal-profile-grid{grid-template-columns:1fr}.portal-profile h1{font-size:28px}}
+
+.portal-stock-photo{display:block;max-width:110px;height:65px;object-fit:cover;border-radius:7px;margin-bottom:8px;border:1px solid #ddd}
