@@ -50,8 +50,9 @@ export function AuthPanel({initialView="welcome"}:{initialView?:View}) {
           <button type="button" className={view==="register"?"selected":""} onClick={()=>choose("register")}>Registreren</button>
           <button type="button" className={view==="login"?"selected":""} onClick={()=>choose("login")}>Inloggen</button>
         </div>
-        <h1 id="account-title">{view==="register"?"Garage registreren":"Inloggen"}</h1>
-        <p>{view==="register"?"Maak eerst je account aan. Je bedrijfsgegevens vul je daarna in.":"Meld je aan om je garage en voorraad te beheren."}</p>
+        {view==="register"&&<div className="dealer-register-stage"><span className="dealer-eyebrow">REGISTREREN · STAP 1 VAN 3</span><p>1. Account <span aria-hidden="true">→</span> 2. Garagegegevens <span aria-hidden="true">→</span> 3. Voertuigen</p></div>}
+        <h1 id="account-title">{view==="register"?"Maak een account aan":"Welkom terug"}</h1>
+        <p>{view==="register"?"Registreer met je zakelijke e-mailadres. Daarna bevestig je je e-mail en maak je je garageprofiel aan.":"Meld je aan om je garage en voorraad te beheren."}</p>
         <form action={view==="register"?registerAction:loginAction} className="portal-form">
           <label>E-mailadres
             <input type="email" name="email" required autoComplete="email" value={email} onChange={event=>setEmail(event.target.value)} placeholder="naam@garage.be"/>
@@ -64,12 +65,12 @@ export function AuthPanel({initialView="welcome"}:{initialView?:View}) {
           </label>
           {view==="register"&&<>
             <p className="portal-note">Minstens 10 tekens. Na registratie bevestig je je e-mailadres.</p>
-            <details className="dealer-company-details">
-              <summary>Staat jouw garage al bij IKKENAUTO? Zoek je bedrijf.</summary>
+            <div className="dealer-company-details dealer-register-company">
+              <div className="dealer-register-company-heading"><strong>Staat je garage al in onze bedrijvengids?</strong><span>Optioneel · we helpen je de juiste bedrijfsnaam te vinden.</span></div>
               <p className="portal-note">De vermelding is nog niet geclaimd. Je kunt deze na e-mailbevestiging laten controleren.</p>
               <CompanyLookup title="Bedrijfsnaam" onSelect={setCompany} onClear={()=>setCompany(null)}/>
               {company&&<p className="dealer-company-selected">Geselecteerd: <strong>{company.name}</strong> {company.city&&"· "+company.city}</p>}
-            </details>
+            </div>
             <input type="hidden" name="directory_row" value={company?.source_row??""}/>
           </>}
           {state.error&&<p role="alert" className="portal-form-error">{state.error}</p>}
@@ -78,8 +79,8 @@ export function AuthPanel({initialView="welcome"}:{initialView?:View}) {
             {registerPending||loginPending?"Bezig…":view==="register"?"Account aanmaken":"Inloggen"}
           </button>
         </form>
-        {view==="login"&&<>
-          <a className="portal-forgot" href="/portal/wachtwoord">Wachtwoord vergeten?</a>
+        {view==="login"&&<a className="portal-forgot" href="/portal/wachtwoord">Wachtwoord vergeten?</a>}
+        {(view==="login" || (view==="register" && Boolean(registerState.message)))&&<>
           <form className="portal-resend" action={resendAction}>
             <input type="hidden" name="email" value={email}/>
             <button type="submit" disabled={resendPending||!email}>{resendPending?"Verzenden…":"Bevestigingsmail opnieuw sturen"}</button>
