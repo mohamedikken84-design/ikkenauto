@@ -1,8 +1,10 @@
+import {connection} from "next/server";
 import Link from "next/link";
 import {redirect} from "next/navigation";
 import {createSupabaseServer} from "@/lib/supabase/server";
 import {GarageProfile} from "./profile";
 export default async function GaragePage(){
+ await connection();
  const db=await createSupabaseServer();
  const {data:{user}}=await db.auth.getUser();
  if(!user)redirect("/portal?mode=login");

@@ -1,7 +1,9 @@
+import {connection} from "next/server";
 import {notFound,redirect} from "next/navigation";
 import {createSupabaseServer} from "@/lib/supabase/server";
 import {EditVehicleForm} from "./edit-form";
 export default async function VehicleEdit({params}:{params:Promise<{id:string}>}){
+ await connection();
  const {id}=await params;
  const db=await createSupabaseServer();
  const {data:{user}}=await db.auth.getUser();
