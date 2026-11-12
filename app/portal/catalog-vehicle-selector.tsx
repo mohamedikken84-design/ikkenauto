@@ -15,25 +15,25 @@ export function CatalogVehicleSelector({
  const [error,setError]=useState("");
  function number(s?:string){const n=Number(s||"");return Number.isSafeInteger(n)&&n>0?n:0;}
  useEffect(()=>{
-   let active=true;setModels([]);setGenerations([]);setPowertrains([]);setTrims([]);
+   let active=true;
    const id=number(values.catalog_make_id);
    if(id)loadCatalogChildren("models",id).then(result=>{if(active){setModels(result);setError("");}}).catch(()=>{if(active)setError("De modelsuggesties zijn tijdelijk niet beschikbaar. Je kunt het model vrij typen.");});
    return ()=>{active=false};
  },[values.catalog_make_id]);
  useEffect(()=>{
-   let active=true;setGenerations([]);setPowertrains([]);setTrims([]);
+   let active=true;
    const id=number(values.catalog_model_id);
    if(id)loadCatalogChildren("generations",id).then(result=>{if(active){setGenerations(result);setError("");}}).catch(()=>{if(active)setError("Generaties tijdelijk niet beschikbaar. Vul de generatie zelf in.");});
    return ()=>{active=false};
  },[values.catalog_model_id]);
  useEffect(()=>{
-   let active=true;setPowertrains([]);setTrims([]);
+   let active=true;
    const id=number(values.catalog_generation_id);
    if(id)loadCatalogChildren("powertrains",id).then(result=>{if(active){setPowertrains(result);setError("");}}).catch(()=>{if(active)setError("Motorisaties tijdelijk niet beschikbaar. Vul deze zelf in.");});
    return ()=>{active=false};
  },[values.catalog_generation_id]);
  useEffect(()=>{
-   let active=true;setTrims([]);
+   let active=true;
    const id=number(values.catalog_powertrain_id);
    if(id)loadCatalogChildren("trims",id).then(result=>{if(active){setTrims(result);setError("");}}).catch(()=>{if(active)setError("Uitvoeringen tijdelijk niet beschikbaar. Vul ze zelf in.");});
    return ()=>{active=false};
@@ -43,10 +43,12 @@ export function CatalogVehicleSelector({
    motorization:"",catalog_powertrain_id:"",trim_line:"",catalog_trim_id:"",
  };
  function selectMake(name:string){
+   setModels([]);setGenerations([]);setPowertrains([]);setTrims([]);
    const match=makes.find(x=>x.name.toLocaleLowerCase("nl-BE")===name.trim().toLocaleLowerCase("nl-BE"));
    update({make:name,catalog_make_id:match?String(match.id):"",...clearModel});
  }
  function selectModel(name:string){
+   setGenerations([]);setPowertrains([]);setTrims([]);
    const match=models.find(x=>x.name?.toLocaleLowerCase("nl-BE")===name.trim().toLocaleLowerCase("nl-BE"));
    update({model:name,catalog_model_id:match?String(match.id):"",
      generation_code:"",catalog_generation_id:"",motorization:"",catalog_powertrain_id:"",trim_line:"",catalog_trim_id:""});
@@ -77,6 +79,7 @@ export function CatalogVehicleSelector({
   <label className="dealer-form-field">
    <span>Generatie / modelcode</span>
    <select value={values.catalog_generation_id||""} disabled={!values.catalog_model_id||!generations.length} onChange={e=>{
+     setPowertrains([]);setTrims([]);
      const match=generations.find(v=>String(v.id)===e.target.value);
      update({catalog_generation_id:e.target.value,generation_code:match?.code||"",motorization:"",catalog_powertrain_id:"",trim_line:"",catalog_trim_id:""});
    }}>
@@ -88,6 +91,7 @@ export function CatalogVehicleSelector({
   <label className="dealer-form-field">
    <span>Motorisatie / versie</span>
    <input list="ia-motorization" value={values.motorization||""} onChange={e=>{
+    setTrims([]);
     const name=e.target.value, match=powertrains.find(p=>p.name?.toLocaleLowerCase("nl-BE")===name.toLocaleLowerCase("nl-BE"));
     update({motorization:name,catalog_powertrain_id:match?String(match.id):"",trim_line:"",catalog_trim_id:""});
    }} placeholder="Bijv. xDrive30d, E 220 d, 1.5 eTSI" maxLength={100}/>
