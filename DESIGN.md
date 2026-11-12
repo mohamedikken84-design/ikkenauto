@@ -16,6 +16,8 @@ Keep existing Next.js, React, Supabase Auth, RLS, Storage, dealer identities, re
 Do not clone proprietary layouts, assets, trademarks, text, images or icons. IKKENAUTO must have its own appearance.
 
 ## 3. Visual identity
+
+**Approved by the project owner: Design 1 — Luxury Minimal.** Use restrained editorial layout with warm off-white background, fine gray/beige borders, true black primary actions and a single subtle gold brand accent. Do not switch to the alternative dark SaaS dashboard or image-heavy automotive showroom style. Preserve the second K as the **only gold letter** in every rendered IKKENAUTO wordmark.
 - Brand: IKKENAUTO with **second K in gold**, as per approved wordmark. Reuse existing `PortalLogo` / logo assets; do not create placeholder logos.
 - Palette:
   - --ia-canvas: #F7F7F6 (page background)
@@ -46,13 +48,13 @@ Use top bar + compact sidebar on desktop, accessible compact nav on mobile. Keep
 
 ## 5. Vehicle entry — critical UX
 - Offer a single unmistakable path "Auto toevoegen" from dashboard and inventory.
-- Show progress with short named steps; recommended flow:
-  1. Basis: merk, model, uitvoering, bouwjaar, kilometerstand, vraagprijs.
-  2. Kenmerken: brandstof, transmissie, carrosserie, staat, vermogen etc.
-  3. Opties: optional equipment grouped by category; description.
-  4. Foto's: allow multiple images after initial vehicle draft is persisted; clear preview and upload feedback.
-  5. Controle: confirm data, save/mark as ready (do not publicly publish).
-  Implement as a real workflow, not visually staged fake controls.
+- Actual creation flow: four guided steps, followed by a separate image upload page after saving a private draft.
+  1. Basis: merk, model, uitvoering, bouwjaar, kilometerstand, prijs.
+  2. Kenmerken: brandstof, transmissie, carrosserie, staat en technische details.
+  3. Uitrusting: categorized options and description.
+  4. Controleren: confirm data and save as draft.
+  5. Photos are uploaded directly from the authenticated browser to private Supabase Storage after the draft has an ID.
+- Never route several large photos through a Vercel Server Action: the deployed function request limit is 4.5 MB; use the private Supabase browser upload and preserve Storage + photo-record RLS.
 - Important constraints: the current backend inserts a vehicle before photos can attach to its ID. Preserve this requirement and make the transition transparent; do not claim photos upload before persistence until implemented.
 - Brand/model: searchable suggestions + free typing for rare brands; never crash when make/model is blank or changes.
 - Every required field identified clearly, with units (€, km, pk). Use real domain validation and accessible, nearby errors; preserve entered values when validation fails.
@@ -72,7 +74,7 @@ Use top bar + compact sidebar on desktop, accessible compact nav on mobile. Keep
 - Clear visible focus ring, semantic form controls, correct keyboard tab order, explicit error and success messaging.
 - Contrast target WCAG AA, touch targets >= 44 px, responsive at 375/768/1024/1440 widths.
 - Preserve useful values on submit errors, allow users to backtrack without data loss. Validate file type, size and duplicate stock numbers.
-- Every button and menu has an actual function. No dummy KPIs, fake reviews, dead import options, or speculative marketplace metrics.
+- Every button, link and menu has an actual function. Informational cards must not have arrow or hover affordances unless interactive. Dashboard KPI cards link to working filtered screens. No dummy KPIs, fake reviews, dead import options, or speculative marketplace metrics.
 - Never expose another dealer's data. Preserve all existing Supabase RLS and server-side owner checks.
 - Handle slow uploads, empty records, long dealer names, and screens at mobile width.
 
