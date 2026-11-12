@@ -5,7 +5,6 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { portalOrigin } from "@/lib/portal-origin";
 
 type Result = { error: string; message?:string };
-const ok:Result={error:""};
 function field(form:FormData,name:string,max=250){return String(form.get(name)??"").trim().slice(0,max);}
 async function authenticate(){
  const db=await createSupabaseServer();
@@ -73,7 +72,6 @@ export async function dealerChecked(_previous:Result,form:FormData):Promise<Resu
  revalidatePath("/portal");
  redirect("/portal?success="+encodeURIComponent("Garageprofiel opgeslagen. Je kunt nu auto's toevoegen."));
 }
-const makes=["Abarth","Alfa Romeo","Alpine","Aston Martin","Audi","Bentley","BMW","BYD","Cadillac","Chevrolet","Chrysler","Citroën","Cupra","Dacia","Daewoo","Daihatsu","Dodge","DS","Ferrari","Fiat","Fisker","Ford","Genesis","Honda","Hyundai","Infiniti","Isuzu","Jaguar","Jeep","Kia","Lamborghini","Lancia","Land Rover","Lexus","Lotus","Maserati","Mazda","McLaren","Mercedes-Benz","MG","MINI","Mitsubishi","Nissan","Opel","Peugeot","Polestar","Porsche","Renault","Rolls-Royce","Saab","SEAT","Skoda","Smart","Subaru","Suzuki","Tesla","Toyota","Volkswagen","Volvo","Xpeng","Zeekr"];
 const choices=["Airconditioning","Automatische klimaatregeling","Cruisecontrol","Adaptieve cruisecontrol","Navigatie","Apple CarPlay","Android Auto","Achteruitrijcamera","Parkeersensoren voor","Parkeersensoren achter","Ledkoplampen","Matrix-led","Panoramadak","Trekhaak","Verwarmde zetels","Elektrische zetels","Lederen bekleding","Isofix","Dodehoekwaarschuwing","Rijstrookassistent","Keyless entry","Elektrische achterklep","Bluetooth","Head-updisplay","360° camera","Sportpakket","Lichtmetalen velgen"];
 export async function vehicleChecked(_previous:Result,form:FormData):Promise<Result>{
  let context:Awaited<ReturnType<typeof getDealer>>;
@@ -123,7 +121,7 @@ export async function queueExternalLink(_previous:Result,form:FormData):Promise<
 }
 function parseCsv(data:string){
  const head=data.split(/\r?\n/,1)[0];const delimiter=head.includes(";")?";":",";
- let rows:string[][]=[],row:string[]=[],cell="",quoted=false;
+ const rows:string[][]=[];let row:string[]=[],cell="",quoted=false;
  for(let i=0;i<data.length;i++){
   const c=data[i];
   if(c==='"'&&quoted&&data[i+1]==='"'){cell+='"';i++;}
