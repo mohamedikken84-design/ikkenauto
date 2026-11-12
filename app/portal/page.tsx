@@ -67,19 +67,41 @@ export default async function Portal({searchParams}:Params){
   if(dealers.length){const res=await db.from("portal_dealer_stock_counts").select("dealer_id,total").in("dealer_id",dealers.map(d=>d.id));dealerCounts=res.data||[];}
   if(vehicles.length){const res=await db.from("portal_dealers").select("id,name").in("id",[...new Set(vehicles.map(v=>v.dealer_id))]);relatedNames=res.data||[];}
  } else if(user&&dealer){
-  // Paginate dealer data too: a 1,000-row limit gave misleading stock totals.
-  const [a,b,vc,rc,sc,lc]=await Promise.all([
-   db.from("portal_vehicles").select("id,dealer_id,make,model,version,year,mileage_km,price_eur,status,created_at,source_ref").eq("dealer_id",dealer.id).order("created_at",{ascending:false}).range((vehiclePage-1)*100,vehiclePage*100-1),
-   db.from("portal_leads").select("id,dealer_id,buyer_name,buyer_email,message,status,created_at").eq("dealer_id",dealer.id).order("created_at",{ascending:false}).range((leadPage-1)*100,leadPage*100-1),
-   db.from("portal_vehicles").select("id",{head:true,count:"exact"}).eq("dealer_id",dealer.id),
-   db.from("portal_vehicles").select("id",{head:true,count:"exact"}).eq("dealer_id",dealer.id).eq("status","ready"),
-   db.from("portal_vehicles").select("id",{head:true,count:"exact"}).eq("dealer_id",dealer.id).eq("status","sold"),
-   db.from("portal_leads").select("id",{head:true,count:"exact"}).eq("dealer_id",dealer.id),
-  ]);
-  vehicles=(a.data||[]) as Vehicle[];leads=b.data||[];
-  databaseError=[a.error,b.error,vc.error,rc.error,sc.error,lc.error].filter(Boolean).map(e=>e?.message).join(" ");
-  totalVehicles=vc.count??0;totalReady=rc.count??0;totalSold=sc.count??0;totalLeads=lc.count??0;
+  // Load only the data needed by the active dealer screen.
+  // Import screen has no inventory/inbox database request. On large dealer accounts
+  // this removes up to six unnecessary Supabase round trips per navigation.
+  const ownerId=dealer.id;
+  if(dealerTab==="overzicht"){
+   const [stock,vc,rc,sc,lc]=await Promise.all([
+    db.from("portal_vehicles").select("id,dealer_id,make,model,version,year,mileage_km,price_eur,status,created_at,source_ref")
+      .eq("dealer_id",ownerId).order("created_at",{ascending:false}).limit(5),
+    db.from("portal_vehicles").select("id",{head:true,count:"exact"}).eq("dealer_id",ownerId),
+    db.from("portal_vehicles").select("id",{head:true,count:"exact"}).eq("dealer_id",ownerId).eq("status","ready"),
+    db.from("portal_vehicles").select("id",{head:true,count:"exact"}).eq("dealer_id",ownerId).eq("status","sold"),
+    db.from("portal_leads").select("id",{head:true,count:"exact"}).eq("dealer_id",ownerId),
+   ]);
+   vehicles=(stock.data||[]) as Vehicle[];
+   totalVehicles=vc.count??0;totalReady=rc.count??0;totalSold=sc.count??0;totalLeads=lc.count??0;
+   databaseError=[stock.error,vc.error,rc.error,sc.error,lc.error].filter(Boolean).map(e=>e?.message).join(" ");
+  }else if(dealerTab==="voertuigen"){
+   const [stock,vc]=await Promise.all([
+    db.from("portal_vehicles").select("id,dealer_id,make,model,version,year,mileage_km,price_eur,status,created_at,source_ref")
+      .eq("dealer_id",ownerId).order("created_at",{ascending:false}).range((vehiclePage-1)*100,vehiclePage*100-1),
+    db.from("portal_vehicles").select("id",{head:true,count:"exact"}).eq("dealer_id",ownerId),
+   ]);
+   vehicles=(stock.data||[]) as Vehicle[];totalVehicles=vc.count??0;
+   databaseError=[stock.error,vc.error].filter(Boolean).map(e=>e?.message).join(" ");
+  }else if(dealerTab==="aanvragen"){
+   const [inbox,lc]=await Promise.all([
+    db.from("portal_leads").select("id,dealer_id,buyer_name,buyer_email,message,status,created_at")
+      .eq("dealer_id",ownerId).order("created_at",{ascending:false}).range((leadPage-1)*100,leadPage*100-1),
+    db.from("portal_leads").select("id",{head:true,count:"exact"}).eq("dealer_id",ownerId),
+   ]);
+   leads=(inbox.data||[]) as typeof leads;totalLeads=lc.count??0;
+   databaseError=[inbox.error,lc.error].filter(Boolean).map(e=>e?.message).join(" ");
+  }
  }
+
  const dealerName=new Map([...dealers.map(d=>[d.id,d.name] as const),...relatedNames.map(d=>[d.id,d.name] as const)]);
  const stockCount=new Map(dealerCounts.map(d=>[d.dealer_id,d.total]));
  return <div className="portal-shell">
