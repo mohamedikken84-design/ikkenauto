@@ -27,10 +27,13 @@ export function VehicleAdvancedEditor({initialSpecifications,initialCodes,origin
  const [expand,setExpand]=useState(false);
  useEffect(()=>{
   let active=true;
-  loadInitialCatalog().then(d=>{if(active){setCatalog(d.equipment);setError("");}})
+  loadInitialCatalog().then(d=>{if(active){setCatalog(d.equipment);setError("");
+   const fromLegacy=legacyOptions.map(label=>d.equipment.find(item=>item.label_nl===label)?.code).filter((code):code is string=>Boolean(code));
+   setCodes(existing=>[...new Set([...existing,...fromLegacy])]);
+  }})
     .catch(()=>{if(active)setError("De uitrustingscatalogus is niet bereikbaar. De bestaande opties blijven bewaard.");});
   return ()=>{active=false;};
- },[]);
+ },[legacyOptions]);
  const fuelToken=fuel==="Elektrisch"?"electric":fuel==="Plug-in hybride"?"plug_in_hybrid":"other";
  const allowed=useMemo(()=>catalog.filter(item=>!item.compatible_fuels?.length
   ||item.compatible_fuels.includes(fuelToken)||item.compatible_fuels.includes(vehicleClass)),[catalog,fuelToken,vehicleClass]);
@@ -38,6 +41,7 @@ export function VehicleAdvancedEditor({initialSpecifications,initialCodes,origin
   ||item.category.toLocaleLowerCase("nl-BE").includes(search.toLocaleLowerCase("nl-BE")));
  const categories=[...new Set(filtered.map(x=>x.category))];
  const codeList=codes.filter(code=>allowed.some(item=>item.code===code));
+ const unmatchedLegacy=legacyOptions.filter(label=>!catalog.some(item=>item.label_nl===label));
  const specObj:Record<string,V>={};
  for(const def of vehicleSpecificationFields){
   if(!isApplicable(def,fuel,vehicleClass))continue;
@@ -56,7 +60,7 @@ export function VehicleAdvancedEditor({initialSpecifications,initialCodes,origin
    {codeList.map(code=><input type="hidden" key={code} name="equipment_codes" value={code}/>)}
    {!catalog.length&&codes.map(code=><input type="hidden" key={code} name="equipment_codes" value={code}/>)}
    {/* The original text array is kept if the catalog is temporarily offline. */}
-   {!catalog.length&&legacyOptions.map(label=><input type="hidden" key={label} name="options" value={label}/>)}
+   {unmatchedLegacy.map(label=><input type="hidden" key={label} name="options" value={label}/>)}
    <section className="dealer-edit-section">
     <div className="dealer-edit-section-heading"><h3>Uitgebreide technische gegevens</h3><p>WLTP, batterij, laadvermogen, banden, onderhoud en technische voertuigkenmerken.</p></div>
     <div className="dealer-form-grid">
