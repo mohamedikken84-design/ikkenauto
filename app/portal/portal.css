@@ -210,3 +210,9 @@
 .dealer-csv-preview h3{font-size:14px;font-weight:800;margin:0 0 6px}
 .dealer-csv-valid{color:#285336;font-size:13px}
 @media(max-width:640px){.dealer-stock-tools{flex-direction:column}.dealer-add-disclosure,.dealer-import-disclosure{width:100%;flex-basis:auto}}
+
+.dealer-profile-link{display:inline-block;margin-top:14px;font-size:13px;font-weight:750;color:#5e451b;text-decoration:underline;text-underline-offset:4px}
+.dealer-media-block{border-bottom:1px solid #e6e6e6;padding:16px 0}
+.dealer-media-block h3{font-size:15px;font-weight:800}
+.dealer-profile-logo{width:145px;height:145px;object-fit:contain;background:#fafafa;border:1px solid #eee;border-radius:8px;margin-top:10px}
+.dealer-profile-cover{width:100%;max-height:210px;object-fit:cover;border:1px solid #eee;border-radius:8px;margin-top:10px}
