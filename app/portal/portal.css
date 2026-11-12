@@ -226,3 +226,16 @@
 .portal-delete-confirm-form{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
 .portal-delete-confirm-form span{font-size:11px;color:#9b3425}
 .portal-delete-confirm-form button[type=button]{font-size:11px;text-decoration:underline}
+
+
+.portal-profile{max-width:1150px;margin:36px auto}
+.portal-profile h1{font-size:36px;font-weight:800;letter-spacing:-.035em;margin:8px 0}
+.portal-profile>p{color:#666;font-size:14px;line-height:1.7;margin-bottom:23px}
+.portal-profile-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:20px}
+.portal-profile .portal-form{margin-top:18px}
+.portal-profile-media{margin-top:18px;background:#f5f5f5;border:1px solid #ddd;border-radius:9px;height:150px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.portal-profile-media img{max-width:100%;max-height:100%;object-fit:contain}
+.portal-cover-media{height:200px}
+.portal-cover-media img{width:100%;height:100%;object-fit:cover}
+.portal-media-placeholder{color:#777;font-size:12px}
+@media(max-width:800px){.portal-profile-grid{grid-template-columns:1fr}.portal-profile h1{font-size:28px}}
