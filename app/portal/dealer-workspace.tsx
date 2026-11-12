@@ -59,7 +59,7 @@ function StockRows({ vehicles, filtered = false }: { vehicles: DealerVehicle[]; 
     </tr>)}</tbody>
   </table></div>;
 }
-function Pagination({ page, total, tab, field = "vehiclePage", anchor = "vehicles", q = "", status = "", fuel = "", equipment = "", minYear = "", maxYear = "", minPrice = "", maxPrice = "", maxMileage = "", inventoryBody = "", inventoryTransmission = "" }: { page: number; total: number; tab: DealerTab; field?: string; anchor?: string; q?: string; status?: string; fuel?: string; equipment?: string; minYear?: string; maxYear?: string; minPrice?: string; maxPrice?: string; maxMileage?: string; inventoryBody?: string; inventoryTransmission?: string }) {
+function Pagination({ page, total, tab, field = "vehiclePage", anchor = "vehicles", q = "", status = "", fuel = "", equipment = "", minYear = "", maxYear = "", minPrice = "", maxPrice = "", maxMileage = "", inventoryBody = "", inventoryTransmission = "", inventoryMake = "", inventoryModel = "", inventoryGeneration = "", inventoryMotorization = "", inventoryTrim = "", inventoryColor = "" }: { page: number; total: number; tab: DealerTab; field?: string; anchor?: string; q?: string; status?: string; fuel?: string; equipment?: string; minYear?: string; maxYear?: string; minPrice?: string; maxPrice?: string; maxMileage?: string; inventoryBody?: string; inventoryTransmission?: string;inventoryMake?:string;inventoryModel?:string;inventoryGeneration?:string;inventoryMotorization?:string;inventoryTrim?:string;inventoryColor?:string }) {
   const last = Math.max(1, Math.ceil(total / 100));
   if (last < 2) return null;
   function toPage(next: number) {
@@ -75,6 +75,12 @@ function Pagination({ page, total, tab, field = "vehiclePage", anchor = "vehicle
     if (tab === "voertuigen" && maxMileage) params.set("maxMileage",maxMileage);
     if (tab === "voertuigen" && inventoryBody) params.set("body",inventoryBody);
     if (tab === "voertuigen" && inventoryTransmission) params.set("transmission",inventoryTransmission);
+    if (tab === "voertuigen" && inventoryMake) params.set("make",inventoryMake);
+    if (tab === "voertuigen" && inventoryModel) params.set("model",inventoryModel);
+    if (tab === "voertuigen" && inventoryGeneration) params.set("generation",inventoryGeneration);
+    if (tab === "voertuigen" && inventoryMotorization) params.set("motorization",inventoryMotorization);
+    if (tab === "voertuigen" && inventoryTrim) params.set("trim",inventoryTrim);
+    if (tab === "voertuigen" && inventoryColor) params.set("color",inventoryColor);
     return "/portal?" + params.toString() + "#" + anchor;
   }
   return <nav className="dealer-pager" aria-label="Pagina's">
@@ -85,10 +91,10 @@ function Pagination({ page, total, tab, field = "vehiclePage", anchor = "vehicle
 }
 
 export function DealerWorkspace({
-  name, tab, vehicles, leads, vehiclePage, leadPage, inventorySearch, inventoryStatus, inventoryFuel, inventoryEquipment, minYear,maxYear,minPrice,maxPrice,maxMileage,inventoryBody,inventoryTransmission, totalVehicles, totalReady, totalSold, totalLeads,
+  name, tab, vehicles, leads, vehiclePage, leadPage, inventorySearch, inventoryStatus, inventoryFuel, inventoryEquipment, minYear,maxYear,minPrice,maxPrice,maxMileage,inventoryBody,inventoryTransmission,inventoryMake,inventoryModel,inventoryGeneration,inventoryMotorization,inventoryTrim,inventoryColor, totalVehicles, totalReady, totalSold, totalLeads,
 }: {
   name: string; tab: DealerTab; vehicles: DealerVehicle[]; leads: DealerLead[];
-  vehiclePage: number; leadPage: number; inventorySearch: string; inventoryStatus: string; inventoryFuel: string; inventoryEquipment: string; minYear:string;maxYear:string;minPrice:string;maxPrice:string;maxMileage:string;inventoryBody:string;inventoryTransmission:string; totalVehicles: number; totalReady: number; totalSold: number; totalLeads: number;
+  vehiclePage: number; leadPage: number; inventorySearch: string; inventoryStatus: string; inventoryFuel: string; inventoryEquipment: string; minYear:string;maxYear:string;minPrice:string;maxPrice:string;maxMileage:string;inventoryBody:string;inventoryTransmission:string;inventoryMake:string;inventoryModel:string;inventoryGeneration:string;inventoryMotorization:string;inventoryTrim:string;inventoryColor:string; totalVehicles: number; totalReady: number; totalSold: number; totalLeads: number;
 }) {
   const sections: { tab: DealerTab; title: string }[] = [
     { tab: "overzicht", title: "Overzicht" },
@@ -140,8 +146,8 @@ export function DealerWorkspace({
       {tab === "voertuigen" && <section className="dealer-content-panel" id="vehicles">
         <div className="dealer-panel-heading"><div><h2>Voorraad</h2><p>{number(totalVehicles)} {inventorySearch || inventoryStatus ? "gevonden voertuigen" : "voertuigen in je eigen voorraad"}.</p></div>
           <Link href="/portal?tab=importeren" className="dealer-text-link">CSV importeren →</Link></div>
-        <DealerInventoryFilters q={inventorySearch} status={inventoryStatus} fuel={inventoryFuel} equipment={inventoryEquipment} minYear={minYear} maxYear={maxYear} minPrice={minPrice} maxPrice={maxPrice} maxMileage={maxMileage} body={inventoryBody} transmission={inventoryTransmission}/>
-        <StockRows vehicles={vehicles} filtered={Boolean(inventorySearch||inventoryStatus||inventoryFuel||inventoryEquipment||minYear||maxYear||minPrice||maxPrice||maxMileage||inventoryBody||inventoryTransmission)}/><Pagination tab={tab} page={vehiclePage} total={totalVehicles} q={inventorySearch} status={inventoryStatus} fuel={inventoryFuel} equipment={inventoryEquipment} minYear={minYear} maxYear={maxYear} minPrice={minPrice} maxPrice={maxPrice} maxMileage={maxMileage} inventoryBody={inventoryBody} inventoryTransmission={inventoryTransmission}/>
+        <DealerInventoryFilters q={inventorySearch} status={inventoryStatus} fuel={inventoryFuel} equipment={inventoryEquipment} minYear={minYear} maxYear={maxYear} minPrice={minPrice} maxPrice={maxPrice} maxMileage={maxMileage} body={inventoryBody} transmission={inventoryTransmission} make={inventoryMake} model={inventoryModel} generation={inventoryGeneration} motorization={inventoryMotorization} trim={inventoryTrim} color={inventoryColor}/>
+        <StockRows vehicles={vehicles} filtered={Boolean(inventorySearch||inventoryStatus||inventoryFuel||inventoryEquipment||minYear||maxYear||minPrice||maxPrice||maxMileage||inventoryBody||inventoryTransmission||inventoryMake||inventoryModel||inventoryGeneration||inventoryMotorization||inventoryTrim||inventoryColor)}/><Pagination tab={tab} page={vehiclePage} total={totalVehicles} q={inventorySearch} status={inventoryStatus} fuel={inventoryFuel} equipment={inventoryEquipment} minYear={minYear} maxYear={maxYear} minPrice={minPrice} maxPrice={maxPrice} maxMileage={maxMileage} inventoryBody={inventoryBody} inventoryTransmission={inventoryTransmission} inventoryMake={inventoryMake} inventoryModel={inventoryModel} inventoryGeneration={inventoryGeneration} inventoryMotorization={inventoryMotorization} inventoryTrim={inventoryTrim} inventoryColor={inventoryColor}/>
       </section>}
 
       {tab === "importeren" && <section className="dealer-content-panel dealer-import-page">
