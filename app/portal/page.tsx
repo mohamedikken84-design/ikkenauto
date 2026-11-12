@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { connection } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { addProspect, setDealerStatus, setProspectStage, signOut, vehicleStatus } from "./actions";
 import type { Metadata } from "next";
@@ -16,6 +17,7 @@ type Vehicle={id:string;dealer_id:string;make:string;model:string;version:string
 type Dealer={id:string;name:string;city:string;email:string;status:string;created_at:string;phone:string|null;owner_id:string};
 const stageNames:{[k:string]:string}={nieuw:"Nieuw",gecontacteerd:"Gecontacteerd",interesse:"Interesse",aangesloten:"Aangesloten",geen_interesse:"Geen interesse"};
 export default async function Portal({searchParams}:Params){
+ await connection();
  const notices=await searchParams;
  const safePage=(v?:string)=>Math.max(1,Math.min(100000,Number.isInteger(Number(v))?Number(v)||1:1));
  const dealerPage=safePage(notices.dealerPage),vehiclePage=safePage(notices.vehiclePage),prospectPage=safePage(notices.prospectPage),leadPage=safePage(notices.leadPage);
