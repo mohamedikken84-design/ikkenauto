@@ -1,6 +1,8 @@
 import {NextResponse} from "next/server";
+import {connection} from "next/server";
 import {createSupabaseServer} from "@/lib/supabase/server";
 export async function GET(request:Request){
+ await connection();
  const url=new URL(request.url),q=(url.searchParams.get("q")||"").trim().slice(0,100).replace(/[%_,()]/g,"");
  if(q.length<2)return NextResponse.json({companies:[]});
  const db=await createSupabaseServer();
