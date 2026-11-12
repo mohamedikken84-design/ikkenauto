@@ -26,6 +26,6 @@ export function AdvertisementLinkImport(){
     {pending?"Link bewaren…":"Advertentielink bewaren"}
    </button>
   </form>
-  <p className="dealer-wizard-footnote">Voor een onmiddellijke voorraadimport: gebruik een CSV-export uit je bestaande software. Automatisch ophalen van gegevens of foto's gebeurt pas na een toegestane API-/feedkoppeling of een afzonderlijk gecontroleerde toestemming van de bron.</p>
+  <p className="dealer-wizard-footnote">Voor een onmiddellijke voorraadimport: gebruik een CSV-export uit je bestaande software. Automatisch ophalen van gegevens of foto&apos;s gebeurt pas na een toegestane API-/feedkoppeling of een afzonderlijk gecontroleerde toestemming van de bron.</p>
  </section>;
 }
