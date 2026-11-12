@@ -179,18 +179,24 @@ export async function vehicleChecked(_previous:Result,form:FormData):Promise<Res
 export async function queueExternalLink(_previous:Result,form:FormData):Promise<Result>{
  let ctx:Awaited<ReturnType<typeof getDealer>>;
  try{ctx=await getDealer();}catch{return {error:"Log in bij je garage."};}
- const url=field(form,"source_url",700);
+ const url=field(form,"source_url",1200);
  let parsed:URL;
- try{parsed=new URL(url);}catch{return {error:"Vul een volledige https-link naar de auto in."};}
+ try{parsed=new URL(url);}catch{return {error:"Plak een volledige https-link naar jouw voertuigadvertentie."};}
  const host=parsed.hostname.toLowerCase().replace(/^www\./,"");
- if(parsed.protocol!=="https:"||!["autoscout24.be","2dehands.be"].some(v=>host===v||host.endsWith("."+v)))
-  return {error:"Gebruik een https-link van autoscout24.be of 2dehands.be."};
- const source=host.endsWith("autoscout24.be")?"autoscout24":"2dehands";
+ if(parsed.protocol!=="https:"||parsed.username||parsed.password||parsed.port||
+   host==="localhost"||host.endsWith(".local")||host.endsWith(".internal")||
+   !/^[a-z0-9.-]+\.[a-z]{2,}$/.test(host)||host.includes(".."))
+  return {error:"Gebruik een publiek bereikbare https-link zonder gebruikersnaam of wachtwoord."};
+ const domainIs=(domain:string)=>host===domain||host.endsWith("."+domain);
+ const source=domainIs("autoscout24.be")||domainIs("autoscout24.de")?"autoscout24":domainIs("2dehands.be")?"2dehands":"other";
+ const sourceLabel=domainIs("mobile.de")?"mobile.de":source==="autoscout24"?"AutoScout24":source==="2dehands"?"2dehands":"garagewebsite";
+ // We only store the URL for manual/feed onboarding. We do NOT crawl or request untrusted URLs.
  const {error}=await ctx.db.from("portal_import_links").insert({dealer_id:ctx.dealerId,source,source_url:parsed.href});
- if(error)return {error:"Link kon niet worden toegevoegd of is al aanwezig."};
+ if(error)return {error:error.code==="23505"?"Je hebt deze link al toegevoegd.":"De advertentielink kon niet worden bewaard."};
  revalidatePath("/portal");
- return {error:"",message:"Link bewaard voor importcontrole. Automatisch uitlezen is nog niet geactiveerd."};
+ return {error:"",message:sourceLabel+"-link opgeslagen. Er wordt nog niets automatisch uitgelezen. Gebruik voorlopig de CSV-import of voeg de auto zelf toe."};
 }
+
 function parseCsv(data:string){
  const head=data.split(/\r?\n/,1)[0];const delimiter=head.includes(";")?";":",";
  const rows:string[][]=[];let row:string[]=[],cell="",quoted=false;
