@@ -24,7 +24,7 @@ export default function DealerLanding(){
      <h2>Bereid je garage voor op de lancering</h2>
      <div className="dl-steps">
       <article><span className="dl-step">01</span><h3>Registreer je garage</h3><p>Maak een account aan en vul je bedrijfsgegevens in. Een bestaande vermelding kan je helpen sneller te starten.</p></article>
-      <article><span className="dl-step">02</span><h3>Beheer je voertuigen</h3><p>Voeg auto's handmatig toe of gebruik een CSV-bestand voor je bestaande voorraad.</p></article>
+      <article><span className="dl-step">02</span><h3>Beheer je voertuigen</h3><p>Voeg auto&apos;s handmatig toe of gebruik een CSV-bestand voor je bestaande voorraad.</p></article>
       <article><span className="dl-step">03</span><h3>Bereid je aanbod voor</h3><p>Je garage en voertuigen blijven voorlopig in het dealerportaal. Publicatie volgt pas bij de officiële lancering, volgens vooraf gecommuniceerde voorwaarden.</p></article>
      </div>
     </div></section>

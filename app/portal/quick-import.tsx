@@ -43,7 +43,7 @@ export function QuickImport(){
   }catch{setError("Het bestand bevat een onjuist CSV-formaat.");}
  }
  return <section className="portal-card portal-import-compact">
-  <div className="portal-card-heading"><div><span className="portal-overline">OPTIONEEL</span><h2>Meerdere auto's importeren</h2></div></div>
+  <div className="portal-card-heading"><div><span className="portal-overline">OPTIONEEL</span><h2>Meerdere auto&apos;s importeren</h2></div></div>
   <p>Heb je al een CSV-export van je voorraad? Controleer de gegevens vóór de import.</p>
   <button className="portal-import-toggle" type="button" aria-expanded={open} onClick={()=>setOpen(s=>!s)}>{open?"Import sluiten":"CSV-bestand importeren"}</button>
   {open&&<form action={importDealerCsv} className="portal-form portal-subform" key={key}>

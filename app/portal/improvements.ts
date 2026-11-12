@@ -114,7 +114,7 @@ export async function queueExternalLink(_previous:Result,form:FormData):Promise<
 }
 function parseCsv(data:string){
  const head=data.split(/\r?\n/,1)[0];const delimiter=head.includes(";")?";":",";
- let rows:string[][]=[],row:string[]=[],cell="",quoted=false;
+ const rows:string[][]=[];let row:string[]=[],cell="",quoted=false;
  for(let i=0;i<data.length;i++){
   const c=data[i];
   if(c==='"'&&quoted&&data[i+1]==='"'){cell+='"';i++;}

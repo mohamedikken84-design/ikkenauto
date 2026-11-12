@@ -13,8 +13,8 @@ export function DealerSetup(){
    const raw=sessionStorage.getItem("ikkenauto_selected_company");if(!raw)return;
    const c=JSON.parse(raw) as {source_row?:number;name?:string;city?:string;website?:string};
    if(typeof c.source_row==="number"&&Number.isSafeInteger(c.source_row)&&typeof c.name==="string"&&c.name.trim()){
-    setSelectedRow(c.source_row);
-    setForm(s=>({...s,name:c.name?.slice(0,140)||s.name,city:c.city?.slice(0,120)||s.city,website:c.website?.slice(0,250)||s.website}));
+    const task=setTimeout(()=>{setSelectedRow(c.source_row!);setForm(s=>({...s,name:c.name?.slice(0,140)||s.name,city:c.city?.slice(0,120)||s.city,website:c.website?.slice(0,250)||s.website}));},0);
+    return()=>clearTimeout(task);
    }
   }catch{}
  },[]);
