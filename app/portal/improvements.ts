@@ -2,11 +2,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase/server";
+import { portalOrigin } from "@/lib/portal-origin";
 
 type Result = { error: string; message?:string };
 const ok:Result={error:""};
 function field(form:FormData,name:string,max=250){return String(form.get(name)??"").trim().slice(0,max);}
-function origin(){return (process.env.PORTAL_ORIGIN||"https://ikkenauto-cursor-keep-alive-6ada.vercel.app").replace(/\/$/,"");}
 async function authenticate(){
  const db=await createSupabaseServer();
  const {data:{user}}=await db.auth.getUser();
@@ -44,7 +44,7 @@ export async function registerChecked(_previous:Result,form:FormData):Promise<Re
    if(data)suggestedRow=rowNumber;
  }
  const {error}=await db.auth.signUp({email,password,options:{
-   emailRedirectTo:origin()+"/portal/auth/callback",
+   emailRedirectTo:(await portalOrigin())+"/portal/auth/callback",
    data:suggestedRow?{suggested_directory_row:suggestedRow}:{}
  }});
  if(error)return {error:"Registreren lukt momenteel niet. Controleer je gegevens of probeer later opnieuw."};
@@ -196,7 +196,7 @@ export async function resendConfirmation(_previous:Result,form:FormData):Promise
  const email=field(form,"email",200).toLowerCase();
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return {error:"Vul een geldig e-mailadres in."};
  const db=await createSupabaseServer();
- const {error}=await db.auth.resend({type:"signup",email,options:{emailRedirectTo:origin()+"/portal/auth/callback"}});
+ const {error}=await db.auth.resend({type:"signup",email,options:{emailRedirectTo:(await portalOrigin())+"/portal/auth/callback"}});
  if(error)return {error:"Nieuwe e-mail verzenden mislukt. Probeer het later opnieuw."};
  return {error:"",message:"Als je adres nog bevestigd moet worden, ontvang je een nieuwe bevestigingsmail."};
 }
