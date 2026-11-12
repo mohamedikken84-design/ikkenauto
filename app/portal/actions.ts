@@ -1,6 +1,5 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase/server";
@@ -176,53 +175,6 @@ export async function importVehicles(form: FormData) {
   revalidatePath("/portal");
   go(accepted+" voertuigen verwerkt"+(errors?"; "+errors+" rijen overgeslagen":"")+".",true);
 }
-export async function uploadVehiclePhoto(form: FormData) {
-  const { db, dealer } = await ownDealer();
-  const vehicleId = value(form, "vehicle_id", 40);
-  const files = form.getAll("photo").filter((entry): entry is File => entry instanceof File && entry.size > 0);
-  const returnTo = value(form, "return_to", 10);
-  const { data: vehicle } = await db.from("portal_vehicles").select("id").eq("id", vehicleId).eq("dealer_id", dealer.id).maybeSingle();
-  if (!vehicle) go("Deze auto hoort niet bij je garage.");
-
-  function photoResult(message: string, ok: boolean): never {
-    if (returnTo === "edit") redirect("/portal/voorraad/" + vehicleId + "/bewerken?" + (ok ? "success=" : "error=") + encodeURIComponent(message) + "#photos");
-    go(message, ok);
-  }
-  if (files.length === 0) photoResult("Kies minstens één foto.", false);
-  if (files.length > 10) photoResult("Je kunt maximaal 10 foto's tegelijk uploaden.", false);
-  if (files.some(file => file.size > 3_500_000 || !["image/jpeg", "image/png", "image/webp"].includes(file.type)))
-    photoResult("Gebruik JPG, PNG of WebP, maximaal 3,5 MB per foto.", false);
-
-  const { count, error: countError } = await db.from("portal_vehicle_photos")
-    .select("id", { count: "exact", head: true }).eq("vehicle_id", vehicleId).eq("dealer_id", dealer.id);
-  if (countError) photoResult("Het bestaande aantal foto's kan niet worden gecontroleerd.", false);
-  if ((count ?? 0) + files.length > 25) photoResult("Er kunnen maximaal 25 foto's bij één voertuig staan.", false);
-
-  let successful = 0;
-  let failed = 0;
-  for (const file of files) {
-    const suffix = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
-    const path = dealer.id + "/" + vehicleId + "/" + randomUUID() + "." + suffix;
-    const stored = await db.storage.from("portal-vehicles").upload(path, Buffer.from(await file.arrayBuffer()), {
-      contentType: file.type, upsert: false,
-    });
-    if (stored.error) { failed++; continue; }
-    const saved = await db.from("portal_vehicle_photos").insert({
-      dealer_id: dealer.id, vehicle_id: vehicleId, storage_path: path,
-    });
-    if (saved.error) {
-      await db.storage.from("portal-vehicles").remove([path]);
-      failed++;
-    } else successful++;
-  }
-  revalidatePath("/portal");
-  revalidatePath("/portal/voorraad/" + vehicleId + "/bewerken");
-  if (!successful) photoResult("Foto's uploaden mislukt. Probeer het opnieuw.", false);
-  const message = successful + (successful === 1 ? " foto toegevoegd." : " foto's toegevoegd.") +
-    (failed ? " " + failed + " foto's konden niet worden geüpload." : "");
-  photoResult(message, failed === 0);
-}
-
 export async function addProspect(form: FormData) {
   const db=await admin(),name=value(form,"name",140),email=value(form,"email",200);
   if(name.length<2)go("Vul de naam van de autohandelaar in.");
