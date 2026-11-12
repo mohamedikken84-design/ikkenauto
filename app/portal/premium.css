@@ -612,3 +612,22 @@
  .portal-shell .dealer-catalog-card .dealer-form-grid { grid-template-columns:minmax(0,1fr); }
  .portal-shell .dealer-link-import-section { padding:17px; }
 }
+
+
+/* Native server-side advanced inventory filters; closed by default on mobile. */
+.portal-shell .dealer-stock-filters .dealer-stock-advanced-search { flex:1 0 100%; border-top:1px solid #e8e5df; padding-top:10px; }
+.portal-shell .dealer-stock-filters .dealer-stock-advanced-search>summary {
+  font-size:12px; color:#65502d; cursor:pointer; padding:6px 0; font-weight:680;
+}
+.portal-shell .dealer-stock-filters .dealer-stock-advanced-grid {
+ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:13px; margin-top:13px;
+}
+.portal-shell .dealer-stock-filters .dealer-stock-advanced-grid label {
+ min-width:0; display:grid; gap:7px; font-size:12px; color:#625e57; font-weight:600;
+}
+@media(max-width:900px) {
+ .portal-shell .dealer-stock-filters .dealer-stock-advanced-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(max-width:530px) {
+ .portal-shell .dealer-stock-filters .dealer-stock-advanced-grid { grid-template-columns:minmax(0,1fr); }
+}
