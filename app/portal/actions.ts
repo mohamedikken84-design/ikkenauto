@@ -111,7 +111,13 @@ export async function vehicleStatus(form: FormData) {
 export async function deleteVehicle(form: FormData) {
   const {db,dealer}=await ownDealer();
   const id=value(form,"vehicle_id",40);
-  // Existing photo files remain private; do not remove stock data through import.
+  // First remove private files while storage RLS can still verify vehicle ownership.
+  const {data:photos,error:photoError}=await db.from("portal_vehicle_photos").select("storage_path").eq("vehicle_id",id).eq("dealer_id",dealer.id);
+  if(photoError)go("Voertuigfoto's konden niet gecontroleerd worden.");
+  if(photos?.length){
+    const removed=await db.storage.from("portal-vehicles").remove(photos.map(x=>x.storage_path));
+    if(removed.error)go("Voertuigfoto's konden niet worden opgeruimd; de auto is niet verwijderd.");
+  }
   const {error}=await db.from("portal_vehicles").delete().eq("id",id).eq("dealer_id",dealer.id);
   if(error) go("Auto verwijderen mislukt.");
   revalidatePath("/portal");
