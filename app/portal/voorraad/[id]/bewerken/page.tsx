@@ -30,7 +30,7 @@ export default async function EditVehicle({params,searchParams}:{params:Promise<
     <aside className="portal-card"><span className="portal-overline">FOTO'S</span><h2>Foto's beheren</h2>
       <p>JPG, PNG of WebP, maximaal 3,5 MB per bestand. Foto's zijn alleen toegankelijk voor je garage tijdens de voorbereiding.</p>
       <form action={uploadVehiclePhoto} className="portal-form">
-       <input type="hidden" name="vehicle_id" value={id}/>
+       <input type="hidden" name="vehicle_id" value={id}/><input type="hidden" name="return_to" value="edit"/>
        <label>Foto toevoegen<input type="file" name="photo" required accept="image/jpeg,image/png,image/webp"/></label>
        <button type="submit" className="portal-button portal-button-secondary">Foto uploaden</button>
       </form>
