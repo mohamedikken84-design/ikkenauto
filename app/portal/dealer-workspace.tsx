@@ -57,21 +57,21 @@ function StockRows({ vehicles }: { vehicles: DealerVehicle[] }) {
     </tr>)}</tbody>
   </table></div>;
 }
-function Pagination({ page, total, tab }: { page: number; total: number; tab: DealerTab }) {
+function Pagination({ page, total, tab, field = "vehiclePage", anchor = "vehicles" }: { page: number; total: number; tab: DealerTab; field?: string; anchor?: string }) {
   const last = Math.max(1, Math.ceil(total / 100));
   if (last < 2) return null;
   return <nav className="dealer-pager" aria-label="Pagina's">
-    {page > 1 ? <Link href={"/portal?tab=" + tab + "&vehiclePage=" + (page - 1) + "#vehicles"}>← Vorige pagina</Link> : <span/>}
+    {page > 1 ? <Link href={"/portal?tab=" + tab + "&" + field + "=" + (page - 1) + "#" + anchor}>← Vorige pagina</Link> : <span/>}
     <span>Pagina {page} van {last}</span>
-    {page < last ? <Link href={"/portal?tab=" + tab + "&vehiclePage=" + (page + 1) + "#vehicles"}>Volgende pagina →</Link> : <span/>}
+    {page < last ? <Link href={"/portal?tab=" + tab + "&" + field + "=" + (page + 1) + "#" + anchor}>Volgende pagina →</Link> : <span/>}
   </nav>;
 }
 
 export function DealerWorkspace({
-  name, tab, vehicles, leads, vehiclePage, totalVehicles, totalReady, totalSold, totalLeads,
+  name, tab, vehicles, leads, vehiclePage, leadPage, totalVehicles, totalReady, totalSold, totalLeads,
 }: {
   name: string; tab: DealerTab; vehicles: DealerVehicle[]; leads: DealerLead[];
-  vehiclePage: number; totalVehicles: number; totalReady: number; totalSold: number; totalLeads: number;
+  vehiclePage: number; leadPage: number; totalVehicles: number; totalReady: number; totalSold: number; totalLeads: number;
 }) {
   const sections: { tab: DealerTab; title: string }[] = [
     { tab: "overzicht", title: "Overzicht" },
@@ -131,7 +131,7 @@ export function DealerWorkspace({
         <QuickImport/>
       </section>}
 
-      {tab === "aanvragen" && <section className="dealer-content-panel">
+      {tab === "aanvragen" && <section className="dealer-content-panel" id="inbox">
         <div className="dealer-panel-heading"><div><h2>Berichten en aanvragen</h2><p>{number(totalLeads)} aanvragen ontvangen.</p></div></div>
         {leads.length === 0 ? <div className="dealer-empty-state">
           <h3>Nog geen aanvragen</h3><p>Hier komen de berichten van geïnteresseerde kopers te staan.</p>
@@ -140,6 +140,7 @@ export function DealerWorkspace({
           <p>{lead.message}</p>
           <a href={"mailto:" + lead.buyer_email}>{lead.buyer_email}</a>
         </article>)}</div>}
+        <Pagination tab={tab} page={leadPage} total={totalLeads} field="leadPage" anchor="inbox"/>
       </section>}
     </main>
   </div>;
