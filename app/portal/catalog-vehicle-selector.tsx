@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { vehicleMakes, suggestedModels } from "@/lib/dealer/vehicle-catalog";
 import { loadCatalogChildren, type CatalogChild, type CatalogMake } from "@/lib/dealer/catalog-client";
 
 type FormState = Record<string,string>;
-export function CatalogVehicleSelector({
+export const CatalogVehicleSelector = memo(function CatalogVehicleSelector({
  values, makes, update,
 }: { values:FormState; makes:CatalogMake[]; update:(patch:FormState)=>void }) {
  const [models,setModels]=useState<CatalogChild[]>([]);
@@ -108,4 +108,4 @@ export function CatalogVehicleSelector({
   </label>
   {error&&<p role="status" className="portal-note dealer-full-row">{error}</p>}
  </div>;
-}
+});
