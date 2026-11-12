@@ -1,11 +1,12 @@
 "use client";
-import {useActionState,useState} from "react";
+import {useActionState,useState,useEffect} from "react";
 import {dealerChecked} from "./improvements";
 import {CompanyLookup} from "./directory-search";
 export function DealerSetup(){
  const [form,setForm]=useState({name:"",city:"",postal_code:"",phone:"",website:"",kbo_number:""});
  const [selectedRow,setSelectedRow]=useState<number|null>(null);
  const [state,action,pending]=useActionState(dealerChecked,{error:""});
+ useEffect(()=>{try{const raw=sessionStorage.getItem("ikkenauto_selected_company");if(!raw)return;const company=JSON.parse(raw) as {source_row?:number;name?:string;city?:string;website?:string};if(typeof company.source_row==="number"&&Number.isSafeInteger(company.source_row)&&typeof company.name==="string"){setSelectedRow(company.source_row);setDetails(s=>({...s,name:company.name?.slice(0,140)||s.name,city:company.city?.slice(0,120)||s.city,website:company.website?.slice(0,250)||s.website}));}}catch{}},[]);
  function set(name:keyof typeof form,value:string){setForm(s=>({...s,[name]:value}));}
  const numbers=form.kbo_number.replace(/\D/g,"").slice(0,10);
  const formatted=numbers.length?("BE "+numbers.slice(0,4)+(numbers.length>4?"."+numbers.slice(4,7):"")+(numbers.length>7?"."+numbers.slice(7):"")):"";

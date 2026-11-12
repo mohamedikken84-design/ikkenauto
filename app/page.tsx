@@ -1,2 +1,2 @@
-import { redirect } from "next/navigation";
-export default function Home(){redirect("/portal");}
+import {redirect} from "next/navigation";
+export default function Home(){redirect("/dealer");}
