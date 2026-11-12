@@ -3,6 +3,7 @@ import {useActionState,useCallback,useEffect,useMemo,useRef,useState} from "reac
 import {useRouter} from "next/navigation";
 import {createBrowserClient} from "@supabase/ssr";
 import {supabaseBrowserConfig} from "@/lib/supabase/env";
+import {uploadDealerPhotos} from "@/lib/dealer/photo-batch";
 import {vehicleChecked} from "./improvements";
 import {CatalogVehicleSelector} from "./catalog-vehicle-selector";
 import {EquipmentSelection} from "./equipment-selection";
@@ -58,22 +59,13 @@ export function VehicleEditor({dealerId}:{dealerId:string}){
   const vehicleId=result.vehicleId;if(!vehicleId||finished.current)return;finished.current=true;
   try{sessionStorage.removeItem(draftKey);}catch{}
   async function upload(){
-   let ok=0,fail=0;const cfg=supabaseBrowserConfig();
+   const cfg=supabaseBrowserConfig();
+   let ok=0,fail=photos.length;
    if(cfg&&photos.length){
     const db=createBrowserClient(cfg.url,cfg.anonKey);
-    for(let i=0;i<photos.length;i++){
-     const file=photos[i];setUploading("Foto "+(i+1)+" van "+photos.length+" uploaden…");
-     try{
-      const ext=file.type==="image/png"?"png":file.type==="image/webp"?"webp":"jpg";
-      const path=dealerId+"/"+vehicleId+"/"+crypto.randomUUID()+"."+ext;
-      const up=await db.storage.from("portal-vehicles").upload(path,file,{contentType:file.type,upsert:false});
-      if(up.error){fail++;continue;}
-      const row=await db.from("portal_vehicle_photos").insert({dealer_id:dealerId,vehicle_id:vehicleId,storage_path:path});
-      if(row.error){fail++;await db.storage.from("portal-vehicles").remove([path]);continue;}
-      ok++;
-     }catch{fail++;}
-    }
-   }else if(photos.length)fail=photos.length;
+    const result=await uploadDealerPhotos(db,photos,dealerId,vehicleId,(done,total)=>setUploading("Foto's verwerken: "+done+" van "+total));
+    ok=result.saved;fail=result.failed.length;
+   }
    const msg=photos.length?(ok+" foto's opgeslagen"+(fail?", "+fail+" mislukt":"")+". Het voertuig is een privéconcept."):"Voertuig opgeslagen als privéconcept. Voeg foto's toe wanneer je wilt.";
    router.replace("/portal/voorraad/"+vehicleId+"/bewerken?success="+encodeURIComponent(msg)+"#photos");
   }
