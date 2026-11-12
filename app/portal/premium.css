@@ -306,3 +306,57 @@
   .portal-shell .dealer-setup-submit .portal-button { width: 100%; }
   .dealer-onboarding { margin-top: 8px; }
 }
+
+
+/* Public dealer entry: confident copy, tangible real product functions, no invented KPIs. */
+.portal-shell .dealer-hero { padding: 80px 0 84px; border-bottom: 1px solid #dededb; }
+.dealer-hero-layout { display: grid; grid-template-columns: minmax(0,1.13fr) minmax(330px,.87fr); gap: 70px; align-items: center; }
+.portal-shell .dealer-hero-copy { max-width: 690px; }
+.portal-shell .dealer-hero h1 { font-size: clamp(43px,5.2vw,73px); line-height: 1.04; font-weight: 710; margin: 23px 0 24px; letter-spacing: -.065em; }
+.portal-shell .dealer-hero h1 span { color: #8d713e; }
+.portal-shell .dealer-hero-lead { font-size: 17px; color: #646464; line-height: 1.7; max-width: 555px; margin: 0 0 29px; }
+.portal-shell .dealer-hero-actions { gap: 22px; }
+.portal-shell .dealer-hero-note { margin-top: 20px; color: #848484; font-size: 11px; }
+.dealer-hero-product { background: #191919; color: #fff; border: 1px solid #272727; border-radius: 13px; padding: 30px 29px 23px; min-width: 0; box-shadow: 0 18px 42px rgba(0,0,0,.06); }
+.dealer-product-top { display: flex; justify-content: space-between; gap: 12px; color: #bfbfbf; font-size: 10px; letter-spacing: .12em; font-weight: 650; border-bottom: 1px solid #343434; padding: 0 0 17px; }
+.dealer-product-top span:last-child { color: #d1aa63; }
+.dealer-hero-product>h2 { font-size: 28px; font-weight: 625; line-height: 1.18; letter-spacing: -.04em; margin: 32px 0 12px; }
+.dealer-hero-product>p { color: #ababab; font-size: 12px; max-width: 300px; line-height: 1.8; margin: 0 0 32px; }
+.dealer-product-features { border-top: 1px solid #373737; }
+.dealer-product-features>div { display: flex; align-items: center; gap: 17px; padding: 20px 0; border-bottom: 1px solid #353535; }
+.dealer-product-features>div>span:first-child { color: #b79b66; font-size: 11px; align-self: flex-start; }
+.dealer-product-features>div>div { display: grid; gap: 6px; flex: 1; }
+.dealer-product-features strong { color: #f9f9f9; font-size: 13px; font-weight: 625; }
+.dealer-product-features small { color: #909090; font-size: 11px; }
+.dealer-product-features>div>span:last-child { font-size: 16px; color: #787878; }
+.dealer-product-footer { display: flex; align-items: center; justify-content: space-between; color: #a0a0a0; font-size: 11px; margin-top: 20px; }
+.dealer-product-dot { width: 7px; height: 7px; border-radius: 50%; background: #c19a53; }
+.portal-shell .dealer-steps { padding: 66px 0; }
+.dealer-section-heading h2 { font-size: 25px; letter-spacing: -.04em; font-weight: 700; margin: 12px 0 30px; }
+.portal-shell .dealer-step-number { display: inline-block; font-size: 11px; background: #efede8; border-radius: 5px; padding: 5px 8px; color: #73592a; }
+.portal-shell .dealer-steps-grid { gap: 38px; }
+.portal-shell .dealer-steps-grid>div { border-top: 1px solid #d8d8d5; padding-top: 16px; }
+.portal-shell .dealer-steps-grid h3 { font-size: 16px; font-weight: 685; margin: 16px 0 9px; }
+.portal-shell .dealer-steps-grid p { font-size: 13px; line-height: 1.75; color: #747474; }
+.portal-shell .dealer-directory-intro { background: transparent; padding-top: 28px; padding-bottom: 35px; }
+.portal-shell .dealer-directory-intro h2 { font-size: 16px; letter-spacing: -.025em; }
+@media(max-width: 1040px) {
+  .dealer-hero-layout { gap: 32px; grid-template-columns: minmax(0,1fr) minmax(300px,.85fr); }
+  .portal-shell .dealer-hero h1 { font-size: 50px; }
+  .dealer-hero-product { padding: 24px 22px; }
+}
+@media(max-width: 760px) {
+  .portal-shell .dealer-hero { padding: 44px 0 50px; }
+  .dealer-hero-layout { grid-template-columns: 1fr; }
+  .portal-shell .dealer-hero h1 { font-size: clamp(42px,9vw,56px); }
+  .portal-shell .dealer-hero-lead { font-size: 15px; }
+  .dealer-hero-product { max-width: 640px; }
+  .portal-shell .dealer-steps { padding: 42px 0; }
+  .portal-shell .dealer-steps-grid { gap: 15px; }
+}
+@media(max-width: 480px) {
+  .portal-shell .dealer-hero h1 { font-size: 40px; }
+  .portal-shell .dealer-hero-actions { align-items: stretch; flex-direction: column; gap: 15px; }
+  .portal-shell .dealer-hero-actions .portal-button { align-self: stretch; }
+  .portal-shell .dealer-hero-actions .dealer-link-button { align-self: flex-start; }
+}
