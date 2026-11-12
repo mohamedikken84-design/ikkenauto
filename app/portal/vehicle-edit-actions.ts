@@ -74,7 +74,7 @@ export async function updateVehicle(_previous:UpdateState,form:FormData):Promise
   source_ref:clean(form,"source_ref",150)||null,
   description:clean(form,"description",4000)||null,
   vat_deductible:vatRegime==="btw",
-  options:catalogLoaded?(accepted||[]).map(v=>v.label_nl):form.getAll("options").map(v=>String(v).slice(0,80)).slice(0,240),
+  options:catalogLoaded?[...new Set([...(accepted||[]).map(v=>v.label_nl),...form.getAll("options").map(v=>String(v).trim().slice(0,80))])].slice(0,240):form.getAll("options").map(v=>String(v).slice(0,80)).slice(0,240),
   updated_at:new Date().toISOString()
  }).eq("id",id).eq("dealer_id",dealerId);
  if(error)return {error:"Opslaan mislukt. Controleer het stocknummer en de gegevens."};
