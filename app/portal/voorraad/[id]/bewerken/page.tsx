@@ -27,8 +27,8 @@ export default async function EditVehicle({params,searchParams}:{params:Promise<
    {success&&<p className="portal-alert portal-success" role="status">{success}</p>}
    <div className="portal-grid">
     <article className="portal-card"><span className="portal-overline">VOERTUIGGEGEVENS</span><h2>Bewerken</h2><VehicleEditForm vehicle={vehicle}/></article>
-    <aside className="portal-card"><span className="portal-overline">FOTO'S</span><h2>Foto's beheren</h2>
-      <p>JPG, PNG of WebP, maximaal 3,5 MB per bestand. Foto's zijn alleen toegankelijk voor je garage tijdens de voorbereiding.</p>
+    <aside className="portal-card"><span className="portal-overline">FOTO&apos;S</span><h2>Foto&apos;s beheren</h2>
+      <p>JPG, PNG of WebP, maximaal 3,5 MB per bestand. Foto&apos;s zijn alleen toegankelijk voor je garage tijdens de voorbereiding.</p>
       <form action={uploadVehiclePhoto} className="portal-form">
        <input type="hidden" name="vehicle_id" value={id}/><input type="hidden" name="return_to" value="edit"/>
        <label>Foto toevoegen<input type="file" name="photo" required accept="image/jpeg,image/png,image/webp"/></label>
@@ -38,7 +38,7 @@ export default async function EditVehicle({params,searchParams}:{params:Promise<
        {photo.url?<img src={photo.url} loading="lazy" alt="Voertuigfoto"/>:<span>Foto tijdelijk niet beschikbaar</span>}
        <form action={removeVehiclePhoto}><input type="hidden" name="photo_id" value={photo.id}/><input type="hidden" name="vehicle_id" value={id}/><button className="portal-delete" type="submit">Foto verwijderen</button></form>
       </figure>)}
-      {!photos.length&&<p className="portal-empty">Nog geen foto's toegevoegd.</p>}</div>
+      {!photos.length&&<p className="portal-empty">Nog geen foto&apos;s toegevoegd.</p>}</div>
     </aside>
    </div>
   </div>
