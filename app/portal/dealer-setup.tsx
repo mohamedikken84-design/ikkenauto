@@ -2,6 +2,7 @@
 import { useActionState, useState } from "react";
 import { dealerChecked } from "./improvements";
 import { CompanyLookup } from "./directory-search";
+import {parseBelgianEnterpriseNumber} from "@/lib/dealer/kbo";
 
 type CompanySuggestion = { source_row: number; name: string; city: string | null; website: string | null };
 export function DealerSetup({ suggestedCompany }: { suggestedCompany?: CompanySuggestion | null }) {
@@ -15,9 +16,9 @@ export function DealerSetup({ suggestedCompany }: { suggestedCompany?: CompanySu
     setForm(previous => ({ ...previous, [name]: value }));
     if (name === "name" || name === "city") setSelectedRow(null);
   }
-  const number = form.kbo_number.replace(/\D/g, "").slice(0, 10);
-  const formatted = number ? "BE " + number.slice(0, 4) + (number.length > 4 ? "." + number.slice(4, 7) : "") +
-    (number.length > 7 ? "." + number.slice(7) : "") : "";
+  const check=form.kbo_number?parseBelgianEnterpriseNumber(form.kbo_number):null;
+  const number=form.kbo_number.replace(/\D/g,"").slice(0,10);
+  const formatted=number?"BE "+number.slice(0,4)+(number.length>4?"."+number.slice(4,7):"")+(number.length>7?"."+number.slice(7):""):"";
   return <div className="dealer-onboarding">
     <div className="dealer-onboarding-heading">
       <span className="dealer-eyebrow">ACCOUNT INSTELLEN · STAP 2 VAN 3</span>
@@ -40,9 +41,10 @@ export function DealerSetup({ suggestedCompany }: { suggestedCompany?: CompanySu
         <input type="hidden" name="directory_row" value={selectedRow || ""}/>
         <label>Bedrijfsnaam *<input name="name" value={form.name} onChange={event => update("name", event.target.value)} autoComplete="organization" placeholder="Officiële naam van de garage" required maxLength={140}/></label>
         <label>Gemeente *<input name="city" value={form.city} onChange={event => update("city", event.target.value)} placeholder="Bijv. Mechelen" required maxLength={120}/></label>
-        <label>Ondernemingsnummer <small>(optioneel)</small>
-          <input name="kbo_number" value={formatted} onChange={event => update("kbo_number", event.target.value.replace(/\D/g, "").slice(0, 10))} inputMode="numeric" placeholder="BE 0123.456.789" aria-describedby="kbo-info"/>
-          <small id="kbo-info">We controleren of het ondernemingsnummer geldig is wanneer je dit invult.</small>
+        <label>Ondernemingsnummer / BTW-nummer *
+          <input name="kbo_number" value={formatted} onChange={event => update("kbo_number", event.target.value.replace(/\D/g, "").slice(0, 10))} inputMode="numeric" placeholder="BE 0123.456.749" aria-describedby="kbo-info" required minLength={9}/>
+          <small id="kbo-info">De Belgische controlecijfers worden gecontroleerd. Dit is nog geen officiële live KBO-verificatie.</small>
+          {check&&!check.valid&&number.length>=9&&<small role="alert" className="portal-form-error">{check.error}</small>}
         </label>
         <label>Postcode<input name="postal_code" value={form.postal_code} onChange={event => update("postal_code", event.target.value)} placeholder="2800" maxLength={12} autoComplete="postal-code"/></label>
         <label>Telefoon<input name="phone" type="tel" value={form.phone} onChange={event => update("phone", event.target.value)} placeholder="+32 ..." maxLength={40} autoComplete="tel"/></label>
