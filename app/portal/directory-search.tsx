@@ -4,7 +4,7 @@ type Company={source_row:number;name:string;city:string|null;address:string|null
 export function CompanyLookup({title,onSelect}:{title:string;onSelect?:(c:Company)=>void}){
  const [query,setQuery]=useState(""),[result,setResult]=useState<Company[]>([]),[busy,setBusy]=useState(false),[selected,setSelected]=useState<number|null>(null),[loaded,setLoaded]=useState(false);
  useEffect(()=>{
-  if(query.trim().length<2){setResult([]);setLoaded(false);return;}
+  if(query.trim().length<2)return;
   let cancelled=false;const ctrl=new AbortController();
   const t=setTimeout(async()=>{
    setBusy(true);try{const response=await fetch("/portal/api/directory?q="+encodeURIComponent(query.trim()),{signal:ctrl.signal});
@@ -13,7 +13,7 @@ export function CompanyLookup({title,onSelect}:{title:string;onSelect?:(c:Compan
   },250);
   return()=>{cancelled=true;ctrl.abort();clearTimeout(t);};
  },[query]);
- return <div className="portal-lookup"><label>{title}<input type="search" value={query} onChange={e=>{setQuery(e.target.value);setSelected(null);}} placeholder="Zoek je bedrijfsnaam…" autoComplete="off"/></label>
+ return <div className="portal-lookup"><label>{title}<input type="search" value={query} onChange={e=>{setQuery(e.target.value);setSelected(null);setResult([]);setLoaded(false);setBusy(false);}} placeholder="Zoek je bedrijfsnaam…" autoComplete="off"/></label>
  {busy&&<small>Zoeken…</small>}
  {loaded&&!busy&&result.length===0&&<small>Geen match gevonden in de geïmporteerde bedrijvengids.</small>}
  {result.length>0&&<div className="portal-lookup-results">{result.map(c=><button type="button" key={c.source_row} className={selected===c.source_row?"chosen":""} onClick={()=>{setSelected(c.source_row);onSelect?.(c);}}>

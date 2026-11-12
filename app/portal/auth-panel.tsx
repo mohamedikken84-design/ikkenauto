@@ -1,32 +1,35 @@
 "use client";
 import {useActionState,useState} from "react";
+import Link from "next/link";
 import {loginChecked,registerChecked,resendConfirmation} from "./improvements";
 import {CompanyLookup} from "./directory-search";
-export function AuthPanel({directoryCount}:{directoryCount:number}){
- const [mode,setMode]=useState<"login"|"register">("login");
+export function AuthPanel({initialMode="login",findInitially=false}:{initialMode?:"login"|"register";findInitially?:boolean}){
+ const [mode,setMode]=useState<"login"|"register">(initialMode),[find,setFind]=useState(findInitially),[picked,setPicked]=useState("");
  const [show,setShow]=useState(false),[email,setEmail]=useState(""),[password,setPassword]=useState("");
  const [loginState,loginAction,loginPending]=useActionState(loginChecked,{error:""});
- const [registrationState,registerAction,registerPending]=useActionState(registerChecked,{error:""});
+ const [registerState,registerAction,registerPending]=useActionState(registerChecked,{error:""});
  const [resendState,resendAction,resendPending]=useActionState(resendConfirmation,{error:""});
- const state=mode==="login"?loginState:registrationState;
- return <section className="portal-auth-layout portal-auth-simple"><div className="portal-auth-intro">
-  <span className="portal-overline">IKKENAUTO VOOR PROFESSIONALS</span>
-  <h1>Alles voor je<br/><em>autovoorraad.</em></h1>
-  <p>Beheer je stock, voeg auto's toe en bereid je garage voor op IKKENAUTO. Een account aanmaken is eenvoudig.</p>
-  <strong className="portal-directory-number">{new Intl.NumberFormat("nl-BE").format(directoryCount)} bedrijfsvermeldingen in onze gids</strong><CompanyLookup title="Staat jouw garage al in onze bedrijvengids?" />
-  <p className="portal-note">Bedrijfsvermeldingen zijn nog geen actieve dealeraccounts. Alleen na registratie en controle kun je je vermelding claimen.</p>
- </div><div className="portal-auth-card">
-  <div className="portal-auth-tabs"><button type="button" className={mode==="login"?"active":""} onClick={()=>setMode("login")}>Inloggen</button><button type="button" className={mode==="register"?"active":""} onClick={()=>setMode("register")}>Registreren</button></div>
-  <h2>{mode==="login"?"Welkom terug":"Gratis dealeraccount"}</h2><p>{mode==="login"?"Meld je aan bij je beveiligde dashboard.":"Maak een account en bevestig je e-mailadres."}</p>
-  <form action={mode==="login"?loginAction:registerAction} className="portal-form">
-   <label>E-mailadres<input name="email" type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} required placeholder="naam@garage.be"/></label>
-   <label>Wachtwoord<span className="portal-password-wrap"><input name="password" type={show?"text":"password"} value={password} onChange={e=>setPassword(e.target.value)} minLength={mode==="register"?10:undefined} required autoComplete={mode==="login"?"current-password":"new-password"}/><button type="button" aria-label={show?"Wachtwoord verbergen":"Wachtwoord tonen"} onClick={()=>setShow(!show)}>{show?"Verberg":"Toon"}</button></span></label>
-   {mode==="register"&&<p className="portal-note">Gebruik minstens 10 tekens. Je ontvangt vervolgens een bevestigingsmail.</p>}
-   {state.error&&<p className="portal-form-error" role="alert">{state.error}</p>}
-   {state.message&&<p className="portal-form-ok" role="status">{state.message}</p>}
-   <button disabled={loginPending||registerPending} className="portal-button">{loginPending||registerPending?"Bezig…":mode==="login"?"Inloggen":"Account aanmaken"}</button>
-  </form>
-  <a className="portal-forgot" href="/portal/wachtwoord">Wachtwoord vergeten?</a>
-  {mode==="login"&&<form className="portal-resend" action={resendAction}><input type="hidden" name="email" value={email}/><button disabled={resendPending||!email} type="submit">Bevestigingsmail opnieuw sturen</button>{resendState.error&&<p className="portal-form-error">{resendState.error}</p>}{resendState.message&&<p className="portal-form-ok">{resendState.message}</p>}</form>}
- </div></section>;
+ const state=mode==="login"?loginState:registerState;
+ return <section className="portal-auth-layout portal-onboard">
+  <div className="portal-auth-intro"><span className="portal-overline">DEALERPORTAAL</span><h1>IKKENAUTO voor autohandelaars</h1>
+   <p>Registreer je garage en beheer je voertuigen in voorbereiding op de publieke lancering van IKKENAUTO.</p>
+   <p className="portal-note">Registreren is gratis. Voertuigen worden nog niet publiek gepubliceerd.</p>
+   <Link className="portal-link-back" href="/dealer">Over het dealerportaal</Link>
+  </div>
+  <div className="portal-auth-card">
+   <div className="portal-auth-tabs"><button type="button" className={mode==="register"?"active":""} onClick={()=>setMode("register")}>Garage registreren</button><button type="button" className={mode==="login"?"active":""} onClick={()=>setMode("login")}>Inloggen</button></div>
+   <h2>{mode==="register"?"Account aanmaken":"Inloggen"}</h2>
+   <p>{mode==="register"?"Maak je account aan. Je garagegegevens voeg je daarna toe.":"Meld je aan om je garage en voertuigen te beheren."}</p>
+   <form action={mode==="register"?registerAction:loginAction} className="portal-form">
+    <label>E-mailadres<input type="email" name="email" required autoComplete="email" placeholder="naam@garage.be" value={email} onChange={e=>setEmail(e.target.value)}/></label>
+    <label>Wachtwoord<span className="portal-password-wrap"><input type={show?"text":"password"} name="password" required minLength={mode==="register"?10:undefined} autoComplete={mode==="register"?"new-password":"current-password"} value={password} onChange={e=>setPassword(e.target.value)}/><button type="button" onClick={()=>setShow(!show)} aria-label={show?"Wachtwoord verbergen":"Wachtwoord tonen"}>{show?"Verbergen":"Tonen"}</button></span></label>
+    {state.error&&<p className="portal-form-error" role="alert">{state.error}</p>}
+    {state.message&&<p className="portal-form-ok" role="status">{state.message}</p>}
+    <button className="portal-button" disabled={loginPending||registerPending}>{loginPending||registerPending?"Bezig…":mode==="register"?"Account aanmaken":"Inloggen"}</button>
+   </form>
+   {mode==="register"?<div className="portal-find-compact"><button type="button" aria-expanded={find} onClick={()=>setFind(!find)}>{find?"Zoekfunctie sluiten":"Staat je garage al bij IKKENAUTO? Zoek je bedrijf"}</button>
+    {find&&<div><CompanyLookup title="Zoek bedrijfsnaam" onSelect={c=>{setPicked(c.name);try{sessionStorage.setItem("ikkenauto_selected_company",JSON.stringify(c));}catch{}}}/>{picked&&<p className="portal-form-ok">Geselecteerd: {picked}. Deze gegevens gebruiken we bij de volgende stap.</p>}</div>}
+   </div>:<><Link className="portal-forgot" href="/portal/wachtwoord">Wachtwoord vergeten?</Link><form className="portal-resend" action={resendAction}><input type="hidden" name="email" value={email}/><button disabled={resendPending||!email} type="submit">Bevestigingsmail opnieuw versturen</button>{resendState.error&&<p className="portal-form-error">{resendState.error}</p>}{resendState.message&&<p className="portal-form-ok">{resendState.message}</p>}</form></>}
+  </div>
+ </section>;
 }
