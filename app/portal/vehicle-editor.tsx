@@ -1,5 +1,5 @@
 "use client";
-import {useActionState,useEffect,useMemo,useRef,useState} from "react";
+import {useActionState,useCallback,useEffect,useMemo,useRef,useState} from "react";
 import {useRouter} from "next/navigation";
 import {createBrowserClient} from "@supabase/ssr";
 import {supabaseBrowserConfig} from "@/lib/supabase/env";
@@ -79,14 +79,14 @@ export function VehicleEditor({dealerId}:{dealerId:string}){
   }
   void upload();
  },[result.vehicleId,photos,draftKey,dealerId,router]);
- function update(patch:Record<string,string>){
+ const update=useCallback((patch:Record<string,string>)=>{
   setValues(v=>({...v,...patch}));setFeedback("");
   if("fuel" in patch||"vehicle_class" in patch){
    const nextFuel=mappedFuel(patch.fuel??fuel),nextClass=patch.vehicle_class??className;
    setCodes(previous=>previous.filter(code=>{const e=equipMap.get(code);
     return e&&(!e.compatible_fuels.length||e.compatible_fuels.includes(nextFuel)||e.compatible_fuels.includes(nextClass));}));
   }
- }
+ },[fuel,className,equipMap]);
  const field=(name:string,label:string,type="text",placeholder="")=><label key={name} className="dealer-form-field">
   <span>{label}</span><input type={type} min={type==="number"?0:undefined} step={type==="number"?"any":undefined}
    value={values[name]||""} placeholder={placeholder} onChange={e=>update({[name]:e.target.value})}/>
@@ -108,6 +108,15 @@ export function VehicleEditor({dealerId}:{dealerId:string}){
   </label>;
  }
  const specGroup=(ids:Set<string>)=><div className="dealer-form-grid">{vehicleSpecificationFields.filter(f=>ids.has(f.key)).map(spec)}</div>;
+ const catalogValues=useMemo(()=>({
+  make:values.make||"",model:values.model||"",vehicle_class:values.vehicle_class||"car",
+  generation_code:values.generation_code||"",motorization:values.motorization||"",
+  trim_line:values.trim_line||"",catalog_make_id:values.catalog_make_id||"",
+  catalog_model_id:values.catalog_model_id||"",catalog_generation_id:values.catalog_generation_id||"",
+  catalog_powertrain_id:values.catalog_powertrain_id||"",catalog_trim_id:values.catalog_trim_id||""
+ }),[values.make,values.model,values.vehicle_class,values.generation_code,values.motorization,values.trim_line,
+  values.catalog_make_id,values.catalog_model_id,values.catalog_generation_id,values.catalog_powertrain_id,values.catalog_trim_id]);
+
  const specifications=Object.fromEntries(Object.entries(values).filter(([k,v])=>k.startsWith("spec.")&&v!=="").map(([k,v])=>[k.slice(5),v==="true"?true:v]));
  function validateBeforeSubmit(){
   let message="",section="voertuig";
@@ -138,7 +147,7 @@ export function VehicleEditor({dealerId}:{dealerId:string}){
    <div className="dealer-wizard-main">
    <p className="dealer-form-intro">Alle velden zijn direct zichtbaar. Niet-verplichte gegevens mogen leeg blijven. Dit formulier bewaart tijdelijk je invoer in deze browsersessie.</p>
    <section className="dealer-long-section" id="vehicle-section-voertuig"><div className="dealer-long-section-heading"><span>01 / 08</span><h2>Voertuig selecteren</h2></div>
-    <CatalogVehicleSelector values={values} makes={makes} update={update}/>
+    <CatalogVehicleSelector values={catalogValues} makes={makes} update={update}/>
     <p className="dealer-wizard-footnote">De catalogus bevat suggesties, geen automatisch bevestigde voertuigkenmerken. Onbekende generaties en uitvoeringen kun je vrij invullen.</p>
    </section>
    <section className="dealer-long-section" id="vehicle-section-techniek"><div className="dealer-long-section-heading"><span>02 / 08</span><h2>Technische gegevens</h2></div>
