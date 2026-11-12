@@ -90,7 +90,7 @@ export function DealerWorkspace({
     <aside className="dealer-workspace-sidebar" aria-label="Dealernavigatie">
       <div className="dealer-sidebar-caption">WERKRUIMTE</div>
       <nav className="dealer-sidebar-links">
-        {sections.map(section => <Link key={section.tab} href={"/portal?tab=" + section.tab}
+        {sections.map(section => <Link key={section.tab} href={"/portal?tab=" + section.tab} prefetch={false}
           aria-current={tab === section.tab ? "page" : undefined} className={tab === section.tab ? "active" : ""}>{section.title}</Link>)}
         <Link href="/portal/voorraad/nieuw" className="dealer-sidebar-add">+ Auto toevoegen</Link>
       </nav>
