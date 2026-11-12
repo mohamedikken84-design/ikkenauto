@@ -2,7 +2,7 @@
 import {revalidatePath} from "next/cache";
 import {redirect} from "next/navigation";
 import {createSupabaseServer} from "@/lib/supabase/server";
-const types=["make","model","generation","powertrain","trim"] as const;
+const types=["make","model","generation","powertrain","trim","equipment"] as const;
 type Kind=typeof types[number];
 const value=(form:FormData,key:string,max=160)=>String(form.get(key)||"").trim().slice(0,max);
 const fail=(message:string):never=>redirect("/portal/admin/catalog?error="+encodeURIComponent(message));
@@ -45,6 +45,19 @@ export async function addCatalogEntry(form:FormData){
  }else if(type==="trim"){
   const id=parseId(form,"powertrain_id");if(!id)return fail("Kies eerst de motorisatie.");
   const result=await db.from("portal_vehicle_trims").insert({powertrain_id:id,name,verified:false});
+  errorMessage=result.error?.message||"";
+ }
+ if(type==="equipment"){
+  const category=value(form,"category",80);
+  if(!category)return fail("Kies een uitrustingscategorie.");
+  const scope=value(form,"scope",20);
+  if(!["all","electric","commercial"].includes(scope))return fail("Onbekende compatibiliteit.");
+  const code=name.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"").slice(0,90);
+  if(code.length<2)return fail("Gebruik een duidelijke uitrustingsnaam.");
+  const fuels=scope==="electric"?["electric","plug_in_hybrid"]:scope==="commercial"?["commercial"]:[];
+  const result=await db.from("portal_vehicle_equipment_catalog").insert({
+   code,label_nl:name,category,compatible_fuels:fuels,enabled:true,
+  });
   errorMessage=result.error?.message||"";
  }
  if(errorMessage)return fail(errorMessage.includes("duplicate key")?"Dit item bestaat al.": "Catalogusitem niet opgeslagen. Controleer de bovenliggende keuze.");
