@@ -18,7 +18,7 @@ export default async function AddVehiclePage() {
     <header className="portal-top"><PortalLogo/><span className="portal-top-caption">Dealerportaal</span></header>
     <div className="portal-container">
       <Link href="/portal?tab=voertuigen" className="dealer-back-link">← Terug naar mijn voertuigen</Link>
-      <VehicleEditor/>
+      <VehicleEditor dealerId={dealer.id}/>
       <footer className="portal-footer dealer-footer">© {new Date().getFullYear()} IKKENAUTO · Alleen toegankelijk voor je garage</footer>
     </div>
   </div>;
