@@ -22,12 +22,12 @@ function Badge({ status }: { status: string }) {
     {status === "ready" ? "Klaar voor lancering" : status === "sold" ? "Verkocht" : "Concept"}
   </span>;
 }
-function StockRows({ vehicles }: { vehicles: DealerVehicle[] }) {
+function StockRows({ vehicles, filtered = false }: { vehicles: DealerVehicle[]; filtered?: boolean }) {
   if (!vehicles.length) return <div className="dealer-empty-state">
     <div className="dealer-empty-symbol" aria-hidden="true">+</div>
-    <h3>Je voorraad is nog leeg</h3>
-    <p>Voeg je eerste auto toe om je voertuigen overzichtelijk te beheren.</p>
-    <Link className="portal-button dealer-primary-action" href="/portal/voorraad/nieuw">Eerste auto toevoegen</Link>
+    <h3>{filtered ? "Geen voertuigen gevonden" : "Je voorraad is nog leeg"}</h3>
+    <p>{filtered ? "Pas je zoekopdracht of filters aan om opnieuw te zoeken." : "Voeg je eerste auto toe om je voertuigen overzichtelijk te beheren."}</p>
+    <Link className="portal-button dealer-primary-action" href={filtered ? "/portal?tab=voertuigen" : "/portal/voorraad/nieuw"}>{filtered ? "Alle voertuigen bekijken" : "Eerste auto toevoegen"}</Link>
   </div>;
   return <div className="dealer-stock-table-wrap"><table className="dealer-stock-table">
     <thead><tr><th>Voertuig</th><th>Prijs</th><th>Voortgang</th><th>Beheren</th></tr></thead>
@@ -57,21 +57,50 @@ function StockRows({ vehicles }: { vehicles: DealerVehicle[] }) {
     </tr>)}</tbody>
   </table></div>;
 }
-function Pagination({ page, total, tab, field = "vehiclePage", anchor = "vehicles" }: { page: number; total: number; tab: DealerTab; field?: string; anchor?: string }) {
+function Pagination({ page, total, tab, field = "vehiclePage", anchor = "vehicles", q = "", status = "" }: { page: number; total: number; tab: DealerTab; field?: string; anchor?: string; q?: string; status?: string }) {
   const last = Math.max(1, Math.ceil(total / 100));
   if (last < 2) return null;
+  function toPage(next: number) {
+    const params = new URLSearchParams({ tab, [field]: String(next) });
+    if (tab === "voertuigen" && q) params.set("q", q);
+    if (tab === "voertuigen" && status) params.set("status", status);
+    return "/portal?" + params.toString() + "#" + anchor;
+  }
   return <nav className="dealer-pager" aria-label="Pagina's">
-    {page > 1 ? <Link href={"/portal?tab=" + tab + "&" + field + "=" + (page - 1) + "#" + anchor}>← Vorige pagina</Link> : <span/>}
+    {page > 1 ? <Link href={toPage(page - 1)}>← Vorige pagina</Link> : <span/>}
     <span>Pagina {page} van {last}</span>
-    {page < last ? <Link href={"/portal?tab=" + tab + "&" + field + "=" + (page + 1) + "#" + anchor}>Volgende pagina →</Link> : <span/>}
+    {page < last ? <Link href={toPage(page + 1)}>Volgende pagina →</Link> : <span/>}
   </nav>;
 }
 
+function InventoryFilters({ q, status }: { q: string; status: string }) {
+  const active = Boolean(q || status);
+  return <form className="dealer-stock-filters" action="/portal" method="get" role="search">
+    <input type="hidden" name="tab" value="voertuigen"/>
+    <label className="dealer-search-field" htmlFor="dealer-search-stock">
+      <span>Zoek in je voorraad</span>
+      <input id="dealer-search-stock" name="q" type="search" maxLength={60} defaultValue={q}
+        placeholder="Merk, model of stocknummer" autoComplete="off"/>
+    </label>
+    <label className="dealer-search-status" htmlFor="dealer-stock-status">
+      <span>Status</span>
+      <select id="dealer-stock-status" name="status" defaultValue={status}>
+        <option value="">Alle statussen</option>
+        <option value="draft">Concept</option>
+        <option value="ready">Klaar voor lancering</option>
+        <option value="sold">Verkocht</option>
+      </select>
+    </label>
+    <button className="dealer-filter-button" type="submit">Zoeken</button>
+    {active && <Link className="dealer-clear-filters" href="/portal?tab=voertuigen">Wis filters</Link>}
+  </form>;
+}
+
 export function DealerWorkspace({
-  name, tab, vehicles, leads, vehiclePage, leadPage, totalVehicles, totalReady, totalSold, totalLeads,
+  name, tab, vehicles, leads, vehiclePage, leadPage, inventorySearch, inventoryStatus, totalVehicles, totalReady, totalSold, totalLeads,
 }: {
   name: string; tab: DealerTab; vehicles: DealerVehicle[]; leads: DealerLead[];
-  vehiclePage: number; leadPage: number; totalVehicles: number; totalReady: number; totalSold: number; totalLeads: number;
+  vehiclePage: number; leadPage: number; inventorySearch: string; inventoryStatus: string; totalVehicles: number; totalReady: number; totalSold: number; totalLeads: number;
 }) {
   const sections: { tab: DealerTab; title: string }[] = [
     { tab: "overzicht", title: "Overzicht" },
@@ -108,10 +137,10 @@ export function DealerWorkspace({
 
       {tab === "overzicht" && <>
         <div className="dealer-kpi-grid">
-          <div className="dealer-kpi"><span>Voertuigen</span><strong>{number(totalVehicles)}</strong><Link href="/portal?tab=voertuigen">Bekijk voorraad →</Link></div>
-          <div className="dealer-kpi"><span>Klaar voor lancering</span><strong>{number(totalReady)}</strong><small>In je privévoorraad</small></div>
-          <div className="dealer-kpi"><span>Verkocht</span><strong>{number(totalSold)}</strong><small>Afgehandelde voertuigen</small></div>
-          <div className="dealer-kpi"><span>Aanvragen</span><strong>{number(totalLeads)}</strong><Link href="/portal?tab=aanvragen">Bekijk aanvragen →</Link></div>
+          <Link href="/portal?tab=voertuigen" className="dealer-kpi dealer-kpi-link" aria-label="Bekijk al je voertuigen"><span>Voertuigen</span><strong>{number(totalVehicles)}</strong><small>Bekijk voorraad →</small></Link>
+          <Link href="/portal?tab=voertuigen&status=ready" className="dealer-kpi dealer-kpi-link" aria-label="Bekijk voertuigen klaar voor lancering"><span>Klaar voor lancering</span><strong>{number(totalReady)}</strong><small>Bekijk voertuigen →</small></Link>
+          <Link href="/portal?tab=voertuigen&status=sold" className="dealer-kpi dealer-kpi-link" aria-label="Bekijk verkochte voertuigen"><span>Verkocht</span><strong>{number(totalSold)}</strong><small>Bekijk voertuigen →</small></Link>
+          <Link href="/portal?tab=aanvragen" className="dealer-kpi dealer-kpi-link" aria-label="Bekijk alle aanvragen"><span>Aanvragen</span><strong>{number(totalLeads)}</strong><small>Bekijk aanvragen →</small></Link>
         </div>
         <section className="dealer-content-panel" id="vehicles">
           <div className="dealer-panel-heading"><div><h2>Recente voertuigen</h2><p>Je laatst toegevoegde auto&apos;s.</p></div><Link href="/portal?tab=voertuigen">Alle voertuigen →</Link></div>
@@ -121,9 +150,10 @@ export function DealerWorkspace({
       </>}
 
       {tab === "voertuigen" && <section className="dealer-content-panel" id="vehicles">
-        <div className="dealer-panel-heading"><div><h2>Voorraad</h2><p>{number(totalVehicles)} auto&apos;s in je eigen voorraad.</p></div>
+        <div className="dealer-panel-heading"><div><h2>Voorraad</h2><p>{number(totalVehicles)} {inventorySearch || inventoryStatus ? "gevonden voertuigen" : "voertuigen in je eigen voorraad"}.</p></div>
           <Link href="/portal?tab=importeren" className="dealer-text-link">CSV importeren →</Link></div>
-        <StockRows vehicles={vehicles}/><Pagination tab={tab} page={vehiclePage} total={totalVehicles}/>
+        <InventoryFilters q={inventorySearch} status={inventoryStatus}/>
+        <StockRows vehicles={vehicles} filtered={Boolean(inventorySearch||inventoryStatus)}/><Pagination tab={tab} page={vehiclePage} total={totalVehicles} q={inventorySearch} status={inventoryStatus}/>
       </section>}
 
       {tab === "importeren" && <section className="dealer-content-panel dealer-import-page">
