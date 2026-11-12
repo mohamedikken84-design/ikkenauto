@@ -63,7 +63,7 @@ export function VehicleEditor({dealerId}:{dealerId:string}){
    let ok=0,fail=photos.length;
    if(cfg&&photos.length){
     const db=createBrowserClient(cfg.url,cfg.anonKey);
-    const result=await uploadDealerPhotos(db,photos,dealerId,vehicleId,(done,total)=>setUploading("Foto's verwerken: "+done+" van "+total));
+    const result=await uploadDealerPhotos(db,photos,dealerId,vehicleId!,(done,total)=>setUploading("Foto's verwerken: "+done+" van "+total));
     ok=result.saved;fail=result.failed.length;
    }
    const msg=photos.length?(ok+" foto's opgeslagen"+(fail?", "+fail+" mislukt":"")+". Het voertuig is een privéconcept."):"Voertuig opgeslagen als privéconcept. Voeg foto's toe wanneer je wilt.";
