@@ -1,3 +1,4 @@
+import {PortalLogo} from "@/app/portal/portal-logo";
 import Link from "next/link";
 import { connection } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase/server";
@@ -83,7 +84,7 @@ export default async function Portal({searchParams}:Params){
  const dealerName=new Map([...dealers.map(d=>[d.id,d.name] as const),...relatedNames.map(d=>[d.id,d.name] as const)]);
  const stockCount=new Map(dealerCounts.map(d=>[d.dealer_id,d.total]));
  return <div className="portal-shell">
-  <div className="portal-top"><Link className="portal-brand" href="/portal"><span>IK</span><span className="portal-brand-gold">K</span><span>ENAUTO</span><small>.BE</small></Link><span className="portal-top-caption">Dealerportaal</span>{user?<form action={signOut}><button className="portal-ghost">Uitloggen</button></form>:<nav className="dealer-top-links" aria-label="Account"><Link href="/portal?aanmelden=1#account">Inloggen</Link><Link className="dealer-nav-register" href="/portal?registreren=1#account">Garage registreren</Link></nav>}</div>
+  <div className="portal-top"><PortalLogo/><span className="portal-top-caption">Dealerportaal</span>{user?<form action={signOut}><button className="portal-ghost">Uitloggen</button></form>:<nav className="dealer-top-links" aria-label="Account"><Link href="/portal?aanmelden=1#account">Inloggen</Link><Link className="dealer-nav-register" href="/portal?registreren=1#account">Garage registreren</Link></nav>}</div>
   <div className="portal-container">
   {notices.error&&<div role="alert" className="portal-alert portal-error">{notices.error}</div>}
   {notices.success&&<div role="status" className="portal-alert portal-success">{notices.success}</div>}

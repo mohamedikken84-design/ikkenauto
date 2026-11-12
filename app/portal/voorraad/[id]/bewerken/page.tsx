@@ -1,3 +1,4 @@
+import {PortalLogo} from "@/app/portal/portal-logo";
 import Link from "next/link";
 import { connection } from "next/server";
 import { redirect, notFound } from "next/navigation";
@@ -22,7 +23,7 @@ export default async function EditVehicle({params,searchParams}:{params:Promise<
    id:p.id,url:(await db.storage.from("portal-vehicles").createSignedUrl(p.storage_path,3600)).data?.signedUrl||null
  })));
  return <section className="portal-shell">
-  <div className="portal-top"><Link className="portal-brand" href="/portal"><span>IK</span><span className="portal-brand-gold">K</span><span>ENAUTO</span><small>.BE</small></Link><span className="portal-top-caption">Voertuigbeheer</span></div>
+  <div className="portal-top"><PortalLogo/><span className="portal-top-caption">Voertuigbeheer</span></div>
   <div className="portal-container">
    <Link href="/portal" className="dealer-back-link">← Terug naar mijn voorraad</Link>
    <div className="portal-heading"><div><span className="portal-overline">{dealer.name} / VOORRAAD</span><h1>{vehicle.make} {vehicle.model}</h1><p>Wijzig de voertuiggegevens en bewaar ze in je voorraad.</p></div></div>
