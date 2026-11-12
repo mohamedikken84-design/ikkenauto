@@ -584,3 +584,31 @@
  .portal-shell .dealer-full-wizard .dealer-form-grid { grid-template-columns:minmax(0,1fr); }
  .portal-shell .dealer-full-wizard .dealer-wizard-main { padding:20px 15px; }
 }
+
+
+/* Automotive catalog, admin extensions and source-link intake: Luxury Minimal */
+.portal-shell .dealer-catalog-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-top:28px; }
+.portal-shell .dealer-catalog-card { padding:22px; display:grid; gap:15px; align-content:start; }
+.portal-shell .dealer-catalog-card h2 { font-size:17px; margin:0; color:#252525; }
+.portal-shell .dealer-catalog-card label { display:grid; gap:8px; font-size:13px; font-weight:650; color:#47443f; min-width:0; }
+.portal-shell .dealer-catalog-card input,
+.portal-shell .dealer-catalog-card select { border:1px solid #dbd7d0; border-radius:6px; background:#fff; padding:11px; min-height:44px; font-size:13px; width:100%; min-width:0; }
+.portal-shell .dealer-catalog-card .dealer-form-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.portal-shell .dealer-catalog-card .portal-button { justify-self:start; }
+.portal-shell .dealer-admin-tools { display:flex; flex-wrap:wrap; align-items:center; gap:15px; margin:15px 0 24px; }
+.portal-shell .dealer-admin-tools>span { color:#817c73; font-size:12px; }
+.portal-shell .dealer-link-import-section { border:1px solid #e8e5df; border-radius:9px; padding:22px; background:#fff; margin:0 0 30px; }
+.portal-shell .dealer-link-import-section .dealer-panel-heading { margin-bottom:18px; }
+.portal-shell .dealer-link-import-section .portal-form { max-width:660px; gap:13px; }
+.portal-shell .dealer-link-import-section .portal-form input { width:100%; min-height:44px; }
+.portal-shell .dealer-source-explainer { margin:0; font-size:12px; color:#686157; }
+.portal-shell .dealer-advanced-edit { display:grid; gap:23px; }
+.portal-shell .dealer-advanced-edit .dealer-form-field { min-width:0; }
+.portal-shell .dealer-advanced-edit .dealer-form-field input[type=checkbox] { width:20px; height:20px; min-height:20px; }
+.portal-shell .dealer-advanced-edit .dealer-expand-specs { margin:14px 0 0; min-height:44px; }
+.portal-shell .dealer-advanced-edit .dealer-advanced-spec-grid { margin-top:18px; }
+@media(max-width:700px) {
+ .portal-shell .dealer-catalog-grid { grid-template-columns:minmax(0,1fr); }
+ .portal-shell .dealer-catalog-card .dealer-form-grid { grid-template-columns:minmax(0,1fr); }
+ .portal-shell .dealer-link-import-section { padding:17px; }
+}
