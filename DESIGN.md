@@ -40,7 +40,7 @@ Do not clone proprietary layouts, assets, trademarks, text, images or icons. IKK
 Dealer navigation, in this order:
 1. Overzicht — small KPI row, most recent vehicles, primary action.
 2. Mijn voertuigen — searchable inventory with thumbnails and status.
-3. Auto toevoegen — dedicated guided form, not a massive accordion within the dashboard.
+3. Auto toevoegen — één doorlopende, overzichtelijke pagina met zichtbare secties en een compacte anker-navigatie. Geen wizard, vervolgstappen of verborgen verplichte invoer.
 4. Importeren — distinct CSV flow with preview and warnings; do not offer fake one-click AutoScout24/2dehands import.
 5. Aanvragen — buyer leads with clear unread/answered statuses.
 6. Garageprofiel — company details and media.
@@ -48,7 +48,7 @@ Use top bar + compact sidebar on desktop, accessible compact nav on mobile. Keep
 
 ## 5. Vehicle entry — critical UX
 - Offer a single unmistakable path "Auto toevoegen" from dashboard and inventory.
-- Actual creation flow: four guided steps, followed by a separate image upload page after saving a private draft.
+- Actual creation flow: all 8 information groups on ONE continuous page (vehicle, technology, equipment, appearance, history, price/tax, photos/description, review). A single bottom action creates a private draft. Selected photos upload directly to private Supabase storage after the draft is persisted; editing stays available afterwards.
   1. Basis: merk, model, uitvoering, bouwjaar, kilometerstand, prijs.
   2. Kenmerken: brandstof, transmissie, carrosserie, staat en technische details.
   3. Uitrusting: categorized options and description.
@@ -70,6 +70,10 @@ Use top bar + compact sidebar on desktop, accessible compact nav on mobile. Keep
 - Deleting cars is destructive and requires clear confirmation; never silently overwrite or delete stored information.
 
 ## 7. Forms, feedback, accessibility
+
+- Do not reintroduce multi-step creation. All relevant fields, including advanced EV and van specifications and equipment categories, are visible in the scrollable page. Sticky compact section anchors and a single save action replace the old wizard.
+- Keep the dealer-portal brand Luxury Minimal: warm off-white, ink black, subtle gold second K, no generic oversized AI-looking cards.
+- Protect production and previews with Vercel Authentication for every deployment. Do not make public again without explicit owner authorization. Root Hostinger/Netlify site protection is managed separately if still deployed.
 - Labels outside inputs; examples as placeholders only, never as sole labels.
 - Clear visible focus ring, semantic form controls, correct keyboard tab order, explicit error and success messaging.
 - Contrast target WCAG AA, touch targets >= 44 px, responsive at 375/768/1024/1440 widths.
