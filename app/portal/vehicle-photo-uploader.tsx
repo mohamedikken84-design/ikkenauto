@@ -4,6 +4,7 @@ import { useMemo, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import { supabaseBrowserConfig } from "@/lib/supabase/env";
+import { uploadDealerPhotos } from "@/lib/dealer/photo-batch";
 
 const MAX_UPLOAD = 10;
 const MAX_PHOTOS = 25;
@@ -49,24 +50,11 @@ export function VehiclePhotoUploader({
         setMessage({ ok:false, text:"Je sessie is verlopen. Meld je opnieuw aan." });
         return;
       }
-      for (let i = 0; i < chosen.length; i++) {
-        const photo = chosen[i];
-        setProgress("Foto " + (i + 1) + " van " + chosen.length + " uploaden…");
-        const extension = photo.type === "image/png" ? "png" : photo.type === "image/webp" ? "webp" : "jpg";
-        const path = dealerId + "/" + vehicleId + "/" + crypto.randomUUID() + "." + extension;
-        // Signed-in browser sends the photo directly to Supabase, not via Vercel's 4.5 MB function limit.
-        const uploaded = await db.storage.from("portal-vehicles").upload(path, photo, { contentType: photo.type, upsert:false });
-        if (uploaded.error) { failed.push(photo.name); continue; }
-        const { error: inserted } = await db.from("portal_vehicle_photos").insert({
-          dealer_id: dealerId, vehicle_id: vehicleId, storage_path: path,
-        });
-        if (inserted) {
-          await db.storage.from("portal-vehicles").remove([path]);
-          failed.push(photo.name);
-          continue;
-        }
-        saved++;
-      }
+      const result = await uploadDealerPhotos(db,chosen,dealerId,vehicleId,(complete,total)=>{
+        setProgress("Foto's verwerken: "+complete+" van "+total);
+      });
+      saved=result.saved;
+      failed.push(...result.failed);
       setMessage({
         ok: failed.length === 0,
         text: saved + (saved === 1 ? " foto opgeslagen." : " foto's opgeslagen.") +
