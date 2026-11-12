@@ -114,14 +114,14 @@ export function DealerWorkspace({
           <div className="dealer-kpi"><span>Aanvragen</span><strong>{number(totalLeads)}</strong><Link href="/portal?tab=aanvragen">Bekijk aanvragen →</Link></div>
         </div>
         <section className="dealer-content-panel" id="vehicles">
-          <div className="dealer-panel-heading"><div><h2>Recente voertuigen</h2><p>Je laatst toegevoegde auto's.</p></div><Link href="/portal?tab=voertuigen">Alle voertuigen →</Link></div>
+          <div className="dealer-panel-heading"><div><h2>Recente voertuigen</h2><p>Je laatst toegevoegde auto&apos;s.</p></div><Link href="/portal?tab=voertuigen">Alle voertuigen →</Link></div>
           <StockRows vehicles={vehicles.slice(0, 5)}/>
         </section>
         <div className="dealer-info-strip"><div><strong>Je garageprofiel volledig maken?</strong><p>Voeg je logo, omslagfoto en contactgegevens toe zodat je voorbereid bent op de lancering.</p></div><Link href="/portal/garage">Profiel aanvullen →</Link></div>
       </>}
 
       {tab === "voertuigen" && <section className="dealer-content-panel" id="vehicles">
-        <div className="dealer-panel-heading"><div><h2>Voorraad</h2><p>{number(totalVehicles)} auto's in je eigen voorraad.</p></div>
+        <div className="dealer-panel-heading"><div><h2>Voorraad</h2><p>{number(totalVehicles)} auto&apos;s in je eigen voorraad.</p></div>
           <Link href="/portal?tab=importeren" className="dealer-text-link">CSV importeren →</Link></div>
         <StockRows vehicles={vehicles}/><Pagination tab={tab} page={vehiclePage} total={totalVehicles}/>
       </section>}
