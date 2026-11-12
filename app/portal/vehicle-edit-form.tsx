@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { updateVehicle } from "./vehicle-edit-actions";
 import { vehicleMakes, suggestedModels } from "@/lib/dealer/vehicle-catalog";
+import { VehicleAdvancedEditor } from "./vehicle-advanced-editor";
 
 type VehicleRecord = {
   id:string;make:string;model:string;version:string|null;price_eur:number;year:number|null;
@@ -12,15 +13,14 @@ type VehicleRecord = {
   emission_class:string|null;condition:string|null;source_ref:string|null;
   seats:number|null;doors:number|null;power_hp:number|null;description:string|null;
   status:string;vat_deductible:boolean;options:string[]|null;
+  equipment_codes:string[]|null;specifications:Record<string,unknown>|null;
+  vehicle_class:string|null;generation_code:string|null;motorization:string|null;trim_line:string|null;
+  vat_regime:string|null;condition_notes:string|null;maintenance_history:string|null;
+  accident_history:string|null;warranty_months:number|null;
 };
 const fuelTypes=["Benzine","Diesel","Elektrisch","Hybride","Plug-in hybride","LPG","CNG","Waterstof","Overig"];
 const gearbox=["Automaat","Manueel","Semi-automaat"];
 const bodyTypes=["SUV","Berline","Hatchback","Break","Coupé","Cabrio","Monovolume","Bestelwagen","Pick-up","Andere"];
-const equipmentGroups=[
- {title:"Comfort",values:["Airconditioning","Automatische klimaatregeling","Verwarmde zetels","Elektrische zetels","Lederen bekleding","Keyless entry","Elektrische achterklep","Panoramadak"]},
- {title:"Veiligheid",values:["Cruisecontrol","Adaptieve cruisecontrol","Achteruitrijcamera","360° camera","Parkeersensoren voor","Parkeersensoren achter","Dodehoekwaarschuwing","Rijstrookassistent","Isofix"]},
- {title:"Multimedia en exterieur",values:["Navigatie","Apple CarPlay","Android Auto","Bluetooth","Head-updisplay","Ledkoplampen","Matrix-led","Lichtmetalen velgen","Sportpakket","Trekhaak"]},
-];
 export function VehicleEditForm({vehicle}:{vehicle:VehicleRecord}) {
  const [state,save,pending]=useActionState(updateVehicle,{error:""});
  const [values,setValues]=useState<Record<string,string>>({
@@ -35,9 +35,12 @@ export function VehicleEditForm({vehicle}:{vehicle:VehicleRecord}) {
   doors:vehicle.doors===null?"":String(vehicle.doors),
   power_hp:vehicle.power_hp===null?"":String(vehicle.power_hp),
   description:vehicle.description||"",status:vehicle.status,
+  vehicle_class:vehicle.vehicle_class||"car",generation_code:vehicle.generation_code||"",
+  motorization:vehicle.motorization||"",trim_line:vehicle.trim_line||"",vat_regime:vehicle.vat_regime||"op_aanvraag",
+  condition_notes:vehicle.condition_notes||"",maintenance_history:vehicle.maintenance_history||"",
+  accident_history:vehicle.accident_history||"",warranty_months:vehicle.warranty_months===null?"":String(vehicle.warranty_months),
  });
  const [deductible,setDeductible]=useState(Boolean(vehicle.vat_deductible));
- const [selectedOptions,setSelectedOptions]=useState<string[]>(vehicle.options||[]);
  const edit=(name:string,v:string)=>setValues(previous=>({...previous,[name]:v,...(name==="make"&&previous.make!==v?{model:""}:{})}));
  const input=(name:string,label:string,opts:{type?:string;required?:boolean;placeholder?:string}={})=><label className="dealer-form-field" key={name}>
    <span>{label}{opts.required&&<b aria-hidden="true"> *</b>}</span>
@@ -48,13 +51,6 @@ export function VehicleEditForm({vehicle}:{vehicle:VehicleRecord}) {
   <span>{label}</span><select name={name} value={values[name]||""} onChange={e=>edit(name,e.target.value)}>
    <option value="">Niet opgegeven</option>{options.map(x=><option key={x} value={x}>{x}</option>)}
   </select></label>;
- const known=equipmentGroups.flatMap(g=>g.values);
- const other=selectedOptions.filter(x=>!known.includes(x));
- function option(name:string){return <label className="dealer-equipment-option" key={name}>
-   <input type="checkbox" name="options" value={name} checked={selectedOptions.includes(name)}
-     onChange={e=>setSelectedOptions(previous=>e.target.checked?[...previous,name]:previous.filter(x=>x!==name))}/>
-   <span>{name}</span>
-  </label>;}
  return <form action={save} className="portal-form dealer-edit-form" id="vehicle-edit-form">
   <input type="hidden" name="vehicle_id" value={vehicle.id}/>
   <section className="dealer-edit-section">
@@ -101,21 +97,35 @@ export function VehicleEditForm({vehicle}:{vehicle:VehicleRecord}) {
 
   <section className="dealer-edit-section">
    <div className="dealer-edit-section-heading"><h3>Beschrijving en uitrusting</h3><p>Voeg alleen toe wat op dit voertuig aanwezig is.</p></div>
-   <details className="dealer-edit-options">
-    <summary>Opties en uitrusting <span>{selectedOptions.length} geselecteerd</span></summary>
-    <div className="dealer-edit-equipment">
-     {equipmentGroups.map(group=><fieldset className="dealer-equipment-group" key={group.title}>
-      <legend>{group.title}</legend><div className="dealer-equipment-grid">{group.values.map(option)}</div>
-     </fieldset>)}
-     {other.length>0&&<fieldset className="dealer-equipment-group"><legend>Overige bestaande opties</legend>
-      <div className="dealer-equipment-grid">{other.map(option)}</div></fieldset>}
-    </div>
-   </details>
    <label className="dealer-form-field dealer-description-field"><span>Omschrijving</span>
     <textarea name="description" rows={5} maxLength={4000} value={values.description||""} onChange={e=>edit("description",e.target.value)} placeholder="Onderhoudshistoriek, technische staat en bijzonderheden"/>
    </label>
   </section>
 
+  <section className="dealer-edit-section">
+   <div className="dealer-edit-section-heading"><h3>Overige voertuiggegevens</h3><p>Generatie en uitvoering zijn vrije invoervelden wanneer de catalogus ze nog niet kent.</p></div>
+   <div className="dealer-form-grid">
+    {select("vehicle_class","Voertuigcategorie",["car","commercial","motorhome","truck","motorcycle","other"])}
+    {input("generation_code","Generatie / modelcode")}
+    {input("motorization","Motorisatie / motorversie")}
+    {input("trim_line","Uitrustingslijn / uitvoering")}
+    {select("vat_regime","BTW-regime",["btw","marge","particulier","vrijgesteld","op_aanvraag"])}
+    {input("warranty_months","Garantie in maanden",{type:"number"})}
+   </div>
+   <label className="dealer-form-field dealer-description-field"><span>Onderhoudshistoriek</span>
+    <textarea rows={3} name="maintenance_history" value={values.maintenance_history||""} onChange={e=>edit("maintenance_history",e.target.value)}/>
+   </label>
+   <label className="dealer-form-field dealer-description-field"><span>Schadehistoriek</span>
+    <textarea rows={3} name="accident_history" value={values.accident_history||""} onChange={e=>edit("accident_history",e.target.value)}/>
+   </label>
+   <label className="dealer-form-field dealer-description-field"><span>Opmerkingen over staat</span>
+    <textarea rows={3} name="condition_notes" value={values.condition_notes||""} onChange={e=>edit("condition_notes",e.target.value)}/>
+   </label>
+  </section>
+  <VehicleAdvancedEditor initialSpecifications={vehicle.specifications}
+     initialCodes={vehicle.equipment_codes||[]}
+     originalOptions={vehicle.options||[]}
+     fuel={values.fuel||""} vehicleClass={values.vehicle_class||"car"}/>
   {state.error&&<p role="alert" className="portal-form-error">{state.error} Je wijzigingen blijven ingevuld.</p>}
   <div className="dealer-edit-submit">
    <p>Je gegevens blijven privé tot de lancering van de marktplaats.</p>
