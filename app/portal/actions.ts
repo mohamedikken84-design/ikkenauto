@@ -105,7 +105,7 @@ export async function vehicleStatus(form: FormData) {
     .eq("id",id).eq("dealer_id",dealer.id);
   if (error) go("Status aanpassen mislukt.");
   revalidatePath("/portal");
-  go("Voorraadstatus bijgewerkt.",true);
+  redirect("/portal?tab=voertuigen&success="+encodeURIComponent("Voorraadstatus bijgewerkt.")+"#vehicles");
 }
 export async function deleteVehicle(form: FormData) {
   const {db,dealer}=await ownDealer();
@@ -120,7 +120,7 @@ export async function deleteVehicle(form: FormData) {
   const {error}=await db.from("portal_vehicles").delete().eq("id",id).eq("dealer_id",dealer.id);
   if(error) go("Auto verwijderen mislukt.");
   revalidatePath("/portal");
-  go("Auto verwijderd.",true);
+  redirect("/portal?tab=voertuigen&success="+encodeURIComponent("Auto verwijderd.")+"#vehicles");
 }
 // Handles quoted CSV fields, embedded commas and CRLF. Rejects incomplete quoted cells.
 function parseCsv(input: string) {
