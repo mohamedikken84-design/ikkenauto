@@ -1,5 +1,7 @@
 # COMPETITOR_VEHICLE_FIELDS.md — IKKENAUTO verified field inventory
 
+**Current authoring UX (13 November 2026):** dealer vehicle entry is now a single long page. All eight information groups are simultaneously available, with sticky jump links, visible technical attributes and grouped searchable equipment. This replaces the previous 8-stage wizard; no additional steps/pages are required for data entry. The vehicle remains a private draft on save, and photos upload after the vehicle ID exists.
+
 Date: 2026-11-12. Owner: IKKENAUTO. Scope: automotive inventory, dealer onboarding, private preparation for a future Belgian marketplace.
 
 **Method & limitation:** Public website pages and published mobile.de API docs were inspected. A documented Seller/Search API schema establishes field *possibility*, not that the feature is available to our account, implemented in every UI, or licensed for copying. No authenticated competitor dealer workspace was accessed. This document does not claim full enumeration of private dropdowns, a scraped make/model database, or a licensed API feed. No protected source code, competitor media, trademarks, or database extracts were copied.
@@ -75,10 +77,10 @@ All 224 equipment entries are IKKENAUTO original taxonomy terms, stored in \`por
 
 ## 4. Usability and infrastructure
 
-The chosen style is **Luxury Minimal** (warm off-white, black, restrained gold, second K alone gold). The 8-stage flow groups essentials, optional tech, searchable equipment, appearance, condition, pricing, photo/description and review.
+The chosen style is **Luxury Minimal** (warm off-white, black, restrained gold, second K alone gold). The one-page form shows all eight sections at the same time (essentials, technical specifications, equipment, appearance, condition, pricing, photos/description, review), with compact section navigation and one save button.
 
 - The initial catalog API combines makes + equipment in one public cacheable read. Cascading data loads on demand; calls are cached in memory within a browser session.
-- \`sessionStorage\` persists in-progress non-sensitive wizard values on a per-dealer basis, debounced at 500 ms. VIN and photo bytes are not persisted locally.
+- \`sessionStorage\` persists in-progress non-sensitive one-page form values on a per-dealer basis, debounced at 500 ms. VIN and photo bytes are not persisted locally.
 - Sensitive photos are uploaded directly to private Supabase Storage only after a persisted draft returns an ID. Existing authenticated RLS policies control both image paths and DB associations.
 - Server validates submitted IDs and equipment relationships instead of trusting unchecked hidden input IDs. No equipment is auto-assigned.
 - Vercel app functions target Dublin near Supabase eu-west-1; no claim about measured user-perceived speed until RUM/Lighthouse testing is conducted.
@@ -130,13 +132,13 @@ Never mark individual scenarios passed based only on code review, a successful C
 3. AutoScout24, Carnet, 2dehands private forms and integration contracts have not been exhaustively accessed, therefore no "literal every field" assertion.
 4. No video upload yet, no comprehensive body/body-style catalog, no public marketplace release, no brokered KBO live API.
 5. Separate legacy public marketplace/PostgreSQL code and Supabase dealer portal need an explicit migration before public search can use the full private inventory.
-6. Performance benchmarks, multi-dealer browser E2E and SMTP delivery still need live testing.
+6. Synthetic PostgreSQL benchmark has now been run (50,000 rows, 2,000 dealers; median 2.982 ms unindexed vs 0.167 ms indexed for one filter query, 12 trials each). This is not a browser or Vercel latency measurement. Multi-dealer browser E2E and SMTP delivery still require live testing.
 7. Open supplier/media policy, consumer-protection disclosure requirements, Car-Pass and legal terms should be reviewed before public launch.
 
 ### Change audit
 - Schema and seed: \`db/supabase-migrations/016_vehicle_catalog_and_extended_specs.sql\`.
 - Fields and validation: \`lib/dealer/vehicle-fields.ts\`, \`lib/dealer/kbo.ts\`.
 - API: \`app/portal/api/catalog/route.ts\`.
-- Wizard: \`app/portal/vehicle-editor.tsx\`; editor \`app/portal/vehicle-advanced-editor.tsx\`.
+- Single-page form: \`app/portal/vehicle-editor.tsx\`, \`app/portal/equipment-selection.tsx\`; editor: \`app/portal/vehicle-advanced-editor.tsx\`.
 - Server actions: \`app/portal/improvements.ts\`, \`app/portal/vehicle-edit-actions.ts\`.
 - Queue: \`app/portal/advertisement-link-import.tsx\`; CSV: \`app/portal/import-stock.ts\`.
