@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { portalOrigin } from "@/lib/portal-origin";
 import { specFieldByKey, normalizeSpecifications, isApplicable } from "@/lib/dealer/vehicle-fields";
+import {parseBelgianEnterpriseNumber} from "@/lib/dealer/kbo";
 
 type Result = { error: string; message?:string; vehicleId?:string };
 function field(form:FormData,name:string,max=250){return String(form.get(name)??"").trim().slice(0,max);}
@@ -50,22 +51,19 @@ export async function registerChecked(_previous:Result,form:FormData):Promise<Re
  if(error)return {error:"Registreren lukt momenteel niet. Controleer je gegevens of probeer later opnieuw."};
  return {error:"",message:"Account aangemaakt. Controleer je mailbox en bevestig je e-mailadres."};
 }
-function kboValid(raw:string){
- const v=raw.replace(/\D/g,"");
- if(!v)return true;
- if(v.length!==10)return false;
- return (97-(Number(v.slice(0,8))%97))===Number(v.slice(8));
-}
 export async function dealerChecked(_previous:Result,form:FormData):Promise<Result>{
  const {db,user}=await authenticate();
  if(!user)return {error:"Je moet eerst aanmelden."};
- const name=field(form,"name",140),city=field(form,"city",120),kbo=field(form,"kbo_number",30).replace(/\D/g,"");
+ const name=field(form,"name",140),city=field(form,"city",120);
+ const parsedKbo=parseBelgianEnterpriseNumber(field(form,"kbo_number",40));
+ if(!parsedKbo.valid)return {error:parsedKbo.error};
+ const kbo=parsedKbo.normalized;
  if(name.length<2)return {error:"Vul de juiste bedrijfsnaam in."};
  if(city.length<2)return {error:"Vul je gemeente in."};
- if(!kboValid(kbo))return {error:"Het Belgische ondernemingsnummer is niet geldig. Controleer de 10 cijfers."};
+
  const {error}=await db.from("portal_dealers").insert({owner_id:user.id,name,city,email:user.email||"",kbo_number:kbo||null,
   phone:field(form,"phone",40)||null,postal_code:field(form,"postal_code",12)||null,website:field(form,"website",250)||null});
- if(error)return {error:"De garage kon niet worden opgeslagen. Controleer je gegevens."};
+ if(error)return {error:error.code==="23505"?"Er bestaat al een dealerprofiel met dit ondernemingsnummer of met jouw account. Contacteer IKKENAUTO om de garage veilig te claimen.":"De garage kon niet worden opgeslagen. Controleer je gegevens."};
  const directoryRow=Number(field(form,"directory_row",8));
  if(Number.isInteger(directoryRow)&&directoryRow>0){
   await db.from("portal_directory_claims").insert({source_row:directoryRow,user_id:user.id,evidence:"Gevonden bij dealerregistratie; verificatie vereist."});
