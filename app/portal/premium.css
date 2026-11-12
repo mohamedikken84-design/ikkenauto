@@ -529,3 +529,8 @@
   .portal-shell .dealer-edit-submit { flex-direction:column; align-items:stretch; }
   .portal-shell .dealer-edit-submit .portal-button { width:100%; }
 }
+
+
+/* Keep the second K as the ONLY gold letter even in the small feature-card wordmark. */
+.portal-shell .dealer-product-top>span.dealer-product-wordmark { color:#f8f7f4; }
+.portal-shell .dealer-product-wordmark>span { color:#d7b263; }
