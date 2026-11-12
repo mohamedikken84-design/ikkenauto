@@ -90,11 +90,12 @@ export default async function Portal({searchParams}:Params){
     db.rpc("portal_dealer_dashboard_counts").maybeSingle(),
    ]);
    vehicles=(stock.data||[]) as Vehicle[];
-   if(counts.data){
-    totalVehicles=Number(counts.data.total_vehicles)||0;
-    totalReady=Number(counts.data.ready_vehicles)||0;
-    totalSold=Number(counts.data.sold_vehicles)||0;
-    totalLeads=Number(counts.data.total_leads)||0;
+   const summary=counts.data as {total_vehicles:number;ready_vehicles:number;sold_vehicles:number;total_leads:number}|null;
+   if(summary){
+    totalVehicles=Number(summary.total_vehicles)||0;
+    totalReady=Number(summary.ready_vehicles)||0;
+    totalSold=Number(summary.sold_vehicles)||0;
+    totalLeads=Number(summary.total_leads)||0;
    }else{
     // Backwards-compatible fallback if the RPC is unavailable in a test environment.
     const [vc,rc,sc,lc]=await Promise.all([
