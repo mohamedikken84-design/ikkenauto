@@ -84,7 +84,7 @@ export default async function CatalogManagement({searchParams}:{searchParams:Pro
      </select></label>
      <label>Compatibiliteit<select name="scope" defaultValue="all">
       <option value="all">Alle voertuigtypes</option>
-      <option value="electric">Elektrische en plug-inhybride auto's</option>
+      <option value="electric">Elektrische en plug-inhybride auto&apos;s</option>
       <option value="commercial">Bestelwagens</option>
      </select></label>
     </CatalogAdd>
