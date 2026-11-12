@@ -41,7 +41,7 @@ export function DealerInventoryFilters({q,status,fuel,equipment,minYear,maxYear,
     {features.map(item=><option key={item.code} value={item.code}>{item.label_nl}</option>)}
    </select>
   </label>
-  <details className="dealer-stock-advanced-search">
+  <details className="dealer-stock-advanced-search" open={Boolean(minYear||maxYear||minPrice||maxPrice||maxMileage||body||transmission)||undefined}>
    <summary>Meer filters: prijs, jaar, kilometerstand en carrosserie</summary>
    <div className="dealer-stock-advanced-grid">
     <label><span>Bouwjaar vanaf</span><input type="number" name="minYear" min="1900" max="2100" defaultValue={minYear} placeholder="Bijv. 2020"/></label>
