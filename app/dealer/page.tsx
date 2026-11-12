@@ -30,6 +30,6 @@ export default function DealerLanding(){
     </div></section>
     <section className="dl-wrap dl-existing"><div><h2>Heb je al een bedrijfsvermelding?</h2><p>Je kunt tijdens de registratie je garage opzoeken en bekende bedrijfsgegevens overnemen. Een vermelding is niet hetzelfde als een geverifieerd dealeraccount.</p></div><Link className="dl-textlink" href="/portal?mode=register&find=1">Zoek je garage tijdens registratie</Link></section>
    </main>
-   <footer className="dl-footer"><div className="dl-wrap dl-footer-inner"><span>© {new Date().getFullYear()} IKKENAUTO</span><nav aria-label="Juridische en contactinformatie"><a href="mailto:info@ikkenauto.be">Contact</a><Link href="/privacy">Privacybeleid</Link><Link href="/voorwaarden">Gebruiksvoorwaarden</Link></nav></div></footer>
+   <footer className="dl-footer"><div className="dl-wrap dl-footer-inner"><span>© IKKENAUTO</span><nav aria-label="Juridische en contactinformatie"><a href="mailto:info@ikkenauto.be">Contact</a><Link href="/privacy">Privacybeleid</Link><Link href="/voorwaarden">Gebruiksvoorwaarden</Link></nav></div></footer>
  </div>;
 }
