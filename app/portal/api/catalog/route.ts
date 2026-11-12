@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { supabaseBrowserConfig } from "@/lib/supabase/env";
 
-export const runtime = "nodejs";
 type Table = "portal_vehicle_makes" | "portal_vehicle_models" | "portal_vehicle_generations" | "portal_vehicle_powertrains" | "portal_vehicle_trims";
 const children: Record<string, { table: Table; column: string }> = {
   models: { table: "portal_vehicle_models", column: "make_id" },
