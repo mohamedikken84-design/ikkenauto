@@ -191,7 +191,9 @@ export async function uploadVehiclePhoto(form: FormData) {
   if(error)go("Foto uploaden mislukt.");
   const saved=await db.from("portal_vehicle_photos").insert({dealer_id:dealer.id,vehicle_id:vehicleId,storage_path:path});
   if(saved.error){await db.storage.from("portal-vehicles").remove([path]);go("Foto registreren mislukt.");}
-  revalidatePath("/portal");go("Foto opgeslagen.",true);
+  revalidatePath("/portal");
+  if(value(form,"return_to",10)==="edit")redirect("/portal/voorraad/"+vehicleId+"/bewerken?success=Foto+opgeslagen");
+  go("Foto opgeslagen.",true);
 }
 export async function addProspect(form: FormData) {
   const db=await admin(),name=value(form,"name",140),email=value(form,"email",200);
