@@ -21,7 +21,7 @@ Zie docs/PROJECT_CLEANUP_PLAN.md voor het consolidatie- en opruimplan. Verwijder
 - **Dealerregistratie:** Supabase Auth met e-mailbevestiging; het claimen van een vermelding vraagt verificatie.
 - **Garageprofiel:** bedrijfsgegevens, logo en omslagfoto.
 - **Dashboard:** overzicht, privévoorraad, invoer, CSV-import, aanvragen en garageprofiel.
-- **Auto toevoegen:** begeleide stappen voor basis, kenmerken, uitrusting en controle; daarna foto's naar eigen privévoorraad.
+- **Auto toevoegen:** één lange, overzichtelijke pagina met alle zichtbare secties, catalogusrelaties, technische gegevens, uitrusting, historie, BTW, foto's en één opslaanknop voor een privéconcept.
 - **Foto's:** directe browserupload naar privé-Supabase Storage met eigenaars-RLS; maximaal 10 bestanden per selectie, 25 per voertuig, maximaal 3,5 MB per bestand.
 - **Voorraad:** zoeken op merk/model/stocknummer, filteren op status, pagina-indeling en beheeracties.
 - **CSV:** preview, maximaal 1.500 voertuigen, bijwerken via stocknummer. AutoScout24 en 2dehands worden **niet automatisch** gesynchroniseerd.
@@ -42,14 +42,14 @@ Directoryrecords zijn **geen** dealeraccounts. De publieke marktplaats is nog ni
 
 De oudere /account-routes en hun lokale PostgreSQL-/sessiemodel zijn historische code voor de marketplace. De actieve dealerportal gebruikt Supabase Auth via /portal. Verwijder deze oudere routes pas nadat hun afhankelijkheden en eventuele gebruikers gemigreerd zijn.
 
-## Automotive uitbreiding (12 november 2026)
+## Automotive uitbreiding (13 november 2026)
 
 Op de Luxury Minimal ontwikkelbranch is een **additieve** Supabase-catalogus toegevoegd:
 - 115 merken, 364 modelvoorstellen, vier bron-gecontroleerde generatiereferenties.
 - Tabellen voor generatie, motorisatie en uitvoering, met administratieve aanvullingen via /portal/admin/catalog. Motorisaties en uitvoeringen zijn **niet** automatisch verzonnen of uit een gesloten database gekopieerd.
 - 224 doorzoekbare uitrustingskenmerken in de database, met EV-/PHEV-/bestelwagencompatibiliteit; ontbrekende opties kunnen beheerders toevoegen.
 - /portal/api/catalog biedt cachebare merk- en optiegegevens, met afhankelijke model-, generatie- en uitvoeringsopties.
-- De voertuigwizard heeft acht stappen en 60+ optionele technische/EV/conditionele specificaties, prijs/btw en private fotoupload.
+- Het handmatige voertuigformulier is **één doorlopende pagina** met acht direct zichtbare onderdelen, niet acht stappen. De pagina omvat 60+ technische/EV/conditionele velden, prijs/btw, uitrusting en private fotoupload.
 - Nieuwe voertuigen blijven privéconcepten; de publieke marktplaats is niet ingeschakeld.
 - De privévoorraad heeft server-side filters voor merk/model/stocknummer, status, brandstof, uitrusting, prijs, kilometerstand, bouwjaar, carrosserie en transmissie.
 - Link-import via AutoScout24, mobile.de, 2dehands en garagewebsites bewaart voorlopig alleen de URL; externe fetch/sync is nog **niet** geactiveerd. CSV-import blijft de werkende bulkmethode.
