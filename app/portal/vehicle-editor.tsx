@@ -210,10 +210,10 @@ export function VehicleEditor({dealerId}:{dealerId:string}){
     <details className="dealer-spec-disclosure"><summary>Onderhandelen, leasing en beschikbaarheid</summary>{specGroup(finance)}</details>
    </section>}
    {step===6&&<section>
-    <p className="dealer-wizard-footnote">Foto's worden na het opslaan van het privéconcept direct naar de beveiligde opslag geüpload. Gebruik eigen of toegestane foto's.</p>
-    <label className="dealer-form-field"><span>Foto's kiezen (maximaal 10 tegelijk, 3,5 MB per foto)</span>
+    <p className="dealer-wizard-footnote">Foto&apos;s worden na het opslaan van het privéconcept direct naar de beveiligde opslag geüpload. Gebruik eigen of toegestane foto&apos;s.</p>
+    <label className="dealer-form-field"><span>Foto&apos;s kiezen (maximaal 10 tegelijk, 3,5 MB per foto)</span>
      <input type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={e=>setPhotos(Array.from(e.target.files||[]))}/></label>
-    <p className="dealer-wizard-footnote">{photos.length} foto('s) geselecteerd. Bestanden blijven niet in de tijdelijke browseropslag bewaard.</p>
+    <p className="dealer-wizard-footnote">{photos.length} foto&apos;s geselecteerd. Bestanden blijven niet in de tijdelijke browseropslag bewaard.</p>
     <label className="dealer-form-field dealer-full-row"><span>Advertentiebeschrijving</span>
      <textarea rows={7} maxLength={4000} value={values.description||""} onChange={e=>update({description:e.target.value})}
       placeholder="Beschrijf de werkelijke staat, onderhoud en uitrusting. Geen onbevestigde claims."/></label>
@@ -227,7 +227,7 @@ export function VehicleEditor({dealerId}:{dealerId:string}){
       ["Foto's",photos.length+" gekozen"]].map(([label,value])=><div key={label}><span>{label}</span><strong>{value}</strong></div>)}
     </div>
     <div className="dealer-note-box"><strong>Concept, nog niet publiek</strong>
-     <p>IKKENAUTO slaat je auto eerst privé op en uploadt daarna de gekozen foto's. Er verschijnt nog geen publieke advertentie op de niet-gelanceerde marktplaats.</p></div>
+     <p>IKKENAUTO slaat je auto eerst privé op en uploadt daarna de gekozen foto&apos;s. Er verschijnt nog geen publieke advertentie op de niet-gelanceerde marktplaats.</p></div>
     <form id="dealer-wizard-submit" action={submit}>
      {scalar.map(key=><input type="hidden" key={key} name={key} value={key==="power_kw"?(values["spec.power_kw"]||""):values[key]||""}/>)}
      <input type="hidden" name="specifications" value={JSON.stringify(specifications)}/>
