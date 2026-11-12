@@ -88,7 +88,7 @@ export default async function Portal({searchParams}:Params){
   {notices.error&&<div role="alert" className="portal-alert portal-error">{notices.error}</div>}
   {notices.success&&<div role="status" className="portal-alert portal-success">{notices.success}</div>}
   {databaseError&&<div className="portal-alert portal-error">Databasefout: {databaseError}</div>}
-  {!user?<AuthPanel initialView={notices.registreren==="1"?"register":notices.aanmelden==="1"?"login":"welcome"}/>:
+  {!user?<AuthPanel key={notices.registreren==="1"?"register":notices.aanmelden==="1"?"login":"welcome"} initialView={notices.registreren==="1"?"register":notices.aanmelden==="1"?"login":"welcome"}/>:
    <>
     <div className="portal-heading"><div><span className="portal-overline">{isAdmin?"PLATFORMBEHEER":dealer?"DEALER WORKSPACE":"EERSTE KEER"}</span><h1>{isAdmin?"IKKENAUTO Control Center":dealer?dealer.name:"Welkom bij IKKENAUTO"}</h1><p>{isAdmin?"Alle aangesloten handelaars, alle auto's en alle prospecten in één omgeving.":dealer?"Beheer je voorraad voor de lancering. Alleen jouw garage ziet deze gegevens.":"Vul je bedrijfsgegevens in om je dealeromgeving te activeren."}</p>{dealer&&!isAdmin&&<Link className="dealer-profile-link" href="/portal/garage">Garageprofiel beheren</Link>}</div><div className="portal-identity">{user.email}<br/><strong>{isAdmin?"Platformbeheer":dealer?"Dealeraccount":"Nieuw account"}</strong></div></div>
     {isAdmin?<><div className="portal-stats"><Stat label="Aangesloten dealers" number={totalDealers}/><Stat label="Auto's in databank" number={totalVehicles}/><Stat label="Verkoopklaar" number={totalReady}/><Stat label="Prospecten" number={totalProspects}/><Stat label="Bedrijvengids" number={directoryTotal}/></div>
