@@ -2,9 +2,9 @@
 import {useActionState,useState} from "react";
 import {dealerChecked} from "./improvements";
 import {CompanyLookup} from "./directory-search";
-export function DealerSetup(){
- const [form,setForm]=useState({name:"",city:"",postal_code:"",phone:"",website:"",kbo_number:""});
- const [selectedRow,setSelectedRow]=useState<number|null>(null);
+export function DealerSetup({initialCompany}:{initialCompany?:{source_row:number;name:string;city:string|null;website:string|null}}){
+ const [form,setForm]=useState({name:initialCompany?.name||"",city:initialCompany?.city||"",postal_code:"",phone:"",website:initialCompany?.website||"",kbo_number:""});
+ const [selectedRow,setSelectedRow]=useState<number|null>(initialCompany?.source_row||null);
  const [state,action,pending]=useActionState(dealerChecked,{error:""});
  function set(name:keyof typeof form,value:string){setForm(s=>({...s,[name]:value}));}
  const numbers=form.kbo_number.replace(/\D/g,"").slice(0,10);

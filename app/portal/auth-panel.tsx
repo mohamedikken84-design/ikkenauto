@@ -8,6 +8,7 @@ type View="intro"|"login"|"register";
 export function AuthPanel({initialView="intro"}:{initialView?:View}){
  const [mode,setMode]=useState<View>(initialView);
  const [showPassword,setShowPassword]=useState(false);
+ const [selectedCompany,setSelectedCompany]=useState<{source_row:number;name:string}|null>(null);
  const [email,setEmail]=useState("");
  const [password,setPassword]=useState("");
  const [loginState,loginAction,loginPending]=useActionState(loginChecked,{error:""});
@@ -34,6 +35,7 @@ export function AuthPanel({initialView="intro"}:{initialView?:View}){
        <h2>{mode==="register"?"Account aanmaken":"Inloggen"}</h2>
        <p>{mode==="register"?"Maak een account aan met uw zakelijke e-mailadres. Na e-mailbevestiging vult u uw garagegegevens in.":"Log in om uw bedrijfsprofiel en voertuigen te beheren."}</p>
        <form action={mode==="login"?loginAction:registerAction} className="portal-form">
+        {mode==="register"&&selectedCompany&&<><input type="hidden" name="directory_row" value={selectedCompany.source_row}/><p className="portal-selected-company">Geselecteerde bedrijfsvermelding: <strong>{selectedCompany.name}</strong>. Deze wordt pas na controle geclaimd.</p></>}
         <label>E-mailadres<input name="email" type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="naam@garage.be" required/></label>
         <label>Wachtwoord<span className="portal-password-wrap"><input name="password" type={showPassword?"text":"password"} autoComplete={mode==="register"?"new-password":"current-password"} minLength={mode==="register"?10:undefined} value={password} onChange={e=>setPassword(e.target.value)} required/><button type="button" onClick={()=>setShowPassword(s=>!s)} aria-label={showPassword?"Wachtwoord verbergen":"Wachtwoord tonen"}>{showPassword?"Verbergen":"Tonen"}</button></span></label>
         {mode==="register"&&<p className="portal-small-note">Minimaal 10 tekens. Gebruik een uniek wachtwoord.</p>}
@@ -59,7 +61,7 @@ export function AuthPanel({initialView="intro"}:{initialView?:View}){
   </section>
   <section className="portal-onboard-directory" aria-labelledby="portal-directory-title">
     <div><h2 id="portal-directory-title">Staat uw garage al in onze bedrijvengids?</h2><p>Zoek een bestaande vermelding om uw registratie te vereenvoudigen. Een vermelding betekent niet dat een garage al is aangesloten.</p></div>
-    <details><summary>Garage opzoeken</summary><CompanyLookup title="Bedrijfsnaam"/></details>
+    <details><summary>Garage opzoeken</summary><CompanyLookup title="Bedrijfsnaam" onSelect={company=>{setSelectedCompany({source_row:company.source_row,name:company.name});choose("register");}}/></details>
   </section>
   <footer className="portal-onboard-footer">
     <span>© {new Date().getFullYear()} IKKENAUTO · Voorbereiding publieke lancering</span>

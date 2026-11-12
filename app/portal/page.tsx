@@ -24,12 +24,20 @@ export default async function Portal({searchParams}:Params){
  const {data:{user}}=await db.auth.getUser();
  let isAdmin=false;
  let dealer:Dealer|null=null;
+ let proposedCompany:{source_row:number;name:string;city:string|null;website:string|null}|undefined;
  if(user){
   const [{data:role},{data:owned}]=await Promise.all([
    db.from("portal_admins").select("user_id").eq("user_id",user.id).maybeSingle(),
    db.from("portal_dealers").select("id,name,city,email,status,created_at,phone,owner_id").eq("owner_id",user.id).maybeSingle(),
   ]);
   isAdmin=Boolean(role);dealer=owned as Dealer|null;
+  if(!isAdmin&&!dealer){
+   const pending=Number(user.user_metadata?.pending_directory_row);
+   if(Number.isInteger(pending)&&pending>0){
+    const {data:company}=await db.from("portal_directory").select("source_row,name,city,website").eq("source_row",pending).maybeSingle();
+    if(company)proposedCompany=company;
+   }
+  }
  }
  let dealers:Dealer[]=[];let vehicles:Vehicle[]=[];
  let prospects:{id:string;name:string;city:string|null;email:string|null;phone:string|null;stage:string;created_at:string}[]=[];
@@ -100,7 +108,7 @@ export default async function Portal({searchParams}:Params){
        <div className="portal-dashboard-actions portal-wide"><Link href="/portal/voertuigen/nieuw" className="portal-primary">Auto toevoegen</Link><Link href="/portal/voertuigen/importeren" className="portal-secondary">Auto\u0027s importeren</Link></div>
        <section className="portal-card portal-wide"><div className="portal-card-heading"><div><span className="portal-overline">MIJN STOCK</span><h2>Voertuigen</h2></div><span className="portal-count">{vehicles.length} auto's</span></div>{vehicles.length===0?<Empty>Voeg je eerste voertuig toe of importeer je bestaande voorraad.</Empty>:<div className="portal-table-wrap"><table className="portal-table"><thead><tr><th>Auto</th><th>Prijs</th><th>Voortgang</th><th>Foto</th><th>Actie</th></tr></thead><tbody>{vehicles.map(v=><tr key={v.id}><td><strong>{v.make} {v.model}</strong><small>{v.version||""} {v.year||""} · {v.mileage_km??"—"} km</small><Link href={"/portal/voertuigen/"+v.id+"/bewerken"} className="portal-text-link">Bewerken</Link></td><td>{euro(v.price_eur)}</td><td><form action={vehicleStatus} className="portal-inline"><input type="hidden" name="vehicle_id" value={v.id}/><select name="status" defaultValue={v.status}><option value="draft">Concept</option><option value="ready">Klaar</option><option value="sold">Verkocht</option></select><button>Opslaan</button></form></td><td><form action={uploadVehiclePhoto} className="portal-inline"><input type="hidden" name="vehicle_id" value={v.id}/><input name="photo" type="file" accept="image/png,image/jpeg,image/webp" required/><button>Upload</button></form></td><td><ConfirmDelete vehicleId={v.id}/></td></tr>)}</tbody></table></div>}</section>
        <section className="portal-card portal-wide"><span className="portal-overline">AANVRAGEN</span><h2>Leads voor je garage</h2><LeadList leads={leads}/></section>
-      </div></>:<DealerSetup/>}
+      </div></>:<DealerSetup initialCompany={proposedCompany}/>}
    </>}
   {user&&<div className="portal-footer">IKKENAUTO · Voorbereiding publieke lancering · Voertuigen nog niet openbaar</div>}
   </div>

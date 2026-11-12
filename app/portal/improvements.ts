@@ -37,7 +37,9 @@ export async function registerChecked(_previous:Result,form:FormData):Promise<Re
  const db=await createSupabaseServer(),email=field(form,"email",200).toLowerCase(),password=field(form,"password",200);
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return {error:"Controleer het e-mailadres."};
  if(password.length<10)return {error:"Gebruik een wachtwoord van minstens 10 tekens."};
- const {error}=await db.auth.signUp({email,password,options:{emailRedirectTo:origin()+"/portal/auth/callback"}});
+ const pendingDirectory=Number(field(form,"directory_row",10));
+ const selected=Number.isInteger(pendingDirectory)&&pendingDirectory>0?pendingDirectory:null;
+ const {error}=await db.auth.signUp({email,password,options:{emailRedirectTo:origin()+"/portal/auth/callback",data:selected?{pending_directory_row:selected}:{}}});
  if(error)return {error:"Registreren lukt momenteel niet. Controleer je gegevens of probeer later opnieuw."};
  return {error:"",message:"Account aangemaakt. Controleer je mailbox en bevestig je e-mailadres."};
 }
