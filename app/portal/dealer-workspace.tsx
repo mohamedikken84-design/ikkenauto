@@ -2,6 +2,7 @@ import Link from "next/link";
 import { vehicleStatus } from "./actions";
 import { ConfirmDelete } from "./confirm-delete";
 import { QuickImport } from "./quick-import";
+import { AdvertisementLinkImport } from "./advertisement-link-import";
 
 export type DealerVehicle = {
   id: string; dealer_id: string; make: string; model: string; version: string | null;
@@ -158,6 +159,7 @@ export function DealerWorkspace({
 
       {tab === "importeren" && <section className="dealer-content-panel dealer-import-page">
         <div className="dealer-panel-heading"><div><h2>Import uit CSV</h2><p>Controleer het bestand vóór de import. Zo voorkom je dubbele voertuigen.</p></div></div>
+        <AdvertisementLinkImport/>
         <QuickImport/>
       </section>}
 
