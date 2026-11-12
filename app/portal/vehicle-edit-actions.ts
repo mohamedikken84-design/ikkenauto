@@ -46,7 +46,7 @@ export async function updateVehicle(_previous:UpdateState,form:FormData):Promise
  if(error)return {error:"Opslaan mislukt. Controleer het stocknummer en de gegevens."};
  revalidatePath("/portal");
  revalidatePath("/portal/voorraad/"+id+"/bewerken");
- redirect("/portal?success="+encodeURIComponent("Voertuiggegevens opgeslagen."));
+ redirect("/portal/voorraad/"+id+"/bewerken?success="+encodeURIComponent("Voertuiggegevens opgeslagen.")+"#vehicle-edit-form");
 }
 export async function removeVehiclePhoto(form:FormData) {
  const {db,dealerId}=await owner();
