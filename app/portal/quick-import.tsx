@@ -53,7 +53,7 @@ export function QuickImport(){
  return <details className="dealer-import-disclosure">
   <summary>CSV-import</summary>
   <div className="dealer-import-content">
-   <p className="portal-note">Voor een exportbestand met meerdere auto's. Eén voertuig voeg je via ‘Auto toevoegen’ in.</p>
+   <p className="portal-note">Voor een exportbestand met meerdere auto&apos;s. Eén voertuig voeg je via ‘Auto toevoegen’ in.</p>
    <form action={importDealerCsv} className="portal-form">
     <label>CSV-bestand selecteren
      <input type="file" name="csv" accept=".csv,text/csv" required onChange={event=>void readFile(event.target.files?.[0])}/>
