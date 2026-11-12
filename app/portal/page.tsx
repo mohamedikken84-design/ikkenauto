@@ -11,7 +11,7 @@ import { DirectoryAdmin } from "./directory-admin";
 
 export const metadata:Metadata={title:"Dealerportaal | IKKENAUTO",description:"Veilig beheer voor garages en IKKENAUTO."};
 const euro=(v:unknown)=>new Intl.NumberFormat("nl-BE",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(Number(v)||0);
-type Params={ searchParams: Promise<{error?:string;success?:string;registreren?:string;aanmelden?:string;dealerPage?:string;vehiclePage?:string;prospectPage?:string;leadPage?:string;tab?:string;q?:string;status?:string}> };
+type Params={ searchParams: Promise<{error?:string;success?:string;registreren?:string;aanmelden?:string;dealerPage?:string;vehiclePage?:string;prospectPage?:string;leadPage?:string;tab?:string;q?:string;status?:string;fuel?:string;equipment?:string}> };
 type Vehicle={id:string;dealer_id:string;make:string;model:string;version:string|null;year:number|null;mileage_km:number|null;price_eur:number;status:string;created_at:string;source_ref:string|null};
 type Dealer={id:string;name:string;city:string;email:string;status:string;created_at:string;phone:string|null;owner_id:string};
 const stageNames:{[k:string]:string}={nieuw:"Nieuw",gecontacteerd:"Gecontacteerd",interesse:"Interesse",aangesloten:"Aangesloten",geen_interesse:"Geen interesse"};
@@ -23,6 +23,8 @@ export default async function Portal({searchParams}:Params){
  const dealerTab:DealerTab=notices.tab==="voertuigen"||notices.tab==="importeren"||notices.tab==="aanvragen"?notices.tab:"overzicht";
  const inventorySearch=(notices.q||"").replace(/[^\p{L}\p{N}\s-]/gu,"").replace(/\s+/g," ").trim().slice(0,60);
  const inventoryStatus=notices.status==="draft"||notices.status==="ready"||notices.status==="sold"?notices.status:"";
+ const inventoryFuel=["Benzine","Diesel","Elektrisch","Hybride","Plug-in hybride","LPG","CNG","Waterstof"].includes(notices.fuel||"")?notices.fuel||"":"";
+ const inventoryEquipment=/^[a-z0-9_]{1,90}$/.test(notices.equipment||"")?notices.equipment||"":"";
  const db=await createSupabaseServer();
  const {data:{user}}=await db.auth.getUser();
  let isAdmin=false;
@@ -91,6 +93,8 @@ export default async function Portal({searchParams}:Params){
     .select("id,dealer_id,make,model,version,year,mileage_km,price_eur,status,created_at,source_ref",{count:"exact"})
     .eq("dealer_id",ownerId);
    if(inventoryStatus)stockQuery=stockQuery.eq("status",inventoryStatus);
+   if(inventoryFuel)stockQuery=stockQuery.eq("fuel",inventoryFuel);
+   if(inventoryEquipment)stockQuery=stockQuery.contains("equipment_codes",[inventoryEquipment]);
    if(inventorySearch){
     // Whitelist user search characters before building PostgREST OR operators.
     const term=inventorySearch;
@@ -126,7 +130,7 @@ export default async function Portal({searchParams}:Params){
       <section id="vehicles" className="portal-card portal-wide"><div className="portal-card-heading"><div><span className="portal-overline">TOTALE STOCK</span><h2>Auto&apos;s van alle dealers</h2></div><span className="portal-count">{totalVehicles} voertuigen</span></div><VehicleTable vehicles={vehicles} dealerName={dealerName}/><Pagination page={vehiclePage} total={totalVehicles} field="vehiclePage" anchor="vehicles"/></section>
       <section id="prospects" className="portal-card portal-wide"><div className="portal-card-heading"><div><span className="portal-overline">ACQUISITIE</span><h2>Te contacteren handelaars</h2></div><span className="portal-count">{totalProspects} prospecten</span></div><form action={addProspect} className="portal-form portal-fields"><label>Garagenaam<input name="name" required placeholder="Naam autohandelaar"/></label><label>Gemeente<input name="city" placeholder="Mechelen"/></label><label>E-mail<input name="email" type="email" placeholder="info@garage.be"/></label><label>Telefoon<input name="phone"/></label><button className="portal-button">Prospect toevoegen</button></form><div className="portal-table-wrap"><table className="portal-table"><thead><tr><th>Handelaar</th><th>Contact</th><th>Opvolging</th></tr></thead><tbody>{prospects.map(p=><tr key={p.id}><td><strong>{p.name}</strong><small>{p.city||"—"}</small></td><td>{p.email||"—"}<small>{p.phone||""}</small></td><td><form action={setProspectStage} className="portal-inline"><input type="hidden" name="id" value={p.id}/><select name="stage" defaultValue={p.stage}>{Object.entries(stageNames).map(([k,n])=><option key={k} value={k}>{n}</option>)}</select><button>Opslaan</button></form></td></tr>)}</tbody></table></div><Pagination page={prospectPage} total={totalProspects} field="prospectPage" anchor="prospects"/></section>
       <section id="leads" className="portal-card portal-wide"><div className="portal-card-heading"><div><span className="portal-overline">INBOX</span><h2>Alle aanvragen</h2></div><span className="portal-count">{totalLeads}</span></div><LeadList leads={leads} dealerName={dealerName}/><Pagination page={leadPage} total={totalLeads} field="leadPage" anchor="leads"/></section><DirectoryAdmin count={directoryTotal} claims={directoryClaims}/></div>
-     </>:dealer?<DealerWorkspace name={dealer.name} tab={dealerTab} vehicles={vehicles} leads={leads} vehiclePage={vehiclePage} leadPage={leadPage} inventorySearch={inventorySearch} inventoryStatus={inventoryStatus} totalVehicles={totalVehicles} totalReady={totalReady} totalSold={totalSold} totalLeads={totalLeads}/>:<DealerSetup suggestedCompany={suggestedCompany}/>}
+     </>:dealer?<DealerWorkspace name={dealer.name} tab={dealerTab} vehicles={vehicles} leads={leads} vehiclePage={vehiclePage} leadPage={leadPage} inventorySearch={inventorySearch} inventoryStatus={inventoryStatus} inventoryFuel={inventoryFuel} inventoryEquipment={inventoryEquipment} totalVehicles={totalVehicles} totalReady={totalReady} totalSold={totalSold} totalLeads={totalLeads}/>:<DealerSetup suggestedCompany={suggestedCompany}/>}
    </>}
   <footer className="portal-footer dealer-footer"><span>© {new Date().getFullYear()} IKKENAUTO · Publieke marktplaats in voorbereiding</span><nav aria-label="Informatie"><a href="mailto:info@ikkenauto.be">Contact</a><Link href="/privacy">Privacy</Link><Link href="/voorwaarden">Voorwaarden</Link><a href="mailto:info@ikkenauto.be?subject=Bedrijfsgegevens">Bedrijfsgegevens</a></nav></footer>
   </div>
