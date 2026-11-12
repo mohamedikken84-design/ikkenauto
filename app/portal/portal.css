@@ -5,8 +5,8 @@
 .portal-shell *{box-sizing:border-box}
 .portal-top{background:#101923;color:white;min-height:76px;padding:16px max(4%,calc((100% - 1400px)/2));display:flex;align-items:center;justify-content:space-between;gap:18px;border-bottom:3px solid #cfac60}
 .portal-brand{display:inline-flex;align-items:center;white-space:nowrap;flex-shrink:0;text-decoration:none}
-.portal-brand-image{display:block;width:195px;height:auto;max-width:42vw}
-@media(max-width:390px){.portal-brand-image{width:162px;max-width:45vw}}
+.portal-brand-image{display:block;width:155px;height:auto;max-width:40vw}
+@media(max-width:390px){.portal-brand-image{width:140px;max-width:42vw}}
 .portal-top-caption{color:#b5becb;font-size:13px}
 .portal-secure{font-size:12px;color:#d5ba78}
 .portal-container{max-width:1400px;margin:auto;padding:44px 4% 40px}
