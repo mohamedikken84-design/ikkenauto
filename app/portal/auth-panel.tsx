@@ -32,7 +32,7 @@ export function AuthPanel({initialView="welcome"}:{initialView?:View}) {
             <p className="dealer-hero-note">Registratie is gratis. De marktplaats is nog in voorbereiding.</p>
           </div>
           <aside className="dealer-hero-product" aria-label="Wat je kunt beheren">
-            <div className="dealer-product-top"><span>DEALERWERKRUIMTE</span><span>IKKENAUTO</span></div>
+            <div className="dealer-product-top"><span>DEALERWERKRUIMTE</span><span className="dealer-product-wordmark">IK<span>K</span>ENAUTO</span></div>
             <h2>Eerst je garage.<br/>Dan je voertuigen.</h2>
             <p>Alles wat je nodig hebt om voorbereid te zijn op de publieke lancering.</p>
             <div className="dealer-product-features">
