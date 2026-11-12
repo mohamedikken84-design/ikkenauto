@@ -52,7 +52,7 @@ export function VehicleEditForm({vehicle}:{vehicle:VehicleRecord}){
    {select("doors","Deuren",["2","3","4","5","6"])}
    {input("power_hp","Vermogen (pk)",{type:"number"})}
    {input("source_ref","Stocknummer")}
-   {select("status","Voorraadstatus",["draft","ready","sold"])}
+   <label>Voorraadstatus<select name="status" value={values.status} onChange={e=>change("status",e.target.value)}><option value="draft">Concept</option><option value="ready">Klaar voor lancering</option><option value="sold">Verkocht</option></select></label>
    <label className="portal-checkline portal-full">
       <input type="checkbox" name="vat_deductible" checked={deductible} onChange={e=>setDeductible(e.target.checked)}/> BTW aftrekbaar
    </label>
