@@ -1,32 +1,16 @@
-import { PageIntro } from "@/components/page-intro";
-import { pageMetadata } from "@/lib/metadata";
-
-export const metadata = pageMetadata({
-  title: "Privacy",
-  description:
-    "Voorlopige pagina voor de privacyverklaring van IKKENAUTO.be. Dit is nog geen geldige GDPR-tekst.",
-  path: "/privacy",
-  index: false,
-});
-
-export default function PrivacyPage() {
-  return (
-    <PageIntro
-      eyebrow="Nog geen beleid"
-      title="Privacy"
-      lede="Dit is nog geen privacyverklaring. De tekst wordt vastgelegd voor IKKENAUTO.be persoonsgegevens verwerkt voor accounts, advertenties of berichten."
-    >
-      <p>
-        Deze versie plaatst geen analysetracking en geen marketingcookies. Een
-        lokaal account bewaart naam, e-mail en een wachtwoordhash in de
-        ontwikkeldatabase. Dat is nog geen juridisch beoordeelde privacytekst en
-        geen toestemming voor marketing.
-      </p>
-      <p>
-        Wanneer die functies er zijn, beschrijft de verklaring het doel, de
-        bewaartermijn en je rechten onder de GDPR, waaronder inzage, verbetering
-        en wissing. Een contactkanaal voor privacyvragen komt op dat moment mee.
-      </p>
-    </PageIntro>
-  );
+import {PageIntro} from "@/components/page-intro";
+import {pageMetadata} from "@/lib/metadata";
+export const metadata=pageMetadata({title:"Privacyinformatie",description:"Informatie over persoonsgegevens bij de voorbereiding van IKKENAUTO.",path:"/privacy",index:false});
+export default function PrivacyPage(){
+ return <PageIntro eyebrow="IKKENAUTO / VOORBEREIDINGSFASE" title="Privacyinformatie" lede="Zo gaan we in de voorbereidingsfase om met gegevens van garages, accountgebruikers en contactpersonen.">
+  <div className="mx-auto max-w-3xl space-y-8 text-sm leading-7">
+   <section><h2 className="text-xl font-bold">Contact</h2><p>Voor vragen over je gegevens, correcties, bezwaar of verwijdering: <a className="underline" href="mailto:info@ikkenauto.be">info@ikkenauto.be</a>.</p><p>De definitieve juridische identiteit en contactgegevens van de verwerkingsverantwoordelijke moeten vóór externe lancering worden bevestigd en toegevoegd. Deze tekst is daarom nog geen definitieve AVG-privacyverklaring.</p></section>
+   <section><h2 className="text-xl font-bold">Welke gegevens verwerken we?</h2><p>Bij registratie: e-mailadres, accountgegevens en beveiligde authenticatiesessies. Bij het garageprofiel: bedrijfsnaam, vestigingsgegevens, ondernemingsnummer, zakelijke contactgegevens en geüploade foto's. Bij voorraadbeheer: voertuigdetails, omschrijvingen, foto's en aangeleverde CSV-bestanden. Bij ondersteuning: berichten, bedrijfsclaims en aanvragen.</p><p>De bedrijvengids bevat daarnaast verzamelde bedrijfsvermeldingen zoals naam, vestigingsplaats, website en bronverwijzing. Bepaalde zakelijke e-mailadressen en telefoonnummers zijn afzonderlijk afgeschermd en niet publiek via de zoekfunctie beschikbaar.</p></section>
+   <section><h2 className="text-xl font-bold">Waarvoor gebruiken we deze informatie?</h2><p>Om een account aan te maken, de rechtmatige beheerder van een garage te controleren, stock op te slaan, de voorbereiding van de marktplaats te organiseren en contact te kunnen beantwoorden. Een registratie of het toevoegen van auto's betekent niet dat die al publiek worden geadverteerd. Marketingberichten vragen een afzonderlijke beoordeling van de toepasselijke regels.</p></section>
+   <section><h2 className="text-xl font-bold">Technische dienstverleners</h2><p>Voor het functioneren van de website gebruiken we onder meer Supabase (accounts, database en bestanden) en Vercel (hosting). De exacte verwerkersafspraken, eventuele internationale doorgiften en toepasselijke waarborgen moeten vóór de externe lancering volledig worden gedocumenteerd.</p></section>
+   <section><h2 className="text-xl font-bold">Bewaring en rechtsgrond</h2><p>Account- en voorraaddata worden opgeslagen om de gevraagde voorbereidingsdienst te leveren. Voor bedrijfsvermeldingen, contactgegevens en prospectopvolging moet de rechtmatigheid van de verwerking nader worden beoordeeld. Bewaartermijnen en verwijderprocedures moeten definitief worden vastgelegd vóór externe uitnodigingen op grote schaal plaatsvinden.</p></section>
+   <section><h2 className="text-xl font-bold">Jouw rechten</h2><p>Je kunt ons vragen om inzage, correctie, verwijdering of beperking van persoonsgegevens en in toepasselijke gevallen bezwaar maken of gegevens meenemen. Je kunt daarnaast een klacht indienen bij de Belgische Gegevensbeschermingsautoriteit.</p></section>
+   <p className="border-t border-gray-200 pt-5 text-xs text-gray-500">Versie: 12 november 2026. Deze tekst beschrijft het huidige technische gebruik, maar moet vóór publieke onboarding juridisch worden aangevuld en beoordeeld.</p>
+  </div>
+ </PageIntro>;
 }
