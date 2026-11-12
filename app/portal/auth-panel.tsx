@@ -63,7 +63,7 @@ export function AuthPanel({initialView="intro"}:{initialView?:View}){
   </section>
   <footer className="portal-onboard-footer">
     <span>© {new Date().getFullYear()} IKKENAUTO · Voorbereiding publieke lancering</span>
-    <nav aria-label="Footer"><Link href="/contact">Contact</Link><Link href="/privacy">Privacybeleid</Link><Link href="/voorwaarden">Gebruiksvoorwaarden</Link></nav>
+    <nav aria-label="Footer"><a href="mailto:info@ikkenauto.be">Contact</a><Link href="/privacy">Privacybeleid</Link><Link href="/voorwaarden">Gebruiksvoorwaarden</Link></nav>
   </footer>
  </div>;
 }

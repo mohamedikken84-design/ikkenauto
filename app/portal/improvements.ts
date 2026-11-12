@@ -181,6 +181,13 @@ export async function claimDirectory(_previous:Result,form:FormData):Promise<Res
 export async function reviewClaim(form:FormData){
  const db=await requireAdmin(),id=Number(field(form,"claim_id",14)),status=field(form,"status",20);
  if(!Number.isInteger(id)||!["approved","rejected"].includes(status))redirect("/portal?error=Ongeldige+claim");
+ if(status==="approved"){
+  if(field(form,"verified_evidence",4)!=="yes")redirect("/portal?error="+encodeURIComponent("Controleer eerst officieel het ondernemingsnummer en de bevoegdheid van de aanvrager."));
+  const {data:claim}=await db.from("portal_directory_claims").select("user_id").eq("id",id).maybeSingle();
+  if(!claim)redirect("/portal?error="+encodeURIComponent("Claim niet gevonden."));
+  const {data:dealer}=await db.from("portal_dealers").select("id,kbo_number").eq("owner_id",claim.user_id).maybeSingle();
+  if(!dealer||!dealer.kbo_number)redirect("/portal?error="+encodeURIComponent("Een claim kan alleen worden goedgekeurd na registratie van een garage met ondernemingsnummer."));
+ }
  const {error}=await db.from("portal_directory_claims").update({status}).eq("id",id);
  if(error)redirect("/portal?error=Claim+wijzigen+mislukt");
  revalidatePath("/portal");
