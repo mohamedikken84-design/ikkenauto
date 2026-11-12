@@ -2,11 +2,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase/server";
+import { portalOrigin } from "@/lib/portal-origin";
 
 type Result = { error: string; message?:string };
-const ok:Result={error:""};
 function field(form:FormData,name:string,max=250){return String(form.get(name)??"").trim().slice(0,max);}
-function origin(){return (process.env.PORTAL_ORIGIN||"https://ikkenauto-cursor-keep-alive-6ada.vercel.app").replace(/\/$/,"");}
 async function authenticate(){
  const db=await createSupabaseServer();
  const {data:{user}}=await db.auth.getUser();
@@ -37,7 +36,16 @@ export async function registerChecked(_previous:Result,form:FormData):Promise<Re
  const db=await createSupabaseServer(),email=field(form,"email",200).toLowerCase(),password=field(form,"password",200);
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return {error:"Controleer het e-mailadres."};
  if(password.length<10)return {error:"Gebruik een wachtwoord van minstens 10 tekens."};
- const {error}=await db.auth.signUp({email,password,options:{emailRedirectTo:origin()+"/portal/auth/callback"}});
+ const rowNumber=Number(field(form,"directory_row",12));
+ let suggestedRow:number|null=null;
+ if(Number.isInteger(rowNumber)&&rowNumber>0){
+   const {data}=await db.from("portal_directory").select("source_row").eq("source_row",rowNumber).maybeSingle();
+   if(data)suggestedRow=rowNumber;
+ }
+ const {error}=await db.auth.signUp({email,password,options:{
+   emailRedirectTo:(await portalOrigin())+"/portal/auth/callback",
+   data:suggestedRow?{suggested_directory_row:suggestedRow}:{}
+ }});
  if(error)return {error:"Registreren lukt momenteel niet. Controleer je gegevens of probeer later opnieuw."};
  return {error:"",message:"Account aangemaakt. Controleer je mailbox en bevestig je e-mailadres."};
 }
@@ -64,7 +72,6 @@ export async function dealerChecked(_previous:Result,form:FormData):Promise<Resu
  revalidatePath("/portal");
  redirect("/portal?success="+encodeURIComponent("Garageprofiel opgeslagen. Je kunt nu auto's toevoegen."));
 }
-const makes=["Abarth","Alfa Romeo","Alpine","Aston Martin","Audi","Bentley","BMW","BYD","Cadillac","Chevrolet","Chrysler","Citroën","Cupra","Dacia","Daewoo","Daihatsu","Dodge","DS","Ferrari","Fiat","Fisker","Ford","Genesis","Honda","Hyundai","Infiniti","Isuzu","Jaguar","Jeep","Kia","Lamborghini","Lancia","Land Rover","Lexus","Lotus","Maserati","Mazda","McLaren","Mercedes-Benz","MG","MINI","Mitsubishi","Nissan","Opel","Peugeot","Polestar","Porsche","Renault","Rolls-Royce","Saab","SEAT","Skoda","Smart","Subaru","Suzuki","Tesla","Toyota","Volkswagen","Volvo","Xpeng","Zeekr"];
 const choices=["Airconditioning","Automatische klimaatregeling","Cruisecontrol","Adaptieve cruisecontrol","Navigatie","Apple CarPlay","Android Auto","Achteruitrijcamera","Parkeersensoren voor","Parkeersensoren achter","Ledkoplampen","Matrix-led","Panoramadak","Trekhaak","Verwarmde zetels","Elektrische zetels","Lederen bekleding","Isofix","Dodehoekwaarschuwing","Rijstrookassistent","Keyless entry","Elektrische achterklep","Bluetooth","Head-updisplay","360° camera","Sportpakket","Lichtmetalen velgen"];
 export async function vehicleChecked(_previous:Result,form:FormData):Promise<Result>{
  let context:Awaited<ReturnType<typeof getDealer>>;
@@ -114,7 +121,7 @@ export async function queueExternalLink(_previous:Result,form:FormData):Promise<
 }
 function parseCsv(data:string){
  const head=data.split(/\r?\n/,1)[0];const delimiter=head.includes(";")?";":",";
- let rows:string[][]=[],row:string[]=[],cell="",quoted=false;
+ const rows:string[][]=[];let row:string[]=[],cell="",quoted=false;
  for(let i=0;i<data.length;i++){
   const c=data[i];
   if(c==='"'&&quoted&&data[i+1]==='"'){cell+='"';i++;}
@@ -187,7 +194,7 @@ export async function resendConfirmation(_previous:Result,form:FormData):Promise
  const email=field(form,"email",200).toLowerCase();
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return {error:"Vul een geldig e-mailadres in."};
  const db=await createSupabaseServer();
- const {error}=await db.auth.resend({type:"signup",email,options:{emailRedirectTo:origin()+"/portal/auth/callback"}});
+ const {error}=await db.auth.resend({type:"signup",email,options:{emailRedirectTo:(await portalOrigin())+"/portal/auth/callback"}});
  if(error)return {error:"Nieuwe e-mail verzenden mislukt. Probeer het later opnieuw."};
  return {error:"",message:"Als je adres nog bevestigd moet worden, ontvang je een nieuwe bevestigingsmail."};
 }

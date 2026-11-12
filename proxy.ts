@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { previewAllows } from "@/lib/preview";
+import { dealerRouteKind, hasDealerShell, isDealerOnlyHost } from "@/lib/dealer/portal-visibility";
 
 function localeFromAccept(header: string) {
   const first = header.split(",")[0]?.trim().toLowerCase() ?? "";
@@ -12,6 +13,19 @@ function closedToCrawlers() {
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const dealerOnly=isDealerOnlyHost(request.nextUrl.hostname,process.env.IKKENAUTO_PORTAL_ONLY);
+  if(dealerOnly){
+    const kind=dealerRouteKind(pathname);
+    if(kind==="home"||kind==="redirect"){
+      const response=NextResponse.redirect(new URL("/portal",request.url));
+      response.headers.set("X-Robots-Tag","noindex, nofollow");
+      response.headers.set("Cache-Control","no-store");
+      return response;
+    }
+    if(kind==="private-api"){
+      return NextResponse.json({error:"not_found"},{status:404,headers:{"Cache-Control":"no-store","X-Robots-Tag":"noindex, nofollow"}});
+    }
+  }
   if (pathname === "/") {
     const cookie = request.cookies.get("ikken_locale")?.value;
     const locale = cookie === "fr" || cookie === "nl" ? cookie : localeFromAccept(request.headers.get("accept-language") ?? "");
@@ -25,6 +39,9 @@ export function proxy(request: NextRequest) {
     pathname,
   });
   const requestHeaders = new Headers(request.headers);
+  // Force a standalone dealer layout: the marketplace navbar and footer must not render.
+  if(hasDealerShell(pathname,dealerOnly))requestHeaders.set("x-ikken-dealer-shell","1");
+  else requestHeaders.delete("x-ikken-dealer-shell");
   if (pathname === "/nl" || pathname.startsWith("/nl/")) requestHeaders.set("x-ikken-path-locale", "nl");
   else if (pathname === "/fr" || pathname.startsWith("/fr/")) requestHeaders.set("x-ikken-path-locale", "fr");
   const response = allowed

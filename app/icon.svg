@@ -1,1 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><rect width="64" height="64" rx="13" fill="#111b27"/><text x="8" y="42" font-family="Arial,Helvetica,sans-serif" font-size="27" font-weight="900" fill="#fff">IK</text><text x="43" y="42" font-family="Arial,Helvetica,sans-serif" font-size="27" font-weight="900" fill="#d7b263">K</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="IKKENAUTO">
+  <rect width="64" height="64" rx="14" fill="#101923"/>
+  <text x="7" y="43" font-family="Arial,Helvetica,sans-serif" font-size="28" font-weight="900" letter-spacing="-1" fill="#FFFFFF">IK</text>
+  <text x="38" y="43" font-family="Arial,Helvetica,sans-serif" font-size="28" font-weight="900" fill="#D7B263">K</text>
+</svg>

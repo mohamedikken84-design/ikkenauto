@@ -111,7 +111,13 @@ export async function vehicleStatus(form: FormData) {
 export async function deleteVehicle(form: FormData) {
   const {db,dealer}=await ownDealer();
   const id=value(form,"vehicle_id",40);
-  // Existing photo files remain private; do not remove stock data through import.
+  // First remove private files while storage RLS can still verify vehicle ownership.
+  const {data:photos,error:photoError}=await db.from("portal_vehicle_photos").select("storage_path").eq("vehicle_id",id).eq("dealer_id",dealer.id);
+  if(photoError)go("Voertuigfoto's konden niet gecontroleerd worden.");
+  if(photos?.length){
+    const removed=await db.storage.from("portal-vehicles").remove(photos.map(x=>x.storage_path));
+    if(removed.error)go("Voertuigfoto's konden niet worden opgeruimd; de auto is niet verwijderd.");
+  }
   const {error}=await db.from("portal_vehicles").delete().eq("id",id).eq("dealer_id",dealer.id);
   if(error) go("Auto verwijderen mislukt.");
   revalidatePath("/portal");
@@ -185,7 +191,9 @@ export async function uploadVehiclePhoto(form: FormData) {
   if(error)go("Foto uploaden mislukt.");
   const saved=await db.from("portal_vehicle_photos").insert({dealer_id:dealer.id,vehicle_id:vehicleId,storage_path:path});
   if(saved.error){await db.storage.from("portal-vehicles").remove([path]);go("Foto registreren mislukt.");}
-  revalidatePath("/portal");go("Foto opgeslagen.",true);
+  revalidatePath("/portal");
+  if(value(form,"return_to",10)==="edit")redirect("/portal/voorraad/"+vehicleId+"/bewerken?success=Foto+opgeslagen");
+  go("Foto opgeslagen.",true);
 }
 export async function addProspect(form: FormData) {
   const db=await admin(),name=value(form,"name",140),email=value(form,"email",200);
