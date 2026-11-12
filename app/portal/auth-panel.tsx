@@ -36,9 +36,9 @@ export function AuthPanel({initialView="welcome"}:{initialView?:View}) {
             <h2>Eerst je garage.<br/>Dan je voertuigen.</h2>
             <p>Alles wat je nodig hebt om voorbereid te zijn op de publieke lancering.</p>
             <div className="dealer-product-features">
-              <div><span>01</span><div><strong>Garageprofiel</strong><small>Bedrijfsgegevens, logo en contact</small></div><span aria-hidden="true">↗</span></div>
-              <div><span>02</span><div><strong>Voertuigen beheren</strong><small>Gegevens, prijzen en foto&apos;s</small></div><span aria-hidden="true">↗</span></div>
-              <div><span>03</span><div><strong>Voorraad importeren</strong><small>CSV-bestanden met controle vooraf</small></div><span aria-hidden="true">↗</span></div>
+              <div><span>01</span><div><strong>Garageprofiel</strong><small>Bedrijfsgegevens, logo en contact</small></div></div>
+              <div><span>02</span><div><strong>Voertuigen beheren</strong><small>Gegevens, prijzen en foto&apos;s</small></div></div>
+              <div><span>03</span><div><strong>Voorraad importeren</strong><small>CSV-bestanden met controle vooraf</small></div></div>
             </div>
             <div className="dealer-product-footer"><span>Je gegevens blijven voorlopig privé</span><span className="dealer-product-dot"/></div>
           </aside>
