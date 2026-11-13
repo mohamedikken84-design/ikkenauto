@@ -30,6 +30,8 @@ button:disabled { cursor: not-allowed; }
 .side-nav svg { flex: 0 0 auto; }
 .nav-count { margin-left: auto; min-width: 21px; padding: 3px 6px; border-radius: 6px; color: #777; font-size: 11px; text-align: center; }
 .sidebar-bottom { margin-top: auto; padding: 16px 13px 17px; }
+.register-preview-link { display: inline-flex; align-items: center; gap: 9px; margin: 0 5px 19px; padding: 8px 5px; font-size: 12px; font-weight: 650; text-decoration: none; color: #5f5a4c; }
+.register-preview-link:hover { text-decoration: underline; color: #222; }
 .side-note { display: flex; align-items: flex-start; gap: 10px; margin: 0 5px 25px; border: 1px solid #e9e8e3; border-radius: 12px; padding: 14px 11px; background: #fcfbf8; }
 .side-note-icon { display: grid; color: #a37d31; place-items: center; margin-top: 1px; }
 .side-note strong { display: block; font-size: 12px; }
