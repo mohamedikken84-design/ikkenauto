@@ -137,6 +137,7 @@ export default function DealerPortal() {
         <button onClick={() => navigate("company")} className={pane === "company" ? "nav-active" : ""}><Icon name="building"/> Bedrijfsprofiel</button>
       </nav>
       <div className="sidebar-bottom">
+        <a className="register-preview-link" href="/registreren"><Icon name="arrow" size={16}/> Bekijk registratieontwerp</a>
         <div className="side-note"><span className="side-note-icon"><Icon name="shield" size={17}/></span><div><strong>Je nieuwe werkruimte.</strong><p>Ontworpen voor autohandelaars, zonder overbodige functies.</p></div></div>
         <div className="sidebar-account"><span className="avatar">IA</span><span><strong>IKKENAUTO demo</strong><small>Ontwerpomgeving</small></span><span className="account-dots">•••</span></div>
       </div>
