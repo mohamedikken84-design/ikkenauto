@@ -6,6 +6,7 @@
 - This product is a free onboarding and inventory-management portal for Belgian automotive dealers.
 - The public consumer marketplace is **out of scope** for V2.
 - Primary jobs: create an account, complete a company profile, add/edit/manage vehicles, import listings (only after integration is validated).
+- The public dealer registration design is available at `/registreren` as a non-submitting visual/validation preview. The preview intentionally does not create accounts.
 - Keep Supabase production data untouched during design work; preview data must be unmistakably labelled.
 
 ## Design principles
