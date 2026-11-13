@@ -1,0 +1,50 @@
+/* Registration concept, scoped to the protected V2 design preview. */
+.dealer-register-page { min-height: 100vh; color: #1d1d1f; background: #f5f5f7; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.dealer-register-topbar { height: 82px; padding: 0 clamp(22px, 5vw, 88px); background: white; border-bottom: 1px solid #e5e5e7; display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.dealer-register-logo { color: #171719; text-decoration: none; font-size: 23px; letter-spacing: -.055em; font-weight: 800; }
+.dealer-register-logo > span, .register-dot { color: #b99349; }
+.dealer-register-toplink { color: #45454b; font-size: 13px; font-weight: 600; text-decoration: none; }
+.dealer-register-toplink span { padding-left: 7px; }
+.dealer-register-toplink:hover, .dealer-register-bottomlink:hover { text-decoration: underline; }
+.dealer-register-preview-note { display: flex; align-items: center; gap: 11px; padding: 13px clamp(22px, 5vw, 88px); color: #776847; background: #faf8f1; border-bottom: 1px solid #ece6d9; font-size: 12px; }
+.dealer-register-note-dot { height: 7px; width: 7px; border-radius: 50%; background: #b99349; flex-shrink: 0; }
+.dealer-register-layout { max-width: 1440px; min-height: calc(100vh - 125px); padding: clamp(44px, 6vw, 104px) clamp(22px, 5vw, 88px); margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(350px, .88fr); gap: clamp(45px, 7vw, 130px); align-items: start; }
+.dealer-register-intro { padding-top: 27px; }
+.dealer-register-eyebrow, .dealer-register-card-step { display: block; margin-bottom: 27px; color: #a18042; font-size: 10px; letter-spacing: .18em; font-weight: 750; }
+.dealer-register-intro h1 { margin: 0; max-width: 680px; font-size: clamp(44px, 4.8vw, 74px); line-height: 1.095; font-weight: 650; letter-spacing: -.064em; }
+.dealer-register-intro h1 em { font-style: normal; color: #9b834e; }
+.dealer-register-intro > p:not(.dealer-register-footer-copy) { max-width: 515px; color: #707078; font-size: 16px; line-height: 1.75; margin: 31px 0 41px; }
+.dealer-register-value-list { display: grid; gap: 25px; max-width: 510px; }
+.dealer-register-value-list > div { display: flex; gap: 17px; align-items: flex-start; }
+.dealer-register-value-icon { border: 1px solid #d6d6d9; border-radius: 10px; min-width: 43px; height: 43px; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #7b7b81; }
+.dealer-register-value-list strong { display: block; font-size: 14px; line-height: 1.5; font-weight: 650; }
+.dealer-register-value-list small { display: block; margin-top: 6px; font-size: 12px; color: #8c8c92; line-height: 1.5; }
+.dealer-register-footer-copy { max-width: 515px; color: #9b9ba1; font-size: 11px; line-height: 1.7; margin-top: 63px; }
+.dealer-register-form-card { padding: clamp(27px, 3.6vw, 46px); border: 1px solid #e5e5e7; background: white; border-radius: 17px; box-shadow: 0 8px 35px #15151506; }
+.dealer-register-card-head { margin-bottom: 31px; }
+.dealer-register-card-step { margin-bottom: 16px; }
+.dealer-register-card-head h2 { font-size: clamp(25px, 2.2vw, 32px); font-weight: 650; letter-spacing: -.045em; line-height: 1.2; margin: 0; }
+.dealer-register-card-head p { color: #83838a; font-size: 13px; line-height: 1.7; margin: 12px 0 0; max-width: 440px; }
+.dealer-register-inputs { display: grid; gap: 10px; }
+.dealer-register-inputs label { color: #45454b; font-size: 12px; font-weight: 650; margin-top: 8px; }
+.dealer-register-inputs label span { color: #b99349; }
+.dealer-register-inputs input { display: block; min-width: 0; width: 100%; height: 47px; padding: 0 14px; border: 1px solid #dcdce0; border-radius: 9px; background: #fff; font-size: 13px; color: #222225; }
+.dealer-register-inputs input::placeholder { color: #a0a0a6; }
+.dealer-register-inputs input:focus { outline: 3px solid #b9934933; border-color: #aa915b; }
+.dealer-register-inputs small { color: #99999e; font-size: 11px; line-height: 1.45; margin: -2px 0 3px; }
+.dealer-register-password-heading { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
+.dealer-register-password-heading label { margin: 0; }
+.dealer-register-password-heading button { border: none; background: transparent; font-size: 11px; color: #6c6c72; text-decoration: underline; padding: 6px; }
+.dealer-register-submit { min-height: 48px; width: 100%; border-radius: 100px; background: #1d1d1f; color: #fff; border: 1px solid #1d1d1f; font-weight: 650; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 28px; }
+.dealer-register-submit:hover { background: #343437; }
+.dealer-register-submit span { font-size: 18px; }
+.dealer-register-security { color: #94949a; margin: 14px auto 20px; font-size: 11px; line-height: 1.6; text-align: center; }
+.dealer-register-bottomlink { display: block; text-align: center; font-size: 12px; font-weight: 600; color: #69696e; text-decoration: none; }
+.dealer-register-bottomlink span { margin-left: 5px; }
+.dealer-register-message { border-radius: 9px; padding: 12px 14px; margin-top: 16px; font-size: 12px; line-height: 1.6; }
+.dealer-register-error { background: #fff3f0; border: 1px solid #f1d2ca; color: #a42c21; }
+.dealer-register-success { background: #f1f8f3; border: 1px solid #d3e7d8; color: #285f3c; }
+@media (max-width: 1024px) { .dealer-register-layout { grid-template-columns: 1fr 1fr; gap: 32px; } .dealer-register-intro h1 { font-size: clamp(38px, 4.7vw, 56px); } .dealer-register-form-card { padding: 28px; } }
+@media (max-width: 810px) { .dealer-register-layout { grid-template-columns: 1fr; padding-top: 38px; } .dealer-register-intro { padding-top: 0; } .dealer-register-intro h1 { font-size: clamp(39px, 8.3vw, 54px); } .dealer-register-intro > p:not(.dealer-register-footer-copy) { margin: 21px 0 28px; } .dealer-register-value-list { gap: 16px; } .dealer-register-footer-copy { margin-top: 26px; } .dealer-register-form-card { max-width: 580px; width: 100%; } }
+@media (max-width: 440px) { .dealer-register-topbar { height: 68px; } .dealer-register-logo { font-size: 20px; } .dealer-register-toplink { font-size: 11px; } .dealer-register-form-card { padding: 25px 18px; } .dealer-register-intro h1 { font-size: 40px; } }
+@media (prefers-reduced-motion: reduce) { .dealer-register-submit { transition: none; } }
