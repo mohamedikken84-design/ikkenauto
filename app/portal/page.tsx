@@ -88,13 +88,16 @@ export default function DealerPortal() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    try {
-      const storedVehicles = window.localStorage.getItem("ikkenauto-v2-preview-vehicles");
-      const storedCompany = window.localStorage.getItem("ikkenauto-v2-preview-company");
-      if (storedVehicles) { const parsed: unknown = JSON.parse(storedVehicles); if (Array.isArray(parsed)) setVehicles(parsed as Vehicle[]); }
-      if (storedCompany) setCompany(JSON.parse(storedCompany) as Company);
-    } catch { /* Preview still works without storage. */ }
-    setLoaded(true);
+    const frame = window.requestAnimationFrame(() => {
+      try {
+        const storedVehicles = window.localStorage.getItem("ikkenauto-v2-preview-vehicles");
+        const storedCompany = window.localStorage.getItem("ikkenauto-v2-preview-company");
+        if (storedVehicles) { const parsed: unknown = JSON.parse(storedVehicles); if (Array.isArray(parsed)) setVehicles(parsed as Vehicle[]); }
+        if (storedCompany) setCompany(JSON.parse(storedCompany) as Company);
+      } catch { /* Preview still works without storage. */ }
+      setLoaded(true);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
   useEffect(() => { if (loaded) { try { window.localStorage.setItem("ikkenauto-v2-preview-vehicles", JSON.stringify(vehicles)); } catch { /* storage not available */ } } }, [vehicles, loaded]);
   useEffect(() => { if (loaded) { try { window.localStorage.setItem("ikkenauto-v2-preview-company", JSON.stringify(company)); } catch { /* storage not available */ } } }, [company, loaded]);
@@ -196,7 +199,7 @@ export default function DealerPortal() {
                 <Field label="Interieurkleur"><input value={draft.interior} placeholder="bv. Zwart leder" onChange={e => updateDraft("interior", e.target.value)}/></Field>
               </div></section>
               <section className="form-panel panel"><PanelTitle eyebrow="03 / UITRUSTING" title="Opties & uitrusting" description="Selecteer alle opties die aanwezig zijn op dit voertuig."/><div className="equipment-grid">{equipment.map(item => <label key={item} className={"equipment-option " + (draft.equipment.includes(item) ? "option-selected" : "")}><input type="checkbox" checked={draft.equipment.includes(item)} onChange={e => updateDraft("equipment", e.target.checked ? [...draft.equipment, item] : draft.equipment.filter(x => x !== item))}/><span className="option-check"><Icon name="check" size={13}/></span>{item}</label>)}</div></section>
-              <section className="form-panel panel"><PanelTitle eyebrow="04 / PRESENTATIE" title="Omschrijving & foto's" description="Laat het voertuig professioneel overkomen met duidelijke informatie en goede foto's."/><div className="form-grid"><div className="field-full"><Field label="Beschrijving"><textarea rows={5} value={draft.description} placeholder="Beschrijf de belangrijkste troeven, onderhoudshistorie en eventuele bijzonderheden…" onChange={e => updateDraft("description", e.target.value)}/></Field></div></div><label className="photo-drop"><Icon name="upload" size={24}/><strong>Voeg foto's toe</strong><span>Kies foto's om de selectie te bekijken. Upload naar de server volgt later.</span><input type="file" accept="image/*" multiple onChange={e => setPhotoNames(Array.from(e.target.files || []).map(f => f.name))}/></label>{photoNames.length > 0 && <p className="photo-names">{photoNames.length} geselecteerd: {photoNames.join(", ")}</p>}</section>
+              <section className="form-panel panel"><PanelTitle eyebrow="04 / PRESENTATIE" title="Omschrijving & foto&apos;s" description="Laat het voertuig professioneel overkomen met duidelijke informatie en goede foto&apos;s."/><div className="form-grid"><div className="field-full"><Field label="Beschrijving"><textarea rows={5} value={draft.description} placeholder="Beschrijf de belangrijkste troeven, onderhoudshistorie en eventuele bijzonderheden…" onChange={e => updateDraft("description", e.target.value)}/></Field></div></div><label className="photo-drop"><Icon name="upload" size={24}/><strong>Voeg foto&apos;s toe</strong><span>Kies foto&apos;s om de selectie te bekijken. Upload naar de server volgt later.</span><input type="file" accept="image/*" multiple onChange={e => setPhotoNames(Array.from(e.target.files || []).map(f => f.name))}/></label>{photoNames.length > 0 && <p className="photo-names">{photoNames.length} geselecteerd: {photoNames.join(", ")}</p>}</section>
               <section className="form-panel panel"><PanelTitle eyebrow="05 / VERKOOP" title="Prijs & publicatie" description="Bepaal de verkoopinformatie en bewaar je voertuig als concept of gereed."/><div className="form-grid">
                 <Field label="Vraagprijs *"><div className="input-prefix"><span>€</span><input type="number" min="0" value={draft.price} placeholder="0" onChange={e => updateDraft("price", e.target.value)}/></div></Field>
                 <Field label="Garantie"><select value={draft.warranty} onChange={e => updateDraft("warranty", e.target.value)}><option value="">Selecteer</option><option>Geen</option><option>12 maanden</option><option>24 maanden</option><option>36 maanden</option></select></Field>
